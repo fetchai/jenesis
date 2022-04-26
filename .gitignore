@@ -1,0 +1,8 @@
+.idea/
+dist/
+
+.DS_Store
+
+*.egg-info/
+*.py[cgo]
+
