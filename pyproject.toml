@@ -2,7 +2,7 @@
 name = "haul"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Ed FitzGerald <edward.fitzgerald@fetch.ai>"]
 license = "Apache"
 
 [tool.poetry.scripts]
