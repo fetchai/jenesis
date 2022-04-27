@@ -204,7 +204,7 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str):
     for contract, _ in contracts_to_deploy:
         # reset this contracts metadata
         contract_settings = selected_profile.contracts[contract.name]
-        contract_settings.reset_metadata()
+        contract_settings.address = None # clear the old address
 
         # lookup the wallet key
         wallet = LocalWallet(keys[contract_settings.deployer_key])
@@ -222,17 +222,5 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str):
 
         # run the deployment task
         run_tasks([task])
-
-        # # build the ledger contract
-        # ledger_contract = _build_ledger_contract(contract, contract_settings, client)
-        #
-        # # deploy the contract to the network
-        # contract_address = _deploy_contract(contract.name, ledger_contract, contract_settings.init, wallet)
-        #
-        # # update the configuration and save it to disk
-        # cfg.update_deployment(selected_profile.name, contract.name,
-        #                       ledger_contract.digest.hex(),
-        #                       ledger_contract.code_id, contract_address)
-        # cfg.save(project_path)
 
     return
