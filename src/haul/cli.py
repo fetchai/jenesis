@@ -7,6 +7,7 @@ from haul.cmd.deploy import add_deploy_command
 from haul.cmd.init import add_init_command
 from haul.cmd.keys import add_keys_command
 from haul.cmd.new import add_new_command
+from haul.cmd.run import add_run_command
 from haul.cmd.shell import add_shell_command
 
 
@@ -20,6 +21,7 @@ def _parse_commandline() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
     add_shell_command(subparsers)
     add_deploy_command(subparsers)
     add_keys_command(subparsers)
+    add_run_command(subparsers)
 
     return parser, parser.parse_args()
 

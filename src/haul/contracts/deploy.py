@@ -12,6 +12,7 @@ from haul.config import Config, ContractConfig, Profile
 from haul.contracts import Contract
 from haul.contracts.detect import detect_contracts
 from haul.contracts.monkey import MonkeyContract
+from haul.contracts.networks import get_network_config
 from haul.keyring import query_keychain_item, LocalInfo, query_keychain_items
 from haul.tasks import Task, TaskStatus
 from haul.tasks.monitor import run_tasks
@@ -140,15 +141,9 @@ class DeployContrackTask(Task):
         self._status_text = ''
 
 
-def _get_network_config(name: str) -> Optional[NetworkConfig]:
-    if name == 'fetchai-capricorn':
-        return NetworkConfig.capricorn_testnet()
-    return None
-
-
 def deploy_contracts(cfg: Config, profile: str, project_path: str):
     selected_profile = cfg.profiles[profile]
-    network_cfg = _get_network_config(selected_profile.network)
+    network_cfg = get_network_config(selected_profile.network)
     if network_cfg is None:
         print('Not network configuration for this profile')
         return
@@ -204,7 +199,7 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str):
     for contract, _ in contracts_to_deploy:
         # reset this contracts metadata
         contract_settings = selected_profile.contracts[contract.name]
-        contract_settings.address = None # clear the old address
+        contract_settings.address = None  # clear the old address
 
         # lookup the wallet key
         wallet = LocalWallet(keys[contract_settings.deployer_key])

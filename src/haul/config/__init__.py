@@ -84,7 +84,8 @@ class Config:
     project_authors: List[str]
     profiles: Dict[str, Profile]
 
-    def update_deployment(self, profile_name: str, contract_name: str, digest: str, code_id: int, address: Address):
+    def update_deployment(self, profile_name: str, contract_name: str, digest: Optional[str], code_id: Optional[int],
+                          address: Optional[Address]):
         profile = self.profiles.get(profile_name)
         if profile is None:
             raise ConfigurationError(f'unable to lookup profile {profile_name}')
@@ -93,10 +94,13 @@ class Config:
         if contract is None:
             raise ConfigurationError(f'unable to lookup contract {contract_name}')
 
-        # update the contract
-        contract.digest = str(digest)
-        contract.code_id = int(code_id)
-        contract.address = Address(address)
+        # update the contract if necessary
+        if digest is not None:
+            contract.digest = str(digest)
+        if code_id is not None:
+            contract.code_id = int(code_id)
+        if address is not None:
+            contract.address = Address(address)
 
         profile.contracts[contract_name] = contract
         self.profiles[profile_name] = profile
