@@ -4,7 +4,7 @@ import os
 import subprocess
 
 
-def run(args: argparse.Namespace):
+def run(_args: argparse.Namespace):
     user_name = subprocess.getoutput("git config user.name")
     user_email = subprocess.getoutput("git config user.email")
     authors = user_name + " <" + user_email + ">"
@@ -34,7 +34,7 @@ def run(args: argparse.Namespace):
 
     try:
         os.makedirs(project)
-        with open(path, "w") as configfile:
+        with open(path, "w", encoding="utf-8") as configfile:
             config.write(configfile)
     except FileExistsError:
         print("Project already initialized")
