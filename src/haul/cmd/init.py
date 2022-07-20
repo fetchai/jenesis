@@ -12,15 +12,6 @@ def run(_args: argparse.Namespace):
     project_path = os.getcwd()
     project_name = os.path.basename(project_path)
 
-    cli_path = project_path[: project_path.index("cli") + len("cli")]
-
-    if (
-        (os.path.join(cli_path, project_name) != project_path)
-        or (project_name == "src")
-        or (project_name == "tests")
-    ):
-        raise Exception("You must be in your project's directory")
-
     config = configparser.ConfigParser()
     config.add_section("project")
     config.set("project", "name", project_name)

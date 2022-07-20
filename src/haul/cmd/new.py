@@ -18,11 +18,10 @@ def run(args: argparse.Namespace):
     config.set("profile.testing", "network", "fetchai-dorado")
 
     current_path = os.getcwd()
-    cli_path = current_path[: current_path.index("cli") + len("cli")]
-    os.chdir(cli_path)
 
     project = os.path.join(args.project, "contracts/.gitkeep")
-    path = os.path.join(cli_path, args.project, "haul.toml")
+
+    path = os.path.join(current_path, args.project, "haul.toml")  # new
 
     try:
         os.makedirs(project)
