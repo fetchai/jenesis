@@ -3,6 +3,7 @@ import json
 import os
 import struct
 import subprocess
+import sys
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
@@ -88,12 +89,12 @@ class Config:
     profiles: Dict[str, Profile]
 
     def update_deployment(
-        self,
-        profile_name: str,
-        contract_name: str,
-        digest: str,
-        code_id: int,
-        address: Address,
+            self,
+            profile_name: str,
+            contract_name: str,
+            digest: str,
+            code_id: int,
+            address: Address,
     ):
         profile = self.profiles.get(profile_name)
         if profile is None:
@@ -181,7 +182,7 @@ class Config:
 
     @classmethod
     def _parse_contract_config(
-        cls, network: str, name: str, details: Any, lock: Any
+            cls, network: str, name: str, details: Any, lock: Any
     ) -> ContractConfig:
         if not isinstance(details, dict):
             raise ConfigurationError(
@@ -217,13 +218,18 @@ class Config:
         with open(lock_file_path, "w", encoding="utf-8") as lock_file:
             toml.dump(contents, lock_file)
 
-    def create_project(name: str):
+    @staticmethod
+    def create_project(path: str):
         user_name = subprocess.getoutput("git config user.name")
         user_email = subprocess.getoutput("git config user.email")
-        authors = f"{user_name} <{user_email}>"
+        authors = [f"{user_name} <{user_email}>"]
+
+        # take the project name directly from the base name of the project
+        project_root = os.path.abspath(path)
+        project_name = os.path.basename(project_root)
 
         data = {
-            "project": {"name": name, "authors": authors},
+            "project": {"name": project_name, "authors": authors},
             "profile": {
                 "testing": {
                     "network": "fetchai-dorado",
@@ -231,21 +237,29 @@ class Config:
             },
         }
 
-        current_directory = os.getcwd()
+        project_configuration_file = os.path.join(project_root, 'haul.toml')
+        project_git_keep_files = [
+            os.path.join(project_root, 'contracts', '.gitkeep'),
+        ]
 
-        if os.path.basename(current_directory) == name:
-            project = "contracts"
-            path = os.path.join(current_directory, "haul.toml")
-        else:
-            project = os.path.join(name, "contracts")
-            path = os.path.join(current_directory, name, "haul.toml")
+        # check to see if the project file already exists
+        if os.path.exists(project_configuration_file):
+            print("Project already initialized")
+            sys.exit(1)
 
         try:
-            os.makedirs(project)
-            file = os.path.join(current_directory, project, ".gitkeep")
-            open(file, "a", encoding="utf-8").close()
+
+            # create the configuration file
+            os.makedirs(os.path.dirname(project_configuration_file), exist_ok=True)
             with open(path, "w", encoding="utf-8") as toml_file:
                 toml.dump(data, toml_file)
+
+            # create all the git kep files
+            for git_keep_path in project_git_keep_files:
+                os.makedirs(os.path.dirname(git_keep_path), exist_ok=True)
+
+                with open(git_keep_path, "a", encoding="utf-8"):
+                    pass
 
         except FileExistsError:
             print("Project already initialized")
