@@ -39,7 +39,7 @@ def test_new_create_project():
 
     user_name = subprocess.getoutput("git config user.name")
     user_email = subprocess.getoutput("git config user.email")
-    authors = f"{user_name} <{user_email}>"
+    authors = [f"{user_name} <{user_email}>"]
 
     assert toml_dict["project"]["authors"] == authors
     assert toml_dict["profile"]["testing"]["network"] == network
@@ -49,20 +49,19 @@ def test_new_create_project():
 def test_init_create_project():
     """Test project creation when (init) command is selected"""
 
-    project_name = os.path.basename(os.getcwd())
     network = "fetchai-dorado"
-    Config.create_project(project_name)
+    Config.create_project(os.getcwd())
 
     input_file_name = "haul.toml"
     path = os.path.join(os.getcwd(), input_file_name)
     with open(path, encoding="utf-8") as toml_file:
         toml_dict = toml.load(toml_file)
 
-    assert toml_dict["project"]["name"] == project_name
+    assert toml_dict["project"]["name"] == os.path.basename(os.getcwd())
 
     user_name = subprocess.getoutput("git config user.name")
     user_email = subprocess.getoutput("git config user.email")
-    authors = f"{user_name} <{user_email}>"
+    authors = [f"{user_name} <{user_email}>"]
 
     assert toml_dict["project"]["authors"] == authors
     assert toml_dict["profile"]["testing"]["network"] == network
