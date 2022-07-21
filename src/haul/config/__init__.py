@@ -89,12 +89,12 @@ class Config:
     profiles: Dict[str, Profile]
 
     def update_deployment(
-            self,
-            profile_name: str,
-            contract_name: str,
-            digest: str,
-            code_id: int,
-            address: Address,
+        self,
+        profile_name: str,
+        contract_name: str,
+        digest: str,
+        code_id: int,
+        address: Address,
     ):
         profile = self.profiles.get(profile_name)
         if profile is None:
@@ -182,7 +182,7 @@ class Config:
 
     @classmethod
     def _parse_contract_config(
-            cls, network: str, name: str, details: Any, lock: Any
+        cls, network: str, name: str, details: Any, lock: Any
     ) -> ContractConfig:
         if not isinstance(details, dict):
             raise ConfigurationError(
