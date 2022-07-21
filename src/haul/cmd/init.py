@@ -5,9 +5,7 @@ from haul.config import Config
 
 
 def run(_args: argparse.Namespace):
-
-    project_name = os.path.basename(os.getcwd())
-    Config.create_project(project_name)
+    Config.create_project(os.getcwd())
 
 
 def add_init_command(parser):
