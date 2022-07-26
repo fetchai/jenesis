@@ -34,7 +34,7 @@ def run_add_contract(args: argparse.Namespace):
     if branch is not None:
         cmd += ['--branch', branch]
     cmd += [TEMPLATE_GIT_URL, '.']
-    with open(os.devnull, 'w') as null_file:
+    with open(os.devnull, 'w', encoding='utf8') as null_file:
         subprocess.check_call(cmd, stdout=null_file, stderr=subprocess.STDOUT, cwd=temp_clone_path)
     print('Downloading template...complete')
 
@@ -53,8 +53,8 @@ def run_add_contract(args: argparse.Namespace):
 
             output_filepath = os.path.join(contract_root, rel_path)
             os.makedirs(os.path.dirname(output_filepath), exist_ok=True)
-            with open(file_path, 'r') as input_file:
-                with open(output_filepath, 'w') as output_file:
+            with open(file_path, 'r', encoding='utf8') as input_file:
+                with open(output_filepath, 'w', encoding='utf8') as output_file:
                     contents = input_file.read()
 
                     # replace the templating parameters here
@@ -65,3 +65,5 @@ def run_add_contract(args: argparse.Namespace):
 
     # clean up the temporary folder
     shutil.rmtree(temp_clone_path)
+
+    return True
