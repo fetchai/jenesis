@@ -4,10 +4,13 @@ from tempfile import mkdtemp
 import shutil
 import subprocess
 
+TEMPLATE_GIT_URL = 'git@github.com:fetchai/haul-templates.git'
+
 
 def run_add_contract(args: argparse.Namespace):
     template = args.template
     name = args.name
+    branch = args.branch
 
     project_root = os.path.abspath(os.getcwd())
     contract_root = os.path.join(project_root, 'contracts', name)
@@ -26,9 +29,14 @@ def run_add_contract(args: argparse.Namespace):
     temp_clone_path = mkdtemp(prefix='haul-', suffix='-tmpl')
 
     # clone the templates folder out in the temporary file
-    cmd = ['git', 'clone', '--single-branch', 'git@github.com:fetchai/haul-templates.git', '.']
+    print('Downloading template...')
+    cmd = ['git', 'clone', '--single-branch']
+    if branch is not None:
+        cmd += ['--branch', branch]
+    cmd += [TEMPLATE_GIT_URL, '.']
     with open(os.devnull, 'w') as null_file:
         subprocess.check_call(cmd, stdout=null_file, stderr=subprocess.STDOUT, cwd=temp_clone_path)
+    print('Downloading template...complete')
 
     # find the target contract
     contract_template_path = os.path.join(temp_clone_path, 'contracts', template)
@@ -37,6 +45,7 @@ def run_add_contract(args: argparse.Namespace):
         return False
 
     # process all the files as part of the template
+    print('Rendering template...')
     for root, _, files in os.walk(contract_template_path):
         for filename in files:
             file_path = os.path.join(root, filename)
@@ -52,9 +61,7 @@ def run_add_contract(args: argparse.Namespace):
                     contents = contents.replace('<<NAME>>', name)
 
                     output_file.write(contents)
-
-            print(f'- {rel_path} -> {output_filepath}')
+    print('Rendering template...complete')
 
     # clean up the temporary folder
     shutil.rmtree(temp_clone_path)
-
