@@ -2,6 +2,7 @@ import argparse
 import sys
 from typing import Tuple
 
+from haul.cmd.add import add_add_command
 from haul.cmd.compile import add_compile_command
 from haul.cmd.deploy import add_deploy_command
 from haul.cmd.init import add_init_command
@@ -20,6 +21,7 @@ def _parse_commandline() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
     add_shell_command(subparsers)
     add_deploy_command(subparsers)
     add_keys_command(subparsers)
+    add_add_command(subparsers)
 
     return parser, parser.parse_args()
 
