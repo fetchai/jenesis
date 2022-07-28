@@ -2,7 +2,7 @@ Haul is a command line tool for rapid contract and service development.
 
 # Installation
 
-Open your terminal, navigate to your project, and install via PyPI
+Open your terminal, navigate to your project, and install haul via PyPI
 
 ```
 pip3 install haul
@@ -10,11 +10,12 @@ pip3 install haul
 
 
 # Getting Started
-There are multiple commands integrated intohaulthat allow you to perform a variety of tasks, these commands are:
+There are multiple commands integrated into haul that allow you to perform a variety of tasks, these commands are:
 * new
 * init
-* deploy
+* add
 * compile
+* deploy
 * shell
 * keys
 
@@ -44,6 +45,47 @@ haul init
 ```
 
 This command will create the same files and folders inside your project directory as the ones described for the ```new``` command.
+
+## Add contract templates
+Once you have successfully created your project, you can add contract templates. You first need to navigate to your project's directory and run the following command:
+
+```
+haul add contract <TEMPLATE> <NAME>
+```
+
+An example of how to add the template **starter** with the name my-first-contract is given below:
+
+```
+haul add contract starter my-first-contract
+```
+
+This ```add contract``` command will add a contract template to your haul project inside contracts/my-first-contract/ folder. 
+
+## Compile contracts
+Once the template has been added to your project, you can compile the contract by running the following command inside your
+project directory:
+
+```
+haul compile
+```
+This will compile all packages in your project's contracts directory and output the wasm code under the artifacts directory.
+
+Note that in order to run haul compile you need to have docker running. A common mistake is to run docker as a root user, you can manage docker as a non-root user by running the following commands:
+```
+sudo groupadd docker
+sudo usermod -aG docker $USER
+```
+
+You will have to log out and log back in to activate the changes. If you are using Linux, you can run the following command to activate the changes:
+```
+newgrp docker
+```
+Finally, verify that you can run docker without sudo
+```
+docker run hello-world
+```
+Now you can re-try ```haul compile```
+
 
 ## Deploy contracts
 
