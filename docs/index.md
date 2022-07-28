@@ -11,13 +11,14 @@ pip3 install haul
 
 # Getting Started
 There are multiple commands integrated into haul that allow you to perform a variety of tasks, these commands are:
-* new
-* init
-* add
-* compile
-* deploy
-* shell
-* keys
+
+- new 
+- init
+- add
+- compile
+- deploy
+- shell
+- keys
 
 ## Create a new project
 The most straightforward way to create a project is using the ```new``` command

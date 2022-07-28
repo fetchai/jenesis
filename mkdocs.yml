@@ -6,7 +6,7 @@ edit_uri: ""
 site_author: developer@fetch.ai
 
 nav:
-  - Getting started: 'getting-started.md'
+  - Getting started: 'index.md'
 
 theme:
   name: material
