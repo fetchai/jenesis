@@ -1,10 +1,13 @@
 import argparse
+import os
+
+from haul.config import Config
 
 
 def run(_args: argparse.Namespace):
-    print('Implement me!')
+    Config.create_project(os.getcwd())
 
 
 def add_init_command(parser):
-    init_cmd = parser.add_parser('init')
+    init_cmd = parser.add_parser("init")
     init_cmd.set_defaults(handler=run)
