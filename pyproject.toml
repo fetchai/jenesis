@@ -18,7 +18,7 @@ toml = "^0.10.2"
 tqdm = "^4.64.0"
 
 [tool.poetry.dev-dependencies]
-coverage = "^6.3.2"
+coverage = "^6.4.2"
 pytest = "^7.1.2"
 pylint = "^2.13.7"
 
