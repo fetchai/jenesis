@@ -18,7 +18,6 @@ def detect_contracts(path: str) -> Optional[List[Contract]]:
 
         expected_files = (
             'Cargo.toml',
-            'Cargo.lock',
         )
         for expected_file in expected_files:
             if not os.path.isfile(os.path.join(contract_path, expected_file)):

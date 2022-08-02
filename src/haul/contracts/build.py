@@ -62,7 +62,7 @@ class ContractBuildTask(Task):
 
         assert self._container is not None
 
-        # check on the progress of the co
+        # check on the progress of the container
         self._container.reload()
 
         if self._container.status == 'exited':

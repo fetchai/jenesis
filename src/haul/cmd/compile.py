@@ -11,7 +11,7 @@ def run(args: argparse.Namespace):
     term = Terminal()
 
     contracts = detect_contracts(os.getcwd())
-    if contracts is None:
+    if contracts is None or len(contracts) == 0:
         print(term.red('Unable to detect any contracts'))
         return 1
 
