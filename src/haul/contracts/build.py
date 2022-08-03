@@ -189,7 +189,7 @@ class WorkspaceBuildTask(Task):
             self._status_text = ''
             return
 
-        # if we get this far we either need to schedule a docker build of the contract or we need to monitor
+        # if we get this far we either need to schedule a docker build of the workspace or we need to monitor
         # the progress of a docker build
         if self._container is None:
             try:
