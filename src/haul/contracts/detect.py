@@ -20,7 +20,7 @@ def is_workspace(path: str) -> bool:
             return False
 
     return True
-    
+
 
 def detect_contracts(path: str) -> Optional[List[Contract]]:
     contracts_folder = os.path.join(path, 'contracts')
