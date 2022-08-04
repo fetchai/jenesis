@@ -13,9 +13,9 @@ python = "^3.7"
 docker = "~5.0.3"
 blessings = "^1.7"
 ptpython = "^3.0.20"
-cosmpy = {git = "https://github.com/fetchai/cosmpy.git", rev = "v0.3.1"}
 toml = "^0.10.2"
 tqdm = "^4.64.0"
+cosmpy = "^0.5.1"
 
 [tool.poetry.dev-dependencies]
 coverage = "^6.3.2"

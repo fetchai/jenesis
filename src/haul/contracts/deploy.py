@@ -141,8 +141,8 @@ class DeployContrackTask(Task):
 
 
 def _get_network_config(name: str) -> Optional[NetworkConfig]:
-    if name == 'fetchai-capricorn':
-        return NetworkConfig.capricorn_testnet()
+    if name == 'fetchai-testnet':
+        return NetworkConfig.fetchai_stable_testnet()
     return None
 
 
