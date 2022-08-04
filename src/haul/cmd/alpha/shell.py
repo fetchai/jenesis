@@ -25,9 +25,9 @@ def run(_args: argparse.Namespace):
     shell_globals['cfg'] = cfg
     shell_globals['project_path'] = project_path
     shell_globals['profile'] = _args.profile
-    shell_globals['contracts'] = {}
+    shell_globals['contracts'] = {contract.name: contract for contract in contracts}
 
-    embed(globals(), locals(), vi_mode=False)
+    embed(globals(), vi_mode=False)
 
 
 def add_shell_command(parser):

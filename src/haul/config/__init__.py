@@ -88,12 +88,13 @@ class Config:
     project_authors: List[str]
     profiles: Dict[str, Profile]
 
-    def update_deployment(self, profile_name: str, contract_name: str, digest: str, code_id: int, address: Address):
+    def update_deployment(
         self,
         profile_name: str,
         contract_name: str,
         digest: str,
         code_id: int,
+        address: Address,
     ):
         profile = self.profiles.get(profile_name)
         if profile is None:
@@ -119,8 +120,15 @@ class Config:
         project_file_path = os.path.join(path, "haul.toml")
         lock_file_path = os.path.join(path, "haul.lock")
 
+        if not os.path.isfile(project_file_path):
+            raise ConfigurationError('Missing project file: "haul.lock"')
         project_contents = toml.load(project_file_path)
-        lock_file_contents = toml.load(lock_file_path)
+
+        if os.path.isfile(lock_file_path):                
+            lock_file_contents = toml.load(lock_file_path)
+        else:
+            lock_file_contents = {}
+            print("No lock file found. Proceeding without any contract deployments.")
 
         return cls._loads(project_contents, lock_file_contents)
 
@@ -234,7 +242,7 @@ class Config:
             "project": {"name": project_name, "authors": authors},
             "profile": {
                 "testing": {
-                    "network": "fetchai-dorado",
+                    "network": "fetchai-testnet",
                 }
             },
         }
