@@ -1,5 +1,6 @@
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as ConcurrentTimeoutError
-from typing import Optional, Tuple, List
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as ConcurrentTimeoutError
+from typing import List, Optional, Tuple
 
 from cosmpy.aerial.client import LedgerClient
 from cosmpy.aerial.config import NetworkConfig
@@ -7,19 +8,26 @@ from cosmpy.aerial.contract import LedgerContract
 from cosmpy.aerial.wallet import LocalWallet, Wallet
 from cosmpy.crypto.address import Address
 from cosmpy.crypto.keypairs import PrivateKey
-
 from haul.config import Config, ContractConfig, Profile
 from haul.contracts import Contract
 from haul.contracts.detect import detect_contracts
 from haul.contracts.monkey import MonkeyContract
-from haul.keyring import query_keychain_item, LocalInfo, query_keychain_items
+from haul.keyring import LocalInfo, query_keychain_item, query_keychain_items
 from haul.tasks import Task, TaskStatus
 from haul.tasks.monitor import run_tasks
 
 
 class DeployContrackTask(Task):
-    def __init__(self, project_path: str, cfg: Config, profile: Profile, contract: Contract, config: ContractConfig,
-                 client: LedgerClient, wallet: Wallet):
+    def __init__(
+        self,
+        project_path: str,
+        cfg: Config,
+        profile: Profile,
+        contract: Contract,
+        config: ContractConfig,
+        client: LedgerClient,
+        wallet: Wallet,
+    ):
         self._project_path = project_path
         self._cfg = cfg
         self._profile = profile
@@ -30,13 +38,13 @@ class DeployContrackTask(Task):
 
         # task status
         self._status = TaskStatus.IDLE
-        self._status_text = ''
+        self._status_text = ""
 
         # background worker
         self._executor = ThreadPoolExecutor(max_workers=1)
 
         # state machine state
-        self._state = 'idle'
+        self._state = "idle"
         self.ledger_contract = None  # type: Optional[LedgerContract]
         self.contract_address = None  # type: Optional[Address]
         self._future = None
@@ -56,17 +64,17 @@ class DeployContrackTask(Task):
     def poll(self):
         # print('POLL', self._state, self._status, self._status_text, self.name)
 
-        if self._state == 'idle':
+        if self._state == "idle":
             self._schedule_build_contract()
-        elif self._state == 'wait-for-ledger-contract':
+        elif self._state == "wait-for-ledger-contract":
             self._wait_for_ledger_contract()
-        elif self._state == 'schedule-deployment':
+        elif self._state == "schedule-deployment":
             self._schedule_deploy_contract()
-        elif self._state == 'wait-for-deployment':
+        elif self._state == "wait-for-deployment":
             self._wait_for_contract_deployment()
-        elif self._state == 'failed':
+        elif self._state == "failed":
             self._failed()
-        elif self._state == 'complete':
+        elif self._state == "complete":
             self._complete()
         else:
             assert False, "bad state"
@@ -79,18 +87,18 @@ class DeployContrackTask(Task):
                 self._contract.binary_path,
                 self._client,
                 code_id=self._config.code_id,
-                address=self._config.address
+                address=self._config.address,
             )
 
         self._future = self._executor.submit(action)
-        self._state = 'wait-for-ledger-contract'
+        self._state = "wait-for-ledger-contract"
         self._status = TaskStatus.IN_PROGRESS
-        self._status_text = '(1/2) Determining contract parameters...'
+        self._status_text = "(1/2) Determining contract parameters..."
 
     def _wait_for_ledger_contract(self):
         try:
             self.ledger_contract = self._future.result(timeout=0.05)
-            self._state = 'schedule-deployment'
+            self._state = "schedule-deployment"
             self._future = None
         except ConcurrentTimeoutError:
             pass
@@ -103,28 +111,28 @@ class DeployContrackTask(Task):
             return self.ledger_contract.deploy(
                 args=self._config.init,
                 sender=self._wallet,
-                admin_address=self._wallet.address()
+                admin_address=self._wallet.address(),
             )
 
         self._future = self._executor.submit(action)
-        self._state = 'wait-for-deployment'
+        self._state = "wait-for-deployment"
         self._status = TaskStatus.IN_PROGRESS
-        self._status_text = '(2/2) Deploying contract...'
+        self._status_text = "(2/2) Deploying contract..."
 
     def _wait_for_contract_deployment(self):
         try:
             self.contract_address = self._future.result(timeout=0.05)
-            self._state = 'complete'
+            self._state = "complete"
             self._future = None
         except ConcurrentTimeoutError:
             pass
 
     def _complete(self):
         # update the configuration and save it to disk
-        self._cfg.update_deployment(self._profile.name, self._contract.name,
-                                    self.ledger_contract.digest.hex(),
-                                    self.ledger_contract.code_id, self.contract_address)
-        self._cfg.save(self._project_path)
+        # self._cfg.update_deployment(self._profile.name, self._contract.name,
+        #                            self.ledger_contract.digest.hex(),
+        #                            self.ledger_contract.code_id, self.contract_address)
+        # self._cfg.save(self._project_path)
 
         self._finished(True)
 
@@ -137,29 +145,43 @@ class DeployContrackTask(Task):
             self._status = TaskStatus.COMPLETE
         else:
             self._status = TaskStatus.FAILED
-        self._status_text = ''
+        self._status_text = ""
 
 
 def _get_network_config(name: str) -> Optional[NetworkConfig]:
-    if name == 'fetchai-testnet':
-        return NetworkConfig.fetchai_stable_testnet()
+    if name == "fetchai-dorado":
+        cfg = NetworkConfig(
+            chain_id="dorado-1",
+            url="grpc+https://grpc-dorado.fetch.ai:443",
+            fee_minimum_gas_price=1000000000000,
+            fee_denomination="atestfet",
+            staking_denomination="atestfet",
+        )
+        return cfg
     return None
 
 
-def deploy_contracts(cfg: Config, profile: str, project_path: str):
+def deploy_contracts(cfg: Config, profile: str, project_path: str, deploy_key: str):
     selected_profile = cfg.profiles[profile]
+    network = selected_profile.network
+
+    key = deploy_key
+    init = {"count": 10}
+
     network_cfg = _get_network_config(selected_profile.network)
     if network_cfg is None:
-        print('Not network configuration for this profile')
+        print("Not network configuration for this profile")
         return
 
     contracts = detect_contracts(project_path)
-
     contracts_to_deploy = []  # type: List[Tuple[Contract, ContractConfig]]
 
     # determine what tasks to do
     for contract in contracts:
-        profile_contract = selected_profile.contracts.get(contract.name)
+
+        profile_contract = ContractConfig(
+            contract.name, network, key, init, None, None, None, None
+        )
         assert profile_contract is not None
 
         # simple case the contract is already deployed and we can just use the information directly from the lockfile
@@ -180,7 +202,7 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str):
 
     # exit if there is nothing to do
     if len(contracts_to_deploy) == 0:
-        print('Nothing to deploy')
+        print("Nothing to deploy")
         return
 
     client = LedgerClient(network_cfg)
@@ -191,23 +213,21 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str):
     all_keys = set(settings.deployer_key for _, settings in contracts_to_deploy)
     for key_name in all_keys:
         if key_name not in available_key_names:
-            print(f'Unknown deployment key {key_name}')
+            print(f"Unknown deployment key {key_name}")
             return
 
         info = query_keychain_item(key_name)
         if not isinstance(info, LocalInfo):
-            print(f'Unable to lookup local key {key_name}')
+            print(f"Unable to lookup local key {key_name}")
             return
 
         keys[key_name] = PrivateKey(info.private_key)
 
-    for contract, _ in contracts_to_deploy:
+    for contract, i in contracts_to_deploy:
         # reset this contracts metadata
-        contract_settings = selected_profile.contracts[contract.name]
-        contract_settings.address = None # clear the old address
-
+        profile_contract.address = None  # clear the old address
         # lookup the wallet key
-        wallet = LocalWallet(keys[contract_settings.deployer_key])
+        wallet = LocalWallet(keys[profile_contract.deployer_key])
 
         # create the deployment task
         task = DeployContrackTask(
@@ -215,7 +235,7 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str):
             cfg,
             selected_profile,
             contract,
-            contract_settings,
+            profile_contract,
             client,
             wallet,
         )
