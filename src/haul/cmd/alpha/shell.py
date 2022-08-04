@@ -1,6 +1,5 @@
 import argparse
 import os
-from typing import Dict
 
 from ptpython import embed
 
