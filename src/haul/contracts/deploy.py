@@ -129,10 +129,10 @@ class DeployContrackTask(Task):
 
     def _complete(self):
         # update the configuration and save it to disk
-        # self._cfg.update_deployment(self._profile.name, self._contract.name,
-        #                            self.ledger_contract.digest.hex(),
-        #                            self.ledger_contract.code_id, self.contract_address)
-        # self._cfg.save(self._project_path)
+        self._cfg.update_deployment(self._profile.name, self._contract.name,
+                                    self.ledger_contract.digest.hex(),
+                                    self.ledger_contract.code_id, self.contract_address)
+        self._cfg.save(self._project_path)
 
         self._finished(True)
 
@@ -182,6 +182,8 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str, deploy_key: s
         profile_contract = ContractConfig(
             contract.name, network, key, init, None, None, None, None
         )
+        selected_profile.contracts[contract.name] = profile_contract
+
         assert profile_contract is not None
 
         # simple case the contract is already deployed and we can just use the information directly from the lockfile
