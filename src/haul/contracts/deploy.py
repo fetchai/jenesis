@@ -2,7 +2,6 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as ConcurrentTim
 from typing import Optional, Tuple, List
 
 from cosmpy.aerial.client import LedgerClient
-from cosmpy.aerial.config import NetworkConfig
 from cosmpy.aerial.contract import LedgerContract
 from cosmpy.aerial.wallet import LocalWallet, Wallet
 from cosmpy.crypto.address import Address

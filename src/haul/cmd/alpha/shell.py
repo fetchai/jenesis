@@ -6,12 +6,12 @@ from ptpython import embed
 
 from haul.config import Config
 from haul.contracts.detect import detect_contracts
-from haul.contracts.monkey import MonkeyContract
+# from haul.contracts.monkey import MonkeyContract
 
 
-def _load_contract_info(project_path: str, profile: str) -> Dict[str, MonkeyContract]:
-    # load up the contract and configuration data for the project
-    return {}
+# def _load_contract_info(project_path: str, profile: str) -> Dict[str, MonkeyContract]:
+#     # load up the contract and configuration data for the project
+#     return {}
 
 
 def run(_args: argparse.Namespace):

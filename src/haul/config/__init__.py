@@ -124,7 +124,7 @@ class Config:
             raise ConfigurationError('Missing project file: "haul.lock"')
         project_contents = toml.load(project_file_path)
 
-        if os.path.isfile(lock_file_path):                
+        if os.path.isfile(lock_file_path):
             lock_file_contents = toml.load(lock_file_path)
         else:
             lock_file_contents = {}
