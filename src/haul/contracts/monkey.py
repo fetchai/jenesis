@@ -95,3 +95,6 @@ class MonkeyContract(LedgerContract):
                 raise
 
         return self._find_contract_id_by_digest(self._digest)
+
+    def __repr__(self):
+        return f'Contract (address: {self._address})'
