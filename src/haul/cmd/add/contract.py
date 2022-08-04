@@ -36,13 +36,13 @@ def run_add_contract(args: argparse.Namespace):
     cmd += [TEMPLATE_GIT_URL, '.']
     with open(os.devnull, 'w', encoding='utf8') as null_file:
         subprocess.check_call(cmd, stdout=null_file, stderr=subprocess.STDOUT, cwd=temp_clone_path)
-    print('Downloading template...complete')
 
     # find the target contract
     contract_template_path = os.path.join(temp_clone_path, 'contracts', template)
     if not os.path.isdir(contract_template_path):
         print(f'Unknown template {template}')
         return False
+    print('Downloading template...complete')
 
     # process all the files as part of the template
     print('Rendering template...')
