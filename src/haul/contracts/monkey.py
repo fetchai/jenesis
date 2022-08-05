@@ -75,6 +75,28 @@ class MonkeyContract(LedgerContract):
 
         return address
 
+    def observed_deploy(
+        self,
+        args: Any,
+        sender: Wallet,
+        label: Optional[str] = None,
+        store_gas_limit: Optional[int] = None,
+        instantiate_gas_limit: Optional[int] = None,
+        admin_address: Optional[Address] = None,
+        funds: Optional[str] = None,
+    ) -> Address:
+        code_id = self.store(sender, gas_limit=store_gas_limit)
+        address = self.instantiate(
+            code_id,
+            args,
+            sender,
+            label=label,
+            gas_limit=instantiate_gas_limit,
+            admin_address=admin_address,
+            funds=funds
+        )
+        return address
+
     def _find_contract_id_by_digest_with_hint(self, code_id_hint: int) -> Optional[int]:
 
         # try and lookup the specified code id

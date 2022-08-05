@@ -13,6 +13,7 @@ from haul.config.errors import ConfigurationError
 from haul.config.extract import (extract_opt_int, extract_opt_str,
                                  extract_req_dict, extract_req_str,
                                  extract_req_str_list)
+from haul.contracts.detect import detect_contracts
 
 
 @dataclass
@@ -102,7 +103,11 @@ class Config:
 
         contract = profile.contracts.get(contract_name)
         if contract is None:
-            raise ConfigurationError(f"unable to lookup contract {contract_name}")
+            contract = ContractConfig(
+                contract_name,
+                profile.network,
+                "", None, None, None, None, None
+            )
 
         # update the contract if necessary
         if digest is not None:
@@ -238,13 +243,23 @@ class Config:
         project_root = os.path.abspath(path)
         project_name = os.path.basename(project_root)
 
+        # detect contract source code and add placeholders for key contract data
+        contracts = detect_contracts(project_root) or []
+
+        contract_cfgs = {contract.name: ContractConfig(
+            contract.name, "fetchai-testnet", "", {}, None, None, None, None
+        ) for contract in contracts}
+
+        profiles = {
+            "testing": {
+                "network": "fetchai-testnet",
+                "contracts": {name: vars(cfg) for (name, cfg) in contract_cfgs.items()},
+            }
+        }
+
         data = {
             "project": {"name": project_name, "authors": authors},
-            "profile": {
-                "testing": {
-                    "network": "fetchai-testnet",
-                }
-            },
+            "profile": profiles,
         }
 
         project_configuration_file = os.path.join(project_root, "haul.toml")
@@ -258,7 +273,6 @@ class Config:
             sys.exit(1)
 
         try:
-
             # create the configuration file
             os.makedirs(os.path.dirname(project_configuration_file), exist_ok=True)
             with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
