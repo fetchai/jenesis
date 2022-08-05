@@ -75,7 +75,7 @@ class MonkeyContract(LedgerContract):
 
         return address
 
-    def observed_deploy(
+    def deploy(
         self,
         args: Any,
         sender: Wallet,
