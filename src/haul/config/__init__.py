@@ -191,7 +191,7 @@ class Config:
                 deployment_lock = lock_profile.get(contract_name, {})
 
                 deployment = cls._parse_contract_config(
-                    contract_settings, network, contract_name, contract_settings, deployment_lock
+                    contract_settings, network, deployment_lock
                 )
                 deployments[contract_name] = deployment
 
@@ -204,9 +204,9 @@ class Config:
 
     @classmethod
     def _parse_contract_config(
-        cls, contract: dict, network: str, name: str, details: Any, lock: Any
+        cls, contract: dict, network: str, lock: Any
     ) -> Deployment:
-        if not isinstance(details, dict):
+        if not isinstance(contract, dict):
             raise ConfigurationError(
                 "contract configuration invalid, expected dictionary"
             )
@@ -221,8 +221,8 @@ class Config:
         return Deployment(
             contract=contract,
             network=str(network),
-            init=extract_opt_dict(details, "init"),
-            deployer_key=extract_req_str(details, "deployer_key"),
+            init=extract_opt_dict(contract, "init"),
+            deployer_key=extract_req_str(contract, "deployer_key"),
             digest=extract_opt_str(lock, "digest"),
             address=opt_address(extract_opt_str(lock, "address")),
             code_id=extract_opt_int(lock, "code_id"),
