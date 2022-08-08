@@ -140,7 +140,8 @@ class DeployContrackTask(Task):
         self._status_text = ''
 
 
-def deploy_contracts(cfg: Config, profile: str, project_path: str):
+def deploy_contracts(cfg: Config, profile: str, project_path: str, deployer_key: Optional[str]):
+
     selected_profile = cfg.profiles[profile]
     network_cfg = get_network_config(selected_profile.network)
     if network_cfg is None:
@@ -155,6 +156,9 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str):
     for contract in contracts:
         profile_contract = selected_profile.contracts.get(contract.name)
         assert profile_contract is not None
+
+        if deployer_key is not None:
+            profile_contract.deployer_key = deployer_key
 
         # simple case the contract is already deployed and we can just use the information directly from the lockfile
         if profile_contract.is_configuration_out_of_date():
@@ -183,6 +187,7 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str):
     keys = {}
     available_key_names = set(query_keychain_items())
     all_keys = set(settings.deployer_key for _, settings in contracts_to_deploy)
+
     for key_name in all_keys:
         if key_name not in available_key_names:
             print(f'Unknown deployment key {key_name}')
