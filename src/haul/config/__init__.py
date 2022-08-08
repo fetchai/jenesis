@@ -13,11 +13,13 @@ from haul.config.errors import ConfigurationError
 from haul.config.extract import (extract_opt_dict, extract_opt_int, extract_opt_str,
                                  extract_req_dict, extract_req_str,
                                  extract_req_str_list)
+from haul.contracts import Contract
 from haul.contracts.detect import detect_contracts
 
 
 @dataclass
-class ContractConfig:
+class Deployment:
+    contract: Contract
     name: str  # internal: the name of the contract
     network: str  # internal: the name of the network to deploy to
     deployer_key: str  # config: the name of the key to use for deployment
@@ -75,11 +77,11 @@ class ContractConfig:
 class Profile:
     name: str
     network: str
-    contracts: Dict[str, ContractConfig]
+    deployments: Dict[str, Deployment]
 
     def to_lockfile(self) -> Any:
         return {
-            name: contract.to_lockfile() for name, contract in self.contracts.items()
+            name: contract.to_lockfile() for name, contract in self.deployments.items()
         }
 
 
@@ -101,9 +103,10 @@ class Config:
         if profile is None:
             raise ConfigurationError(f"unable to lookup profile {profile_name}")
 
-        contract = profile.contracts.get(contract_name)
+        contract = profile.deployments.get(contract_name)
         if contract is None:
-            contract = ContractConfig(
+            contract = Deployment(
+                contract,
                 contract_name,
                 profile.network,
                 "", None, None, None, None, None
@@ -117,7 +120,7 @@ class Config:
         if address is not None:
             contract.address = Address(address)
 
-        profile.contracts[contract_name] = contract
+        profile.deployments[contract_name] = contract
         self.profiles[profile_name] = profile
 
     @classmethod
@@ -179,26 +182,26 @@ class Config:
         if not isinstance(profile_contracts, dict):
             raise ConfigurationError("invalid contracts section in config")
 
-        contracts = {}
+        deployments = {}
         if "contracts" in profile:
             for contract_name, contract_settings in profile_contracts.items():
                 contract_lock = lock_profile.get(contract_name, {})
 
                 contract = cls._parse_contract_config(
-                    network, contract_name, contract_settings, contract_lock
+                    contract_settings, network, contract_name, contract_settings, contract_lock
                 )
-                contracts[contract.name] = contract
+                deployments[contract.name] = contract
 
         return Profile(
             name=str(name),
             network=network,
-            contracts=contracts,
+            deployments=deployments,
         )
 
     @classmethod
     def _parse_contract_config(
-        cls, network: str, name: str, details: Any, lock: Any
-    ) -> ContractConfig:
+        cls, contract: dict, network: str, name: str, details: Any, lock: Any
+    ) -> Deployment:
         if not isinstance(details, dict):
             raise ConfigurationError(
                 "contract configuration invalid, expected dictionary"
@@ -211,7 +214,8 @@ class Config:
         def opt_address(value: Optional[str]) -> Optional[Address]:
             return None if value is None else Address(value)
 
-        return ContractConfig(
+        return Deployment(
+            contract=contract,
             name=str(name),
             network=str(network),
             init=extract_opt_dict(details, "init"),
@@ -246,8 +250,8 @@ class Config:
         # detect contract source code and add placeholders for key contract data
         contracts = detect_contracts(project_root) or []
 
-        contract_cfgs = {contract.name: ContractConfig(
-            contract.name, "fetchai-testnet", "", "", None, None, None, None
+        contract_cfgs = {contract.name: Deployment(contract,
+            contract.name, "fetchai-testnet", "", {}, None, None, None, None
         ) for contract in contracts}
 
         profiles = {

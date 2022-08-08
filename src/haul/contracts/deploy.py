@@ -7,7 +7,7 @@ from cosmpy.aerial.wallet import LocalWallet, Wallet
 from cosmpy.crypto.address import Address
 from cosmpy.crypto.keypairs import PrivateKey
 
-from haul.config import Config, ContractConfig, Profile
+from haul.config import Config, Deployment, Profile
 from haul.contracts import Contract
 from haul.contracts.detect import detect_contracts
 from haul.contracts.monkey import MonkeyContract
@@ -18,7 +18,7 @@ from haul.tasks.monitor import run_tasks
 
 
 class DeployContrackTask(Task):
-    def __init__(self, project_path: str, cfg: Config, profile: Profile, contract: Contract, config: ContractConfig,
+    def __init__(self, project_path: str, cfg: Config, profile: Profile, contract: Contract, config: Deployment,
                  client: LedgerClient, wallet: Wallet):
         self._project_path = project_path
         self._cfg = cfg
@@ -150,11 +150,11 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str, deployer_key:
 
     contracts = detect_contracts(project_path)
 
-    contracts_to_deploy = []  # type: List[Tuple[Contract, ContractConfig]]
+    contracts_to_deploy = []  # type: List[Tuple[Contract, Deployment]]
 
     # determine what tasks to do
     for contract in contracts:
-        profile_contract = selected_profile.contracts.get(contract.name)
+        profile_contract = selected_profile.deployments.get(contract.name)
         assert profile_contract is not None
 
         if deployer_key is not None:
@@ -202,7 +202,7 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str, deployer_key:
 
     for contract, _ in contracts_to_deploy:
         # reset this contracts metadata
-        contract_settings = selected_profile.contracts[contract.name]
+        contract_settings = selected_profile.deployments[contract.name]
         contract_settings.address = None  # clear the old address
 
         # lookup the wallet key
