@@ -18,8 +18,11 @@ class Contract:
 
         return _compute_digest(self.binary_path).hex()
 
-    def functions(self):
-        return self.schema['properties']
+    def messages(self) -> dict:
+        return self.schema.keys()
+
+    def init_args(self) -> dict:
+        return self.schema['instantiate_msg']['properties'].keys()
 
     def __repr__(self):
         return self.name

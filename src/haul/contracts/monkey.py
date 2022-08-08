@@ -9,7 +9,7 @@ from cosmpy.crypto.address import Address
 from cosmpy.protos.cosmwasm.wasm.v1.query_pb2 import QueryCodeRequest
 
 
-class InstantiateArgsError(RuntimeError):    
+class InstantiateArgsError(RuntimeError):
     pass
 
 
@@ -139,4 +139,4 @@ class MonkeyContract(LedgerContract):
         return self._find_contract_id_by_digest(self._digest)
 
     def __repr__(self):
-        return f'Contract (address: {self._address})'
+        return str(self._address)

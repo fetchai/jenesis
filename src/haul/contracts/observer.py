@@ -4,7 +4,7 @@ from haul.config import Config
 from haul.contracts.monkey import ContractObserver
 
 
-class ContractConfigUpdator(ContractObserver):
+class DeploymentUpdater(ContractObserver):
     def __init__(self, cfg: Config, project_path: str, profile: str, contract: str):
         self._cfg = cfg
         self._project_path = str(project_path)

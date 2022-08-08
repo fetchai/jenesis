@@ -9,7 +9,7 @@ from haul.config import Config
 from haul.contracts.detect import detect_contracts
 from haul.contracts.monkey import MonkeyContract
 from haul.contracts.networks import get_network_config
-from haul.contracts.observer import ContractConfigUpdator
+from haul.contracts.observer import DeploymentUpdater
 
 
 def load_config(args: argparse.Namespace) -> dict:
@@ -51,11 +51,11 @@ def load_config(args: argparse.Namespace) -> dict:
                 client,
                 address=address,
                 code_id=code_id,
-                observer=ContractConfigUpdator(
+                observer=DeploymentUpdater(
                     cfg,
                     project_path,
                     args.profile,
-                    selected_contract.name,
+                    contract.name,
                 ),
                 init_args=selected_contract.init,
             )
@@ -68,7 +68,9 @@ def load_config(args: argparse.Namespace) -> dict:
     shell_globals['cfg'] = cfg
     shell_globals['project_path'] = project_path
     shell_globals['profile'] = args.profile
-    shell_globals['contracts'] = contract_instances
+    shell_globals['contracts'] = {contract.name: contract for contract in contracts}
+    for (name, instance) in contract_instances.items():
+        shell_globals[name] = instance
 
     return shell_globals
 

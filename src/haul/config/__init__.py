@@ -10,8 +10,8 @@ from typing import Any, Dict, List, Optional
 import toml
 from cosmpy.crypto.address import Address
 from haul.config.errors import ConfigurationError
-from haul.config.extract import (extract_opt_dict, extract_opt_int, extract_opt_str,
-                                 extract_req_dict, extract_req_str,
+from haul.config.extract import (extract_opt_dict, extract_opt_int,
+                                 extract_opt_str, extract_req_str,
                                  extract_req_str_list)
 from haul.contracts import Contract
 from haul.contracts.detect import detect_contracts
@@ -19,8 +19,7 @@ from haul.contracts.detect import detect_contracts
 
 @dataclass
 class Deployment:
-    contract: Contract
-    name: str  # internal: the name of the contract
+    contract: Contract # internal: the contract that is deployed
     network: str  # internal: the name of the network to deploy to
     deployer_key: str  # config: the name of the key to use for deployment
     init: Any  # config: init parameters for the contract
@@ -55,6 +54,9 @@ class Deployment:
 
         return hasher.hexdigest()
 
+    def __repr__(self) -> str:
+        return f'{self.contract.name}: {self.address}'
+
     def is_configuration_out_of_date(self) -> bool:
         return self.checksum != self.compute_checksum()
 
@@ -77,11 +79,12 @@ class Deployment:
 class Profile:
     name: str
     network: str
+    contracts: Dict[str, Contract]
     deployments: Dict[str, Deployment]
 
     def to_lockfile(self) -> Any:
         return {
-            name: contract.to_lockfile() for name, contract in self.deployments.items()
+            name: deployment.to_lockfile() for name, deployment in self.deployments.items()
         }
 
 
@@ -103,24 +106,24 @@ class Config:
         if profile is None:
             raise ConfigurationError(f"unable to lookup profile {profile_name}")
 
-        contract = profile.deployments.get(contract_name)
-        if contract is None:
-            contract = Deployment(
+        contract = profile.contracts.get(contract_name)
+        deployment = profile.deployments.get(contract_name)
+        if deployment is None:
+            deployment = Deployment(
                 contract,
-                contract_name,
                 profile.network,
                 "", None, None, None, None, None
             )
 
         # update the contract if necessary
         if digest is not None:
-            contract.digest = str(digest)
+            deployment.digest = str(digest)
         if code_id is not None:
-            contract.code_id = int(code_id)
+            deployment.code_id = int(code_id)
         if address is not None:
-            contract.address = Address(address)
+            deployment.address = Address(address)
 
-        profile.deployments[contract_name] = contract
+        profile.deployments[contract_name] = deployment
         self.profiles[profile_name] = profile
 
     @classmethod
@@ -185,16 +188,17 @@ class Config:
         deployments = {}
         if "contracts" in profile:
             for contract_name, contract_settings in profile_contracts.items():
-                contract_lock = lock_profile.get(contract_name, {})
+                deployment_lock = lock_profile.get(contract_name, {})
 
-                contract = cls._parse_contract_config(
-                    contract_settings, network, contract_name, contract_settings, contract_lock
+                deployment = cls._parse_contract_config(
+                    contract_settings, network, contract_name, contract_settings, deployment_lock
                 )
-                deployments[contract.name] = contract
+                deployments[contract_name] = deployment
 
         return Profile(
             name=str(name),
             network=network,
+            contracts=profile_contracts,
             deployments=deployments,
         )
 
@@ -216,7 +220,6 @@ class Config:
 
         return Deployment(
             contract=contract,
-            name=str(name),
             network=str(network),
             init=extract_opt_dict(details, "init"),
             deployer_key=extract_req_str(details, "deployer_key"),
@@ -251,7 +254,8 @@ class Config:
         contracts = detect_contracts(project_root) or []
 
         contract_cfgs = {contract.name: Deployment(contract,
-            contract.name, "fetchai-testnet", "", {}, None, None, None, None
+            "fetchai-testnet", "", {arg: "" for arg in contract.init_args()},
+            None, None, None, None,
         ) for contract in contracts}
 
         profiles = {
