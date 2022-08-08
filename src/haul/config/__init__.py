@@ -247,7 +247,7 @@ class Config:
         contracts = detect_contracts(project_root) or []
 
         contract_cfgs = {contract.name: ContractConfig(
-            contract.name, "fetchai-testnet", "", {}, None, None, None, None
+            contract.name, "fetchai-testnet", "", "", None, None, None, None
         ) for contract in contracts}
 
         profiles = {
@@ -267,23 +267,14 @@ class Config:
             os.path.join(project_root, "contracts", ".gitkeep"),
         ]
 
-        # check to see if the project file already exists
-        if os.path.exists(project_configuration_file):
-            print("Project already initialized")
-            sys.exit(1)
+        # create the configuration file
+        os.makedirs(os.path.dirname(project_configuration_file), exist_ok=True)
+        with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
+            toml.dump(data, toml_file)
 
-        try:
-            # create the configuration file
-            os.makedirs(os.path.dirname(project_configuration_file), exist_ok=True)
-            with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
-                toml.dump(data, toml_file)
+        # create all the git kep files
+        for git_keep_path in project_git_keep_files:
+            os.makedirs(os.path.dirname(git_keep_path), exist_ok=True)
 
-            # create all the git kep files
-            for git_keep_path in project_git_keep_files:
-                os.makedirs(os.path.dirname(git_keep_path), exist_ok=True)
-
-                with open(git_keep_path, "a", encoding="utf-8"):
-                    pass
-
-        except FileExistsError:
-            print("Project already initialized")
+            with open(git_keep_path, "a", encoding="utf-8"):
+                pass
