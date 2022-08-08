@@ -9,6 +9,10 @@ from cosmpy.crypto.address import Address
 from cosmpy.protos.cosmwasm.wasm.v1.query_pb2 import QueryCodeRequest
 
 
+class InstantiateArgsError(RuntimeError):    
+    pass
+
+
 class ContractObserver(ABC):
     @abstractmethod
     def on_code_id_update(self, code_id: int):
@@ -20,14 +24,22 @@ class ContractObserver(ABC):
 
 
 class MonkeyContract(LedgerContract):
-    def __init__(self, path: Optional[str], client: LedgerClient, address: Optional[Address] = None,
-                 digest: Optional[bytes] = None,
-                 code_id: Optional[int] = None, observer: Optional[ContractObserver] = None):
+    def __init__(
+        self,
+        path: Optional[str],
+        client: LedgerClient,
+        address: Optional[Address] = None,
+        digest: Optional[bytes] = None,
+        code_id: Optional[int] = None,
+        observer: Optional[ContractObserver] = None,
+        init_args: Optional[dict] = None,
+    ):
         # pylint: disable=super-init-not-called
         self._path = path
         self._client = client
         self._address = address
         self._observer = observer
+        self._init_args = init_args
 
         # build the digest
         if path is not None:
@@ -67,6 +79,14 @@ class MonkeyContract(LedgerContract):
             admin_address: Optional[Address] = None,
             funds: Optional[str] = None,
     ) -> Address:
+        # if no args provided, insert init args from configuration
+        if args is None:
+            if self._init_args is not None:
+                args = self._init_args
+            else:
+                raise InstantiateArgsError(
+                    'Please provide instantiation arguments either in "args" or in the haul.toml configuration for this contract and profile'
+                )
         address = super().instantiate(code_id, args, sender, label=label, gas_limit=gas_limit,
                                       admin_address=admin_address, funds=funds)
 

@@ -55,8 +55,9 @@ def load_config(args: argparse.Namespace) -> dict:
                     cfg,
                     project_path,
                     args.profile,
-                    contract.name,
-                )
+                    selected_contract.name,
+                ),
+                init_args=selected_contract.init,
             )
 
             contract_instances[contract.name] = monkey

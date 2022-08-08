@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 import toml
 from cosmpy.crypto.address import Address
 from haul.config.errors import ConfigurationError
-from haul.config.extract import (extract_opt_int, extract_opt_str,
+from haul.config.extract import (extract_opt_dict, extract_opt_int, extract_opt_str,
                                  extract_req_dict, extract_req_str,
                                  extract_req_str_list)
 from haul.contracts.detect import detect_contracts
@@ -214,7 +214,7 @@ class Config:
         return ContractConfig(
             name=str(name),
             network=str(network),
-            init=extract_req_dict(details, "init"),
+            init=extract_opt_dict(details, "init"),
             deployer_key=extract_req_str(details, "deployer_key"),
             digest=extract_opt_str(lock, "digest"),
             address=opt_address(extract_opt_str(lock, "address")),
