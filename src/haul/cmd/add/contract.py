@@ -3,6 +3,7 @@ import os
 from tempfile import mkdtemp
 import shutil
 import subprocess
+from haul.config import Config
 
 TEMPLATE_GIT_URL = 'git@github.com:fetchai/haul-templates.git'
 
@@ -65,5 +66,7 @@ def run_add_contract(args: argparse.Namespace):
 
     # clean up the temporary folder
     shutil.rmtree(temp_clone_path)
+
+    Config.create_project(os.getcwd())
 
     return True

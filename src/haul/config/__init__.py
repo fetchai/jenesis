@@ -10,14 +10,16 @@ from typing import Any, Dict, List, Optional
 import toml
 from cosmpy.crypto.address import Address
 from haul.config.errors import ConfigurationError
-from haul.config.extract import (extract_opt_int, extract_opt_str,
-                                 extract_req_dict, extract_req_str,
+from haul.config.extract import (extract_opt_dict, extract_opt_int,
+                                 extract_opt_str, extract_req_str,
                                  extract_req_str_list)
+from haul.contracts import Contract
+from haul.contracts.detect import detect_contracts
 
 
 @dataclass
-class ContractConfig:
-    name: str  # internal: the name of the contract
+class Deployment:
+    contract: Contract # internal: the contract that is deployed
     network: str  # internal: the name of the network to deploy to
     deployer_key: str  # config: the name of the key to use for deployment
     init: Any  # config: init parameters for the contract
@@ -52,6 +54,9 @@ class ContractConfig:
 
         return hasher.hexdigest()
 
+    def __repr__(self) -> str:
+        return f'{self.contract.name}: {self.address}'
+
     def is_configuration_out_of_date(self) -> bool:
         return self.checksum != self.compute_checksum()
 
@@ -74,11 +79,12 @@ class ContractConfig:
 class Profile:
     name: str
     network: str
-    contracts: Dict[str, ContractConfig]
+    contracts: Dict[str, Contract]
+    deployments: Dict[str, Deployment]
 
     def to_lockfile(self) -> Any:
         return {
-            name: contract.to_lockfile() for name, contract in self.contracts.items()
+            name: deployment.to_lockfile() for name, deployment in self.deployments.items()
         }
 
 
@@ -101,15 +107,23 @@ class Config:
             raise ConfigurationError(f"unable to lookup profile {profile_name}")
 
         contract = profile.contracts.get(contract_name)
-        if contract is None:
-            raise ConfigurationError(f"unable to lookup contract {contract_name}")
+        deployment = profile.deployments.get(contract_name)
+        if deployment is None:
+            deployment = Deployment(
+                contract,
+                profile.network,
+                "", None, None, None, None, None
+            )
 
-        # update the contract
-        contract.digest = str(digest)
-        contract.code_id = int(code_id)
-        contract.address = Address(address)
+        # update the contract if necessary
+        if digest is not None:
+            deployment.digest = str(digest)
+        if code_id is not None:
+            deployment.code_id = int(code_id)
+        if address is not None:
+            deployment.address = Address(address)
 
-        profile.contracts[contract_name] = contract
+        profile.deployments[contract_name] = deployment
         self.profiles[profile_name] = profile
 
     @classmethod
@@ -117,8 +131,15 @@ class Config:
         project_file_path = os.path.join(path, "haul.toml")
         lock_file_path = os.path.join(path, "haul.lock")
 
+        if not os.path.isfile(project_file_path):
+            raise ConfigurationError('Missing project file: "haul.lock"')
         project_contents = toml.load(project_file_path)
-        lock_file_contents = toml.load(lock_file_path)
+
+        if os.path.isfile(lock_file_path):
+            lock_file_contents = toml.load(lock_file_path)
+        else:
+            lock_file_contents = {}
+            print("No lock file found. Proceeding without any contract deployments.")
 
         return cls._loads(project_contents, lock_file_contents)
 
@@ -164,27 +185,28 @@ class Config:
         if not isinstance(profile_contracts, dict):
             raise ConfigurationError("invalid contracts section in config")
 
-        contracts = {}
+        deployments = {}
         if "contracts" in profile:
             for contract_name, contract_settings in profile_contracts.items():
-                contract_lock = lock_profile.get(contract_name, {})
+                deployment_lock = lock_profile.get(contract_name, {})
 
-                contract = cls._parse_contract_config(
-                    network, contract_name, contract_settings, contract_lock
+                deployment = cls._parse_contract_config(
+                    contract_settings, network, deployment_lock
                 )
-                contracts[contract.name] = contract
+                deployments[contract_name] = deployment
 
         return Profile(
             name=str(name),
             network=network,
-            contracts=contracts,
+            contracts=profile_contracts,
+            deployments=deployments,
         )
 
     @classmethod
     def _parse_contract_config(
-        cls, network: str, name: str, details: Any, lock: Any
-    ) -> ContractConfig:
-        if not isinstance(details, dict):
+        cls, contract: dict, network: str, lock: Any
+    ) -> Deployment:
+        if not isinstance(contract, dict):
             raise ConfigurationError(
                 "contract configuration invalid, expected dictionary"
             )
@@ -196,11 +218,11 @@ class Config:
         def opt_address(value: Optional[str]) -> Optional[Address]:
             return None if value is None else Address(value)
 
-        return ContractConfig(
-            name=str(name),
+        return Deployment(
+            contract=contract,
             network=str(network),
-            init=extract_req_dict(details, "init"),
-            deployer_key=extract_req_str(details, "deployer_key"),
+            init=extract_opt_dict(contract, "init"),
+            deployer_key=extract_req_str(contract, "deployer_key"),
             digest=extract_opt_str(lock, "digest"),
             address=opt_address(extract_opt_str(lock, "address")),
             code_id=extract_opt_int(lock, "code_id"),
@@ -228,13 +250,24 @@ class Config:
         project_root = os.path.abspath(path)
         project_name = os.path.basename(project_root)
 
+        # detect contract source code and add placeholders for key contract data
+        contracts = detect_contracts(project_root) or []
+
+        contract_cfgs = {contract.name: Deployment(contract,
+            "fetchai-testnet", "", {arg: "" for arg in contract.init_args()},
+            None, None, None, None,
+        ) for contract in contracts}
+
+        profiles = {
+            "testing": {
+                "network": "fetchai-testnet",
+                "contracts": {name: vars(cfg) for (name, cfg) in contract_cfgs.items()},
+            }
+        }
+
         data = {
             "project": {"name": project_name, "authors": authors},
-            "profile": {
-                "testing": {
-                    "network": "fetchai-dorado",
-                }
-            },
+            "profile": profiles,
         }
 
         project_configuration_file = os.path.join(project_root, "haul.toml")
@@ -242,24 +275,14 @@ class Config:
             os.path.join(project_root, "contracts", ".gitkeep"),
         ]
 
-        # check to see if the project file already exists
-        if os.path.exists(project_configuration_file):
-            print("Project already initialized")
-            sys.exit(1)
+        # create the configuration file
+        os.makedirs(os.path.dirname(project_configuration_file), exist_ok=True)
+        with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
+            toml.dump(data, toml_file)
 
-        try:
+        # create all the git kep files
+        for git_keep_path in project_git_keep_files:
+            os.makedirs(os.path.dirname(git_keep_path), exist_ok=True)
 
-            # create the configuration file
-            os.makedirs(os.path.dirname(project_configuration_file), exist_ok=True)
-            with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
-                toml.dump(data, toml_file)
-
-            # create all the git kep files
-            for git_keep_path in project_git_keep_files:
-                os.makedirs(os.path.dirname(git_keep_path), exist_ok=True)
-
-                with open(git_keep_path, "a", encoding="utf-8"):
-                    pass
-
-        except FileExistsError:
-            print("Project already initialized")
+            with open(git_keep_path, "a", encoding="utf-8"):
+                pass

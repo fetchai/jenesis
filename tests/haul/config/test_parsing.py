@@ -27,7 +27,7 @@ def test_new_create_project():
     """Test project creation when (new) command is selected"""
 
     project_name = "ProjectX"
-    network = "fetchai-dorado"
+    network = "fetchai-testnet"
     Config.create_project(project_name)
 
     input_file_name = "haul.toml"
@@ -49,7 +49,7 @@ def test_new_create_project():
 def test_init_create_project():
     """Test project creation when (init) command is selected"""
 
-    network = "fetchai-dorado"
+    network = "fetchai-testnet"
     Config.create_project(os.getcwd())
 
     input_file_name = "haul.toml"

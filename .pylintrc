@@ -4,6 +4,7 @@ disable=
     C0115, # missing-class-docstring
     C0116, # missing-function-docstring
     C0301, # line-too-long
+    W0122, # use of exec
     W0703, # broad-except
     R0914, # too-many-locals
     R0913, # too-many-arguments
