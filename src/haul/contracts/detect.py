@@ -6,6 +6,22 @@ import toml
 from haul.contracts import Contract
 
 
+def is_workspace(path: str) -> bool:
+    contracts_folder = os.path.join(path, 'contracts')
+    if not os.path.isdir(contracts_folder):
+        return False
+
+    expected_files = (
+        'Cargo.toml',
+        'Cargo.lock',
+    )
+    for expected_file in expected_files:
+        if not os.path.isfile(os.path.join(path, expected_file)):
+            return False
+
+    return True
+
+
 def detect_contracts(path: str) -> Optional[List[Contract]]:
     contracts_folder = os.path.join(path, 'contracts')
     if not os.path.isdir(contracts_folder):
@@ -18,7 +34,6 @@ def detect_contracts(path: str) -> Optional[List[Contract]]:
 
         expected_files = (
             'Cargo.toml',
-            'Cargo.lock',
         )
         for expected_file in expected_files:
             if not os.path.isfile(os.path.join(contract_path, expected_file)):
