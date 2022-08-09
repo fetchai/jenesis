@@ -1,10 +1,10 @@
 import platform
 from typing import Union, List
 
-from haul.keyring.amino.codec import LocalInfo, OfflineInfo
+from jenesis.keyring.amino.codec import LocalInfo, OfflineInfo
 
 try:
-    from haul.keyring import macos
+    from jenesis.keyring import macos
 except Exception:
     pass
 

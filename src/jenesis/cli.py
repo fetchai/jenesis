@@ -2,11 +2,11 @@ import argparse
 import sys
 from typing import Tuple
 
-from haul.cmd.add import add_add_command
-from haul.cmd.alpha import add_alpha_command
-from haul.cmd.compile import add_compile_command
-from haul.cmd.init import add_init_command
-from haul.cmd.new import add_new_command
+from jenesis.cmd.add import add_add_command
+from jenesis.cmd.alpha import add_alpha_command
+from jenesis.cmd.compile import add_compile_command
+from jenesis.cmd.init import add_init_command
+from jenesis.cmd.new import add_new_command
 
 
 def _parse_commandline() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:

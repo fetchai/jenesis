@@ -3,7 +3,7 @@ import os
 from tempfile import mkdtemp
 import shutil
 import subprocess
-from haul.config import Config
+from jenesis.config import Config
 
 TEMPLATE_GIT_URL = 'git@github.com:fetchai/haul-templates.git'
 
@@ -17,7 +17,7 @@ def run_add_contract(args: argparse.Namespace):
     contract_root = os.path.join(project_root, 'contracts', name)
 
     # check that we are actually running the command from the project root
-    if not os.path.exists(os.path.join(project_root, 'haul.toml')):
+    if not os.path.exists(os.path.join(project_root, 'jenesis.toml')):
         print('Please run command from project root')
         return False
 
@@ -27,7 +27,7 @@ def run_add_contract(args: argparse.Namespace):
         return False
 
     # create the temporary clone folder
-    temp_clone_path = mkdtemp(prefix='haul-', suffix='-tmpl')
+    temp_clone_path = mkdtemp(prefix='jenesis-', suffix='-tmpl')
 
     # clone the templates folder out in the temporary file
     print('Downloading template...')

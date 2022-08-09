@@ -9,12 +9,12 @@ from typing import Any, Dict, List, Optional
 
 import toml
 from cosmpy.crypto.address import Address
-from haul.config.errors import ConfigurationError
-from haul.config.extract import (extract_opt_dict, extract_opt_int,
+from jenesis.config.errors import ConfigurationError
+from jenesis.config.extract import (extract_opt_dict, extract_opt_int,
                                  extract_opt_str, extract_req_str,
                                  extract_req_str_list)
-from haul.contracts import Contract
-from haul.contracts.detect import detect_contracts
+from jenesis.contracts import Contract
+from jenesis.contracts.detect import detect_contracts
 
 
 @dataclass
@@ -128,11 +128,11 @@ class Config:
 
     @classmethod
     def load(cls, path: str) -> "Config":
-        project_file_path = os.path.join(path, "haul.toml")
-        lock_file_path = os.path.join(path, "haul.lock")
+        project_file_path = os.path.join(path, "jenesis.toml")
+        lock_file_path = os.path.join(path, "jenesis.lock")
 
         if not os.path.isfile(project_file_path):
-            raise ConfigurationError('Missing project file: "haul.lock"')
+            raise ConfigurationError('Missing project file: "jenesis.lock"')
         project_contents = toml.load(project_file_path)
 
         if os.path.isfile(lock_file_path):
@@ -236,7 +236,7 @@ class Config:
             }
         }
 
-        lock_file_path = os.path.join(path, "haul.lock")
+        lock_file_path = os.path.join(path, "jenesis.lock")
         with open(lock_file_path, "w", encoding="utf-8") as lock_file:
             toml.dump(contents, lock_file)
 
@@ -270,7 +270,7 @@ class Config:
             "profile": profiles,
         }
 
-        project_configuration_file = os.path.join(project_root, "haul.toml")
+        project_configuration_file = os.path.join(project_root, "jenesis.toml")
         project_git_keep_files = [
             os.path.join(project_root, "contracts", ".gitkeep"),
         ]

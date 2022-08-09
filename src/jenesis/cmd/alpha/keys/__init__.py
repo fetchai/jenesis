@@ -3,7 +3,7 @@ import argparse
 from cosmpy.crypto.address import Address
 from cosmpy.crypto.keypairs import PublicKey
 
-from haul.keyring import query_keychain_items, query_keychain_item
+from jenesis.keyring import query_keychain_items, query_keychain_item
 
 
 def run_list(_args: argparse.Namespace):

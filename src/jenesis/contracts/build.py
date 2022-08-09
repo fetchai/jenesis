@@ -6,9 +6,9 @@ from docker import from_env
 from docker.errors import DockerException
 from docker.types import Mount
 
-from haul.contracts import Contract
-from haul.tasks import Task, TaskStatus
-from haul.tasks.monitor import run_tasks
+from jenesis.contracts import Contract
+from jenesis.tasks import Task, TaskStatus
+from jenesis.tasks.monitor import run_tasks
 
 
 class ContractBuildTask(Task):
@@ -52,7 +52,7 @@ class ContractBuildTask(Task):
                 self._status = TaskStatus.IN_PROGRESS
                 self._status_text = 'Building...'
             except DockerException:
-                print("Error: looks like your docker setup isn't right, please visit https://haul.fetch.ai/ for more information")
+                print("Error: looks like your docker setup isn't right, please visit https://jenesis.fetch.ai/ for more information")
                 self._container = None
                 self._status = TaskStatus.FAILED
                 self._status_text = ''

@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple, Dict
 
 from blessings import Terminal
 
-from haul.tasks import Task
+from jenesis.tasks import Task
 
 
 class TaskStatusDisplay:

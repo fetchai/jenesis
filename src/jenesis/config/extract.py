@@ -1,6 +1,6 @@
 from typing import Any, Optional, List, TypeVar, Generic
 
-from haul.config.errors import ConfigurationError
+from jenesis.config.errors import ConfigurationError
 
 T = TypeVar('T')
 

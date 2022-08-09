@@ -2,8 +2,8 @@ from ctypes import c_void_p, byref, string_at
 from io import BytesIO
 from typing import List, Union
 
-from haul.keyring.amino.codec import LocalInfo, OfflineInfo, unmarshal_binary_length_prefixed
-from haul.keyring.macos.abi import CFDictionaryCreate, _found, k_, create_cfstr, create_cfbool, SecItemCopyMatching, \
+from jenesis.keyring.amino.codec import LocalInfo, OfflineInfo, unmarshal_binary_length_prefixed
+from jenesis.keyring.macos.abi import CFDictionaryCreate, _found, k_, create_cfstr, create_cfbool, SecItemCopyMatching, \
     CFArrayGetCount, CFArrayGetValueAtIndex, CFStringGetLength, CFStringGetCString, CFDictionaryGetValue, CFShow, \
     get_cfstr_value, CFDataGetBytePtr, CFDataGetLength
 

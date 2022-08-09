@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "haul"
+name = "jenesis"
 version = "0.1.0"
 description = ""
 authors = ["Ed FitzGerald <edward.fitzgerald@fetch.ai>"]
 license = "Apache"
 
 [tool.poetry.scripts]
-haul = 'haul.cli:main'
+jenesis = 'jenesis.cli:main'
 
 [tool.poetry.dependencies]
 python = "^3.7"

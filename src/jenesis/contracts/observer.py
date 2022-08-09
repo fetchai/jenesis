@@ -1,7 +1,7 @@
 from cosmpy.crypto.address import Address
 
-from haul.config import Config
-from haul.contracts.monkey import ContractObserver
+from jenesis.config import Config
+from jenesis.contracts.monkey import ContractObserver
 
 
 class DeploymentUpdater(ContractObserver):

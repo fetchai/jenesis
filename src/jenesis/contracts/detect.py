@@ -4,7 +4,7 @@ from typing import List, Optional
 import json
 import toml
 
-from haul.contracts import Contract
+from jenesis.contracts import Contract
 
 
 def is_workspace(path: str) -> bool:

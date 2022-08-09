@@ -1,8 +1,8 @@
 import argparse
 import os
 
-from haul.config import Config
-from haul.contracts.deploy import deploy_contracts
+from jenesis.config import Config
+from jenesis.contracts.deploy import deploy_contracts
 
 
 def run(args: argparse.Namespace):

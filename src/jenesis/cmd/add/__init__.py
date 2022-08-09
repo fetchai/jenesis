@@ -1,6 +1,6 @@
 import argparse
 
-from haul.cmd.add.contract import run_add_contract
+from jenesis.cmd.add.contract import run_add_contract
 
 
 def add_add_command(parser):

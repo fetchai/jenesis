@@ -5,11 +5,11 @@ from ptpython import embed
 
 from cosmpy.aerial.client import LedgerClient
 
-from haul.config import Config
-from haul.contracts.detect import detect_contracts
-from haul.contracts.monkey import MonkeyContract
-from haul.contracts.networks import get_network_config
-from haul.contracts.observer import DeploymentUpdater
+from jenesis.config import Config
+from jenesis.contracts.detect import detect_contracts
+from jenesis.contracts.monkey import MonkeyContract
+from jenesis.contracts.networks import get_network_config
+from jenesis.contracts.observer import DeploymentUpdater
 
 
 def load_config(args: argparse.Namespace) -> dict:

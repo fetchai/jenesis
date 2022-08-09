@@ -1,6 +1,6 @@
 import argparse
 
-from haul.config import Config
+from jenesis.config import Config
 
 
 def run(args: argparse.Namespace):

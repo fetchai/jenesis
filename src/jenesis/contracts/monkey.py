@@ -85,7 +85,7 @@ class MonkeyContract(LedgerContract):
                 args = self._init_args
             else:
                 raise InstantiateArgsError(
-                    'Please provide instantiation arguments either in "args" or in the haul.toml configuration for this contract and profile'
+                    'Please provide instantiation arguments either in "args" or in the jenesis.toml configuration for this contract and profile'
                 )
         address = super().instantiate(code_id, args, sender, label=label, gas_limit=gas_limit,
                                       admin_address=admin_address, funds=funds)

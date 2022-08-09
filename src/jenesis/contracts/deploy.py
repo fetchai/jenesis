@@ -7,14 +7,14 @@ from cosmpy.aerial.wallet import LocalWallet, Wallet
 from cosmpy.crypto.address import Address
 from cosmpy.crypto.keypairs import PrivateKey
 
-from haul.config import Config, Deployment, Profile
-from haul.contracts import Contract
-from haul.contracts.detect import detect_contracts
-from haul.contracts.monkey import MonkeyContract
-from haul.contracts.networks import get_network_config
-from haul.keyring import query_keychain_item, LocalInfo, query_keychain_items
-from haul.tasks import Task, TaskStatus
-from haul.tasks.monitor import run_tasks
+from jenesis.config import Config, Deployment, Profile
+from jenesis.contracts import Contract
+from jenesis.contracts.detect import detect_contracts
+from jenesis.contracts.monkey import MonkeyContract
+from jenesis.contracts.networks import get_network_config
+from jenesis.keyring import query_keychain_item, LocalInfo, query_keychain_items
+from jenesis.tasks import Task, TaskStatus
+from jenesis.tasks.monitor import run_tasks
 
 
 class DeployContractTask(Task):
@@ -164,6 +164,8 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str, deployer_key:
         if profile_contract.is_configuration_out_of_date():
             contracts_to_deploy.append((contract, profile_contract))
             continue
+        else:
+            print(f"{contract.name} already deployed")
 
         digest = contract.digest()
         if digest is None:

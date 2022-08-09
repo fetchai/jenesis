@@ -3,8 +3,8 @@ import os
 
 from blessings import Terminal
 
-from haul.contracts.build import build_contracts, build_workspace
-from haul.contracts.detect import detect_contracts, is_workspace
+from jenesis.contracts.build import build_contracts, build_workspace
+from jenesis.contracts.detect import detect_contracts, is_workspace
 
 
 def run(args: argparse.Namespace):
