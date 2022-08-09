@@ -5,7 +5,7 @@ import shutil
 import subprocess
 from jenesis.config import Config
 
-TEMPLATE_GIT_URL = 'git@github.com:fetchai/haul-templates.git'
+TEMPLATE_GIT_URL = 'git@github.com:fetchai/jenesis-templates.git'
 
 
 def run_add_contract(args: argparse.Namespace):
