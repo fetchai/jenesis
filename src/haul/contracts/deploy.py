@@ -17,7 +17,7 @@ from haul.tasks import Task, TaskStatus
 from haul.tasks.monitor import run_tasks
 
 
-class DeployContrackTask(Task):
+class DeployContractTask(Task):
     def __init__(self, project_path: str, cfg: Config, profile: Profile, contract: Contract, config: Deployment,
                  client: LedgerClient, wallet: Wallet):
         self._project_path = project_path
@@ -209,7 +209,7 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str, deployer_key:
         wallet = LocalWallet(keys[contract_settings.deployer_key])
 
         # create the deployment task
-        task = DeployContrackTask(
+        task = DeployContractTask(
             project_path,
             cfg,
             selected_profile,
