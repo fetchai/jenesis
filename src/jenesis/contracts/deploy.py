@@ -164,8 +164,6 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str, deployer_key:
         if profile_contract.is_configuration_out_of_date():
             contracts_to_deploy.append((contract, profile_contract))
             continue
-        else:
-            print(f"{contract.name} already deployed")
 
         digest = contract.digest()
         if digest is None:
