@@ -1,7 +1,7 @@
 from io import BytesIO
 import pytest
 
-from haul.keyring.amino.codec import *
+from jenesis.keyring.amino.codec import *
 
 prefix_test_data = (
     ('0000000000000000000000000000000000000000000000000000000000000000', '00000000'),

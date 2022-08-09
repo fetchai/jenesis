@@ -4,7 +4,7 @@ import subprocess
 
 import pytest
 import toml
-from haul.config import Config, ConfigurationError
+from jenesis.config import Config, ConfigurationError
 
 fail_parse_cases = (
     ({}, {}, r"unable to extract configuration string project\.name"),
