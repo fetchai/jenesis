@@ -30,7 +30,7 @@ def test_new_create_project():
     network = "fetchai-testnet"
     Config.create_project(project_name)
 
-    input_file_name = "haul.toml"
+    input_file_name = "jenesis.toml"
     path = os.path.join(os.getcwd(), project_name, input_file_name)
     with open(path, encoding="utf-8") as toml_file:
         toml_dict = toml.load(toml_file)
@@ -52,7 +52,7 @@ def test_init_create_project():
     network = "fetchai-testnet"
     Config.create_project(os.getcwd())
 
-    input_file_name = "haul.toml"
+    input_file_name = "jenesis.toml"
     path = os.path.join(os.getcwd(), input_file_name)
     with open(path, encoding="utf-8") as toml_file:
         toml_dict = toml.load(toml_file)
@@ -66,5 +66,5 @@ def test_init_create_project():
     assert toml_dict["project"]["authors"] == authors
     assert toml_dict["profile"]["testing"]["network"] == network
 
-    os.remove("haul.toml")
+    os.remove("jenesis.toml")
     shutil.rmtree("contracts")
