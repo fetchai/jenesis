@@ -52,6 +52,7 @@ class ContractBuildTask(Task):
                 self._status = TaskStatus.IN_PROGRESS
                 self._status_text = 'Building...'
             except DockerException:
+                print("Error: looks like your docker setup isn't right, please visit https://haul.fetch.ai/ for more information")
                 self._container = None
                 self._status = TaskStatus.FAILED
                 self._status_text = ''
