@@ -1,10 +1,14 @@
 # Deploy contracts
 
-*NOTE: ```deploy``` command is still under active development and currently only supported in MacOS*
+> *NOTE: ```deploy``` command is still under active development and currently only supported in MacOS*
 
-Once you have successfully compiled your contracts, make sure to fill out the necessary instantiation message information under the `init` field in the `jenesis.toml` file. Also, you have to make sure that each contract's directory name matches the `.wasm` file name under the `artifacts` directory. To deploy all the contracts inside a certain profile you have two options: 
+Once you have successfully compiled your contracts, make sure to fill out the necessary instantiation message information under the `init` field in the `jenesis.toml` file. 
 
-1. Fill the deployer_key field for each contract (they can be different) and run the following command:
+> *Note: `jenesis deploy` currently requires that each contract's directory name matches the `.wasm` file name under the `artifacts` directory.
+
+To deploy all the contracts inside a certain profile you have two options: 
+
+1. Fill the `deployer_key` field for each contract (they can be different) and run the following command:
 
 ```
 jenesis alpha deploy profile_name

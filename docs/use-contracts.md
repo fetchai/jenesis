@@ -1,6 +1,6 @@
 # Contract Interaction
 
-*NOTE: ```shell``` and ```run``` commands are still under active development*
+> *NOTE: ```shell``` and ```run``` commands are still under active development*
 
 You can interact with your project's contracts by using the ```shell``` command:
 
@@ -16,12 +16,12 @@ C my_first_contract
 C cw20
 Detecting contracts...complete
 ```
-*NOTE: Keep in mind that contract names need to be accepted python variable names. For example: using my-first-contract instead of my_first_contract will generate problems when trying to interact with them.*
+> *NOTE: `jenesis alpha shell` currently requires that contract names use accepted python variable names. For example, using `my-first-contract` instead of `my_first_contract` will generate an error when trying to interact with it.*
 
 In this case, we can see that `my_first_contract` and `cw20` contracts are available for this project. If these contracts have been already deployed you can directly interact with them by performing contract executions such as:
 
 ```
->>> my_first_contract.execute(args = {""})
+>>> my_first_contract.execute(args = {'msg_name': {...}}
 ```
 
 We will show an example assuming that the cw20 contract has only been compiled and not yet deployed, going through imports, deployment, execution, and querying.
@@ -71,10 +71,9 @@ Finally, we query both wallet's balance
 >>> cw20.query({"balance":{"address":wallet2.address()}})
 {'balance': '1000'}
 ```
-We can observe that effectively, wallet has sent 1000 tokens to wallet2.
+We can observe that wallet has sent 1000 tokens to wallet2.
 
-To avoid running line by line in the terminal you can use the ```run``` command. This command will read a specified python script with all the desired outcomes. This way we can put the example we just ran all together a single python script instead of writing line by line on the terminal:
-
+You can also assemble the above commands into a script that is executable by the  ```run``` command.
 ```python
 from cosmpy.aerial.client import LedgerClient, NetworkConfig
 from cosmpy.aerial.faucet import FaucetApi
@@ -99,7 +98,7 @@ print("wallet final cw20 balance: " , cw20.query({"balance":{"address":wallet.ad
 print("wallet2 final cw20 balance: " , cw20.query({"balance":{"address":wallet2.address()}}))
 ```
 
-We simply named this script script.py and located it inside the project's directory. Now we simply run:
+If we paste the above code into the file script.py inside the project's directory, we can run it with:
 
 ```
 jenesis alpha run script.py

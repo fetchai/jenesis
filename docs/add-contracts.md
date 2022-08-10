@@ -40,16 +40,3 @@ info = {performance = {max_speed = 200, unit = kph}, fuel = {consumption = 7, un
 ```
 
 You can also add contracts manually by copying and pasting the contract directory from another project you may have, however, they need to follow the same directory structure as the **starter** template mentioned above. If you add a contract manually, you will need to run ```jenesis init``` again to update the `jenesis.toml` configuration file.
-
-
-
-## Compile contracts
-Once the template has been added to your project, you can compile the contract by running the following command inside your
-project directory:
-
-```
-jenesis compile
-```
-This will compile all packages in your project's contracts directory and output the wasm code under the artifacts directory.
-
-Note that in order to run ```jenesis compile``` you need to have docker running and configured with permissions for your user.

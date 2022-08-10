@@ -9,8 +9,10 @@ nav:
   - Getting started: 'index.md'
   - Working with contracts:
     - Add contracts: 'add-contracts.md'
+    - Compile contracts: 'compile-contracts.md'
     - Deploy contracts: 'deploy-contracts.md'
     - Interact with contracts: 'use-contracts.md'
+  - Keys: 'keys.md'
 
 theme:
   name: material
