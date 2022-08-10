@@ -52,18 +52,4 @@ jenesis compile
 ```
 This will compile all packages in your project's contracts directory and output the wasm code under the artifacts directory.
 
-Note that in order to run jenesis compile you need to have docker running. A common mistake is to run docker as a root user, you can manage docker as a non-root user by running the following commands:
-```
-sudo groupadd docker
-sudo usermod -aG docker $USER
-```
-
-You will have to log out and log back in to activate the changes. If you are using Linux, you can run the following command to activate the changes:
-```
-newgrp docker
-```
-Finally, verify that you can run docker without sudo
-```
-docker run hello-world
-```
-Now you can re-try ```jenesis compile```
+Note that in order to run ```jenesis compile``` you need to have docker running and configured with permissions for your user.
