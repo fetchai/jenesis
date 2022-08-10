@@ -1,5 +1,7 @@
 # Contract Interaction
 
+*NOTE: ```shell``` and ```run``` commands are still under active development*
+
 You can interact with your project's contracts by using the ```shell``` command:
 
 ```
@@ -10,15 +12,16 @@ You will observe the following text indicating the available contracts in your p
 
 ```
 Detecting contracts...
-C my-first-contract
+C my_first_contract
 C cw20
 Detecting contracts...complete
 ```
+*NOTE: Keep in mind that contract names need to be accepted python variable names. For example: using my-first-contract instead of my_first_contract will generate problems when trying to interact with them.*
 
-In this case, we can see that my-first-contract and cw20 contracts are available for this project. If these contracts have been already deployed you can directly interact with them by performing contract executions such as:
+In this case, we can see that `my_first_contract` and `cw20` contracts are available for this project. If these contracts have been already deployed you can directly interact with them by performing contract executions such as:
 
 ```
->>> my-first-contract.execute(args = {""})
+>>> my_first_contract.execute(args = {""})
 ```
 
 We will show an example assuming that the cw20 contract has only been compiled and not yet deployed, going through imports, deployment, execution, and querying.
@@ -41,20 +44,20 @@ Now we define the faucet and two wallets. We provide wealth to the sender wallet
 >>> faucet_api.get_wealth(wallet.address())
 ```
 
-We now proceed to deploy the cw20 contract, we define the arguments for the cw20 token such as name, symbol, decimal, and the addresses that will be funded with these cw20 tokens.
+We now proceed to deploy the cw20 contract, we define the arguments for the cw20 token: name, symbol, decimal, and the addresses that will be funded with these cw20 tokens. In this case we will fund wallet's address with 5000 tokens.
 ```
 >>> cw20.deploy({"name": "Crab Coin","symbol": "CRAB","decimals": 6,"initial_balances": [{"address":wallet.address(),"amount":"5000"}]},wallet)
 ```
 
 
-We can query wallet balance to make sure it has cw20 balance
+We can query wallet balance to make sure it has been funded with cw20 tokens
 
 ```
 >>> cw20.query({"balance":{"address":wallet.address()}})
 {'balance': '5000'}
 ```
 
-We now execute a cw20 token transfer from wallet to wallet2
+We now execute a cw20 token transfer of 1000 tokens from wallet to wallet2
 
 ```
 >>> cw20.execute({'transfer': {'amount':'1000','recipient':wallet2.address()}}, sender=wallet)
@@ -68,8 +71,9 @@ Finally, we query both wallet's balance
 >>> cw20.query({"balance":{"address":wallet2.address()}})
 {'balance': '1000'}
 ```
+We can observe that effectively, wallet has sent 1000 tokens to wallet2.
 
-To avoid running line by line in the terminal you can use the command ```run```. This command will read a specified python script with all the desired outcomes. This way we can put all together the example we just ran in the shell command in a single python script:
+To avoid running line by line in the terminal you can use the ```run``` command. This command will read a specified python script with all the desired outcomes. This way we can put the example we just ran all together a single python script instead of writing line by line on the terminal:
 
 ```python
 from cosmpy.aerial.client import LedgerClient, NetworkConfig

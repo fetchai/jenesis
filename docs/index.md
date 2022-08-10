@@ -25,7 +25,7 @@ The most straightforward way to create a project is using the ```new``` command
 jenesis new my_project
 ```
 
-The command above will create a new directory called my_project. Inside this directory a jenesis.toml file will be created containing the following information:
+The command above will create a new directory called `my_project`. Inside this directory a `jenesis.toml` file will be created containing the following information:
 
 ```
 [project]
@@ -40,7 +40,7 @@ network = "fetchai-testnet"
 
 The project name is the argument passed to the ```new``` command while the authors field is populated by querying the user's GitHub username and email address. The profile network is automatically set to **fetchai-testnet**. The contracts field will remain empty until new contracts are added. 
 
-The contracts folder will also be created inside my_project directory that will eventually contain all the information needed to compile and deploy the desired contracts, however, at this stage, this folder will be empty. 
+The contracts folder will also be created inside `my_project` directory that will eventually contain all the information needed to compile and deploy the desired contracts, however, at this stage, this folder will be empty. 
 
 The ```init``` command is very similar to the ```new``` command, but in this case, you won't need a project name argument since this command is intended to run inside an already created project directory to initialize your project.
 
@@ -53,6 +53,8 @@ This command will create the same files and folders inside your project director
 
 
 ## Keys
+
+*NOTE: ```keys``` command is still under active development and currently only supported in MacOS*
 
 Jenesis has a basic interaction with keys, with the ```keys``` command you can either list all the keys locally available or show the address of a specific key. To list all the keys available run the following command:
 ```
