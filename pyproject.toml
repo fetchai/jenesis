@@ -1,9 +1,10 @@
 [tool.poetry]
 name = "jenesis"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
-authors = ["Ed FitzGerald <edward.fitzgerald@fetch.ai>"]
+authors = ["Ed FitzGerald <edward.fitzgerald@fetch.ai>", "James Riehl <james.riehl@fetch.ai>", "Alejandro Madrigal <alejandro.madrigal@fetch.ai"]
 license = "Apache"
+readme = "README.md"
 
 [tool.poetry.scripts]
 jenesis = 'jenesis.cli:main'
