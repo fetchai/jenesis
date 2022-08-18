@@ -2,12 +2,12 @@ import argparse
 import os
 
 from cosmpy.aerial.client import LedgerClient
+from ptpython import embed
 from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts
 from jenesis.contracts.monkey import MonkeyContract
 from jenesis.contracts.networks import get_network_config
 from jenesis.contracts.observer import DeploymentUpdater
-from ptpython import embed
 
 
 def load_config(args: argparse.Namespace) -> dict:
