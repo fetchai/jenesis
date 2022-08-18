@@ -241,7 +241,7 @@ class Config:
             toml.dump(contents, lock_file)
 
     @staticmethod
-    def create_project(path: str):
+    def create_project(path: str, profile:str):
         user_name = subprocess.getoutput("git config user.name")
         user_email = subprocess.getoutput("git config user.email")
         authors = [f"{user_name} <{user_email}>"]
@@ -259,7 +259,7 @@ class Config:
         ) for contract in contracts}
 
         profiles = {
-            "testing": {
+            profile: {
                 "network": "fetchai-testnet",
                 "contracts": {name: vars(cfg) for (name, cfg) in contract_cfgs.items()},
             }
