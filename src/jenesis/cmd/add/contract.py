@@ -19,6 +19,7 @@ def run_add_contract(args: argparse.Namespace):
 
     # check that we are actually running the command from the project root
     if not os.path.exists(os.path.join(project_root, "jenesis.toml")):
+        # pylint: disable=all
         print("Please run command from project root")
         return False
 

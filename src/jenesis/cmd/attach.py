@@ -14,6 +14,7 @@ def run(args: argparse.Namespace):
 
     # check that we are actually running the command from the project root
     if not os.path.exists(os.path.join(project_path, "jenesis.toml")):
+        # pylint: disable=all
         print("Please run command from project root")
         return
 
@@ -36,7 +37,6 @@ def run(args: argparse.Namespace):
             selected_contract = contract
             continue
 
-    # selected_contract = [C for C in contracts if C.name == name][0]
     client = LedgerClient(network_cfg)
 
     contract = MonkeyContract(selected_contract.binary_path, client, args.address)
@@ -47,7 +47,6 @@ def run(args: argparse.Namespace):
     cfg.update_deployment(
         selected_profile.name, args.contract, digest, code_id, args.address
     )
-    # cfg.load(project_path)
     cfg.save(project_path)
 
 

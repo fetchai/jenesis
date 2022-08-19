@@ -15,6 +15,7 @@ def load_config(args: argparse.Namespace) -> dict:
 
     # check that we are actually running the command from the project root
     if not os.path.exists(os.path.join(project_path, "jenesis.toml")):
+        # pylint: disable=all
         print("Please run command from project root")
         return 1
 
