@@ -297,12 +297,12 @@ class Config:
             "fetchai-testnet", "", {arg: "" for arg in contract.init_args()},
             None, None, None, None)}
 
-        data = toml.load("jenesis.toml") 
+        data = toml.load("jenesis.toml")
 
         for (name, cfg) in contract_cfgs.items():
             data["profile"][profile]["contracts"][name] = vars(cfg)
 
         project_configuration_file = os.path.join(project_root, "jenesis.toml")
 
-        with open(project_configuration_file, "w") as toml_file:
+        with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
             toml.dump(data, toml_file)
