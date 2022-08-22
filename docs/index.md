@@ -1,4 +1,4 @@
-Jenesis is a command line tool for rapid contract and service development.
+Jenesis is a command line tool for rapid contract and service development for the Fetch.ai blockchain ecosystem and other CosmWasm-enabled blockchains.
 
 # Installation
 
