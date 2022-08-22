@@ -27,15 +27,20 @@ def run(args: argparse.Namespace):
     selected_profile = cfg.profiles[args.profile]
     network_cfg = get_network_config(selected_profile.network)
     if network_cfg is None:
-        print("Not network configuration for this profile")
+        print("No network configuration for this profile")
         return
 
     contracts = detect_contracts(project_path)
 
+    selected_contract = ""
     for contract in contracts:
         if contract.name == args.contract:
             selected_contract = contract
             continue
+
+    if selected_contract == "":
+        print('Contract not found in project')
+        return
 
     client = LedgerClient(network_cfg)
 
@@ -43,7 +48,7 @@ def run(args: argparse.Namespace):
     code_id = contract.code_id
     digest = contract.digest.hex()
 
-    Config.create_project(project_path, args.profile)
+    Config.update_project(project_path, args.profile, selected_contract)
     cfg.update_deployment(
         selected_profile.name, args.contract, digest, code_id, args.address
     )

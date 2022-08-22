@@ -286,3 +286,23 @@ class Config:
 
             with open(git_keep_path, "a", encoding="utf-8"):
                 pass
+
+    @staticmethod
+    def update_project(path: str, profile:str, contract: Contract):
+
+        # take the project name directly from the base name of the project
+        project_root = os.path.abspath(path)
+
+        contract_cfgs = {contract.name: Deployment(contract,
+            "fetchai-testnet", "", {arg: "" for arg in contract.init_args()},
+            None, None, None, None)}
+
+        data = toml.load("jenesis.toml") 
+
+        for (name, cfg) in contract_cfgs.items():
+            data["profile"][profile]["contracts"][name] = vars(cfg)
+
+        project_configuration_file = os.path.join(project_root, "jenesis.toml")
+
+        with open(project_configuration_file, "w") as toml_file:
+            toml.dump(data, toml_file)

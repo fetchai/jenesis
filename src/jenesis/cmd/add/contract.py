@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 from tempfile import mkdtemp
+from jenesis.contracts.detect import detect_contracts
 
 from jenesis.config import Config
 
@@ -77,6 +78,18 @@ def run_add_contract(args: argparse.Namespace):
     # clean up the temporary folder
     shutil.rmtree(temp_clone_path)
 
-    Config.create_project(os.getcwd(), args.profile)
+    contracts = detect_contracts(project_root)
+
+    selected_contract = ""
+    for contract in contracts:
+        if contract.name == name:
+            selected_contract = contract
+            continue
+
+    if selected_contract == "":
+        print('Contract not found in project')
+        return
+
+    Config.update_project(os.getcwd(), args.profile, selected_contract)
 
     return True
