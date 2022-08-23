@@ -293,14 +293,13 @@ class Config:
         # take the project name directly from the base name of the project
         project_root = os.path.abspath(path)
 
-        contract_cfgs = {contract.name: Deployment(contract,
+        contract_cfg = Deployment(contract,
             "fetchai-testnet", "", {arg: "" for arg in contract.init_args()},
-            None, None, None, None)}
+            None, None, None, None)
 
         data = toml.load("jenesis.toml")
 
-        for (name, cfg) in contract_cfgs.items():
-            data["profile"][profile]["contracts"][name] = vars(cfg)
+        data["profile"][profile]["contracts"][contract.name] = vars(contract_cfg)
 
         project_configuration_file = os.path.join(project_root, "jenesis.toml")
 
