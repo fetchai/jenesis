@@ -8,8 +8,9 @@ from cosmpy.aerial.client import LedgerClient
 from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts
 from jenesis.contracts.monkey import MonkeyContract
-from jenesis.contracts.networks import get_network_config
+from jenesis.contracts.networks import get_network_config, LOCAL_NODES
 from jenesis.contracts.observer import DeploymentUpdater
+from jenesis.node import run_local_node
 
 
 def load_config(args: argparse.Namespace) -> dict:
@@ -18,8 +19,6 @@ def load_config(args: argparse.Namespace) -> dict:
     cfg = Config.load(project_path)
     contracts = detect_contracts(project_path)
 
-    print('Detecting contracts...')
-
     contract_instances = {}
     selected_profile = cfg.profiles.get(args.profile)
     if selected_profile is not None:
@@ -27,8 +26,13 @@ def load_config(args: argparse.Namespace) -> dict:
         if net_config is None:
             raise RuntimeError(f'Unknown network name "{selected_profile.network}"')
 
+        if selected_profile.network in LOCAL_NODES:
+            run_local_node(net_config)
+
         # build the ledger client
         client = LedgerClient(net_config)
+
+        print('Detecting contracts...')
 
         for contract in contracts:
             print('C', contract)
@@ -62,7 +66,7 @@ def load_config(args: argparse.Namespace) -> dict:
 
             contract_instances[contract.name] = monkey
 
-    print('Detecting contracts...complete')
+        print('Detecting contracts...complete')
 
     shell_globals = {}
     shell_globals['cfg'] = cfg
@@ -76,7 +80,6 @@ def load_config(args: argparse.Namespace) -> dict:
 
 
 def run(args: argparse.Namespace):
-
     shell_globals = load_config(args)
     shell_globals.update(globals())
     embed(shell_globals, vi_mode=False, history_filename='.shell_history')
