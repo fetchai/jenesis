@@ -1,10 +1,8 @@
 import argparse
 import os
 
-from ptpython import embed
-
 from cosmpy.aerial.client import LedgerClient
-
+from ptpython import embed
 from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts
 from jenesis.contracts.monkey import MonkeyContract
@@ -15,10 +13,16 @@ from jenesis.contracts.observer import DeploymentUpdater
 def load_config(args: argparse.Namespace) -> dict:
     project_path = os.getcwd()
 
+    # check that we are actually running the command from the project root
+    if not os.path.exists(os.path.join(project_path, "jenesis.toml")):
+        # pylint: disable=all
+        print("Please run command from project root")
+        return 1
+
     cfg = Config.load(project_path)
     contracts = detect_contracts(project_path)
 
-    print('Detecting contracts...')
+    print("Detecting contracts...")
 
     contract_instances = {}
     selected_profile = cfg.profiles.get(args.profile)
@@ -31,7 +35,7 @@ def load_config(args: argparse.Namespace) -> dict:
         client = LedgerClient(net_config)
 
         for contract in contracts:
-            print('C', contract)
+            print("C", contract)
 
             # skip contracts that we have not compiled
             if contract.digest() is None:
@@ -62,13 +66,13 @@ def load_config(args: argparse.Namespace) -> dict:
 
             contract_instances[contract.name] = monkey
 
-    print('Detecting contracts...complete')
+    print("Detecting contracts...complete")
 
     shell_globals = {}
-    shell_globals['cfg'] = cfg
-    shell_globals['project_path'] = project_path
-    shell_globals['profile'] = args.profile
-    shell_globals['contracts'] = {contract.name: contract for contract in contracts}
+    shell_globals["cfg"] = cfg
+    shell_globals["project_path"] = project_path
+    shell_globals["profile"] = args.profile
+    shell_globals["contracts"] = {contract.name: contract for contract in contracts}
     for (name, instance) in contract_instances.items():
         shell_globals[name] = instance
 
@@ -79,10 +83,12 @@ def run(args: argparse.Namespace):
 
     shell_globals = load_config(args)
     shell_globals.update(globals())
-    embed(shell_globals, vi_mode=False, history_filename='.shell_history')
+    embed(shell_globals, vi_mode=False, history_filename=".shell_history")
 
 
 def add_shell_command(parser):
-    shell_cmd = parser.add_parser('shell')
-    shell_cmd.add_argument('-p', '--profile', default='testing', help='The profile to use')
+    shell_cmd = parser.add_parser("shell")
+    shell_cmd.add_argument(
+        "-p", "--profile", default="testing", help="The profile to use"
+    )
     shell_cmd.set_defaults(handler=run)

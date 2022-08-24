@@ -241,7 +241,7 @@ class Config:
             toml.dump(contents, lock_file)
 
     @staticmethod
-    def create_project(path: str):
+    def create_project(path: str, profile:str):
         user_name = subprocess.getoutput("git config user.name")
         user_email = subprocess.getoutput("git config user.email")
         authors = [f"{user_name} <{user_email}>"]
@@ -259,7 +259,7 @@ class Config:
         ) for contract in contracts}
 
         profiles = {
-            "testing": {
+            profile: {
                 "network": "fetchai-testnet",
                 "contracts": {name: vars(cfg) for (name, cfg) in contract_cfgs.items()},
             }
@@ -286,3 +286,22 @@ class Config:
 
             with open(git_keep_path, "a", encoding="utf-8"):
                 pass
+
+    @staticmethod
+    def update_project(path: str, profile:str, contract: Contract):
+
+        # take the project name directly from the base name of the project
+        project_root = os.path.abspath(path)
+
+        contract_cfg = Deployment(contract,
+            "fetchai-testnet", "", {arg: "" for arg in contract.init_args()},
+            None, None, None, None)
+
+        data = toml.load("jenesis.toml")
+
+        data["profile"][profile]["contracts"][contract.name] = vars(contract_cfg)
+
+        project_configuration_file = os.path.join(project_root, "jenesis.toml")
+
+        with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
+            toml.dump(data, toml_file)
