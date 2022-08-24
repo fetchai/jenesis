@@ -56,7 +56,7 @@ class Deployment:
         return hasher.hexdigest()
 
     def __repr__(self) -> str:
-        return f'{self.contract.name}: {self.address}'
+        return f'{self.contract["contract"]}: {self.address}'
 
     def is_configuration_out_of_date(self) -> bool:
         return self.checksum != self.compute_checksum()
