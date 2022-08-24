@@ -11,7 +11,6 @@ from jenesis.config import Config, Deployment, Profile
 from jenesis.contracts import Contract
 from jenesis.contracts.detect import detect_contracts
 from jenesis.contracts.monkey import MonkeyContract
-from jenesis.contracts.networks import get_network_config, LOCAL_NODES
 from jenesis.keyring import query_keychain_item, LocalInfo, query_keychain_items
 from jenesis.node import run_local_node
 from jenesis.tasks import Task, TaskStatus
@@ -141,16 +140,15 @@ class DeployContractTask(Task):
         self._status_text = ''
 
 
-def deploy_contracts(cfg: Config, profile: str, project_path: str, deployer_key: Optional[str]):
+def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str], profile: Optional[str] = None):
+
+    if profile is None:
+        profile = cfg.get_default_profile()
 
     selected_profile = cfg.profiles[profile]
-    network_cfg = get_network_config(selected_profile.network)
-    if network_cfg is None:
-        print('Not network configuration for this profile')
-        return
 
-    if selected_profile.network["name"] in LOCAL_NODES:
-        run_local_node(network_cfg)
+    if selected_profile.network.is_local:
+        run_local_node(selected_profile.network)
 
     contracts = detect_contracts(project_path)
 
@@ -185,7 +183,7 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str, deployer_key:
         print('Nothing to deploy')
         return
 
-    client = LedgerClient(network_cfg)
+    client = LedgerClient(selected_profile.network)
 
     # load all the keys required for this operation
     keys = {}

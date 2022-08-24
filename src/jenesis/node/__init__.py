@@ -11,40 +11,67 @@ from cosmpy.aerial.config import NetworkConfig
 from cosmpy.aerial.client import parse_url
 
 DEFAULT_DOCKER_IMAGE_TAG = "fetchai/fetchd:0.10.5"
+DEFAULT_VALIDATOR_KEY_NAME = "validator"
 DEFAULT_MNEMONIC = "gap bomb bulk border original scare assault pelican resemble found laptop skin gesture height inflict clinic reject giggle hurdle bubble soldier hurt moon hint"
 DEFAULT_PASSWORD = "12345678"
 DEFAULT_MONIKER = "test-node"
 DEFAULT_CHAIN_ID = "testing"
-DEFAULT_GENESIS_ACCOUNT = "validator"
+DEFAULT_GENESIS_ACCOUNT = "fetch1gns5lphdk5ew5lnre7ulzv8s8k9dr9eyqvgj0w"
 DEFAULT_DENOMINATION = "atestfet"
 DEFAULT_CLI_BINARY = "fetchd"
 
 TMP_DIR = tempfile.TemporaryDirectory() # pylint: disable=consider-using-with
 
-class LocalNodeConfig(NetworkConfig):
+class Network(NetworkConfig):
 
     def __init__(
         self,
-        net_config: NetworkConfig,
-        cli_binary: Optional[str] = DEFAULT_CLI_BINARY,
-        mnemonic: Optional[str] = DEFAULT_MNEMONIC,
-        password: Optional[str] = DEFAULT_PASSWORD,
-        moniker: Optional[str] = DEFAULT_MONIKER,
+        name: str = "",
+        chain_id: str = "",
+        fee_minimum_gas_price: int = 0,
+        fee_denomination: str = "",
+        staking_denomination: str = "",
+        url: str = "",
+        faucet_url: Optional[str] = None,
+        is_local: Optional[bool] = False,
+        cli_binary: Optional[str] = None,
+        validator_key_name: Optional[str] = None,
+        mnemonic: Optional[str] = None,
+        password: Optional[str] = None,
+        moniker: Optional[str] = None,
         genesis_accounts: Optional[List[str]] = None,
     ):
-        self.cli_binary = cli_binary
-        self.mnemonic = mnemonic
-        self.password = password
-        self.moniker = moniker
-        self.genesis_accounts = genesis_accounts or [DEFAULT_GENESIS_ACCOUNT]
         super().__init__(
+            chain_id,
+            fee_minimum_gas_price,
+            fee_denomination,
+            staking_denomination,
+            url,
+            faucet_url=faucet_url,
+        )
+        self.name = name
+        self.is_local = is_local
+        if is_local:
+            self.cli_binary = cli_binary or DEFAULT_CLI_BINARY
+            self.validator_key_name = validator_key_name or DEFAULT_VALIDATOR_KEY_NAME
+            self.mnemonic = mnemonic or DEFAULT_MNEMONIC
+            self.password = password or DEFAULT_PASSWORD
+            self.moniker = moniker or DEFAULT_MONIKER
+            self.genesis_accounts = genesis_accounts or [DEFAULT_GENESIS_ACCOUNT]
+
+    @classmethod
+    def from_cosmpy_config(cls, name: str, net_config: NetworkConfig, is_local: bool = False):
+        return Network(
+            name,
             net_config.chain_id,
             net_config.fee_minimum_gas_price,
             net_config.fee_denomination,
             net_config.staking_denomination,
             net_config.url,
             faucet_url=net_config.faucet_url,
+            is_local=is_local,
         )
+
 
 class LedgerNodeDockerContainer:
 
@@ -52,7 +79,7 @@ class LedgerNodeDockerContainer:
 
     def __init__(
         self,
-        config: dict,
+        network: Network,
         tag: str = DEFAULT_DOCKER_IMAGE_TAG,
     ):
         """
@@ -65,7 +92,7 @@ class LedgerNodeDockerContainer:
         """
         self._client = from_env()
         self._image_tag = tag
-        self.config: LocalNodeConfig = config
+        self.network: Network = network
 
     @property
     def tag(self) -> str:
@@ -74,29 +101,34 @@ class LedgerNodeDockerContainer:
 
     def _make_entrypoint_file(self, tmpdirname) -> None:
         """Make a temporary entrypoint file to setup and run the test ledger node"""
-        run_node_lines = (
+        run_node_lines = [
             "#!/usr/bin/env bash",
             # variables
-            f'export VALIDATOR_KEY_NAME={self.config.genesis_accounts[0]}',
-            f'export VALIDATOR_MNEMONIC="{self.config.mnemonic}"',
-            f'export PASSWORD="{self.config.password}"',
-            f'export CHAIN_ID={self.config.chain_id}',
-            f'export MONIKER={self.config.moniker}',
-            f'export DENOM={self.config.fee_denomination}',
+            f'export VALIDATOR_KEY_NAME={self.network.validator_key_name}',
+            f'export VALIDATOR_MNEMONIC="{self.network.mnemonic}"',
+            f'export PASSWORD="{self.network.password}"',
+            f'export CHAIN_ID={self.network.chain_id}',
+            f'export MONIKER={self.network.moniker}',
+            f'export DENOM={self.network.fee_denomination}',
             # Add key
-            f'( echo "$VALIDATOR_MNEMONIC"; echo "$PASSWORD"; echo "$PASSWORD"; ) |{self.config.cli_binary} keys add $VALIDATOR_KEY_NAME --recover',
+            f'( echo "$VALIDATOR_MNEMONIC"; echo "$PASSWORD"; echo "$PASSWORD"; ) |{self.network.cli_binary} keys add $VALIDATOR_KEY_NAME --recover',
             # Configure node
-            f"{self.config.cli_binary} init --chain-id=$CHAIN_ID $MONIKER",
-            f'echo "$PASSWORD" |{self.config.cli_binary} add-genesis-account $({self.config.cli_binary} keys show $VALIDATOR_KEY_NAME -a) 100000000000000000000000$DENOM',
-            f'echo "$PASSWORD" |{self.config.cli_binary} gentx $VALIDATOR_KEY_NAME 10000000000000000000000$DENOM --chain-id $CHAIN_ID',
-            f"{self.config.cli_binary} collect-gentxs",
+            f"{self.network.cli_binary} init --chain-id=$CHAIN_ID $MONIKER",
+        ]
+        for acc in self.network.genesis_accounts:
+            run_node_lines.append(
+                f'echo "$PASSWORD" |{self.network.cli_binary} add-genesis-account {acc} 100000000000000000000000$DENOM',
+            )
+        run_node_lines.extend([
+            f'echo "$PASSWORD" |{self.network.cli_binary} add-genesis-account $({self.network.cli_binary} keys show $VALIDATOR_KEY_NAME -a) 100000000000000000000000$DENOM',
+            f'echo "$PASSWORD" |{self.network.cli_binary} gentx $VALIDATOR_KEY_NAME 10000000000000000000000$DENOM --chain-id $CHAIN_ID',
+            f"{self.network.cli_binary} collect-gentxs",
             # Enable rest-api
-            f'sed -i "s/stake/atestfet/" ~/.{self.config.cli_binary}/config/genesis.json',
-            f'sed -i "s/enable = false/enable = true/" ~/.{self.config.cli_binary}/config/app.toml',
-            f'sed -i "s/swagger = false/swagger = true/" ~/.{self.config.cli_binary}/config/app.toml',
-            f"{self.config.cli_binary} start --rpc.laddr tcp://0.0.0.0:26657",
-        )
-
+            f'sed -i "s/stake/atestfet/" ~/.{self.network.cli_binary}/config/genesis.json',
+            f'sed -i "s/enable = false/enable = true/" ~/.{self.network.cli_binary}/config/app.toml',
+            f'sed -i "s/swagger = false/swagger = true/" ~/.{self.network.cli_binary}/config/app.toml',
+            f"{self.network.cli_binary} start --rpc.laddr tcp://0.0.0.0:26657",
+        ])
         entrypoint_file = os.path.join(tmpdirname, "run-node.sh")
         with open(entrypoint_file, "w", encoding="utf-8") as file:
             file.writelines(line + "\n" for line in run_node_lines)
@@ -118,7 +150,7 @@ class LedgerNodeDockerContainer:
 
     def is_ready(self) -> bool:
         try:
-            parsed_url = parse_url(self.config.url)
+            parsed_url = parse_url(self.network.url)
             url = f"{parsed_url.rest_url}/blocks/latest"
             response = requests.get(url)
             assert response.status_code == 200, ""
@@ -134,9 +166,8 @@ class LedgerNodeDockerContainer:
         return False
 
 
-def run_local_node(net_config: NetworkConfig):
-    local_node_config = LocalNodeConfig(net_config)
-    local_node = LedgerNodeDockerContainer(local_node_config)
+def run_local_node(network: Network):
+    local_node = LedgerNodeDockerContainer(network)
     if not local_node.is_ready():
         print("Starting local node...")
         container = local_node.run()

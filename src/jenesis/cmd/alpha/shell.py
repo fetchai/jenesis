@@ -6,7 +6,6 @@ from ptpython import embed
 from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts
 from jenesis.contracts.monkey import MonkeyContract
-from jenesis.contracts.networks import get_network_config, LOCAL_NODES
 from jenesis.contracts.observer import DeploymentUpdater
 from jenesis.node import run_local_node
 
@@ -17,24 +16,22 @@ def load_config(args: argparse.Namespace) -> dict:
     # check that we are actually running the command from the project root
     if not os.path.exists(os.path.join(project_path, "jenesis.toml")):
         # pylint: disable=all
-        print("Please run command from project root")
-        return 1
+        raise RuntimeError("Please run command from project root or create project first")
 
     cfg = Config.load(project_path)
     contracts = detect_contracts(project_path)
 
     contract_instances = {}
-    selected_profile = cfg.profiles.get(args.profile)
-    if selected_profile is not None:
-        net_config = get_network_config(selected_profile.network)
-        if net_config is None:
-            raise RuntimeError(f'Unknown network name "{selected_profile.network}"')
 
-        if selected_profile.network["name"] in LOCAL_NODES:
-            run_local_node(net_config)
+    profile_name = args.profile or cfg.get_default_profile()
+
+    selected_profile = cfg.profiles.get(profile_name)
+    if selected_profile is not None:
+        if selected_profile.network.is_local:
+            run_local_node(selected_profile.network)
 
         # build the ledger client
-        client = LedgerClient(net_config)
+        client = LedgerClient(selected_profile.network)
 
         print('Detecting contracts...')
 
@@ -62,7 +59,7 @@ def load_config(args: argparse.Namespace) -> dict:
                 observer=DeploymentUpdater(
                     cfg,
                     project_path,
-                    args.profile,
+                    profile_name,
                     contract.name,
                 ),
                 init_args=selected_contract.init,
@@ -75,7 +72,7 @@ def load_config(args: argparse.Namespace) -> dict:
     shell_globals = {}
     shell_globals["cfg"] = cfg
     shell_globals["project_path"] = project_path
-    shell_globals["profile"] = args.profile
+    shell_globals["profile"] = profile_name
     shell_globals["contracts"] = {contract.name: contract for contract in contracts}
     for (name, instance) in contract_instances.items():
         shell_globals[name] = instance
@@ -92,6 +89,6 @@ def run(args: argparse.Namespace):
 def add_shell_command(parser):
     shell_cmd = parser.add_parser("shell")
     shell_cmd.add_argument(
-        "-p", "--profile", default="testing", help="The profile to use"
+        "-p", "--profile", default=None, help="The profile to use"
     )
     shell_cmd.set_defaults(handler=run)
