@@ -6,8 +6,22 @@ from tempfile import mkdtemp
 from jenesis.contracts.detect import detect_contracts
 
 from jenesis.config import Config
+import toml
 
 TEMPLATE_GIT_URL = "git@github.com:fetchai/jenesis-templates.git"
+
+def add_contract_command(parser):
+
+    add_contract_cmd = parser.add_parser("contract")
+    add_contract_cmd.add_argument("template", help="The name of the template to use")
+    add_contract_cmd.add_argument("name", help="The name of contract to create")
+    add_contract_cmd.add_argument(
+        "-p", "--profile", default="testing", help="The profile to deploy"
+    )
+    add_contract_cmd.add_argument(
+        "-b", "--branch", help="The name of the branch that should be used"
+    )
+    add_contract_cmd.set_defaults(handler=run_add_contract)
 
 
 def run_add_contract(args: argparse.Namespace):
@@ -90,6 +104,10 @@ def run_add_contract(args: argparse.Namespace):
         print('Contract not found in project')
         return
 
-    Config.update_project(os.getcwd(), args.profile, selected_contract)
+    data = toml.load("jenesis.toml") 
+
+    network = data["profile"][args.profile]["network"]
+
+    Config.update_project(os.getcwd(), args.profile, network,selected_contract)
 
     return True
