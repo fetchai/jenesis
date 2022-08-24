@@ -23,10 +23,6 @@ def run(args: argparse.Namespace):
     profile_name = args.profile or cfg.get_default_profile()
 
     selected_profile = cfg.profiles[profile_name]
-    # network_cfg = get_network_config(selected_profile.network)
-    # if network_cfg is None:
-    #     print("No network configuration for this profile")
-    #     return
 
     contracts = detect_contracts(project_path)
 
@@ -50,7 +46,8 @@ def run(args: argparse.Namespace):
 
     network = Network(**data["profile"][profile_name]["network"])
 
-    Config.update_project(project_path, profile_name, network, selected_contract)
+    Config.update_project(project_path, profile_name, network.name, selected_contract)
+
     cfg.update_deployment(
         selected_profile.name, args.contract, digest, code_id, args.address
     )

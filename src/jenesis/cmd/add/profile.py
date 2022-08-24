@@ -2,7 +2,7 @@ import argparse
 import os
 import toml
 
-from jenesis.config import Config, ConfigurationError
+from jenesis.config import ConfigurationError
 from jenesis.contracts.networks import fetchai_testnet_config, fetchai_localnode_config
 
 def run(args: argparse.Namespace):

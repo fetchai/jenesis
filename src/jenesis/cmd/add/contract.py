@@ -16,7 +16,7 @@ def add_contract_command(parser):
     add_contract_cmd.add_argument("template", help="The name of the template to use")
     add_contract_cmd.add_argument("name", help="The name of contract to create")
     add_contract_cmd.add_argument(
-        "-p", "--profile", default="testing", help="The profile to deploy"
+        "-p", "--profile", default=None, help="The profile to deploy"
     )
     add_contract_cmd.add_argument(
         "-b", "--branch", help="The name of the branch that should be used"
@@ -40,9 +40,7 @@ def run_add_contract(args: argparse.Namespace):
 
     cfg = Config.load(project_root)
 
-    if args.profile not in cfg.profiles:
-        print(f'Invalid profile name. Expected one of {",".join(cfg.profiles.keys())}')
-        return 1
+    profile = args.profile or cfg.get_default_profile()
 
     # check to see if the contract already exists
     if os.path.exists(contract_root):
@@ -104,10 +102,8 @@ def run_add_contract(args: argparse.Namespace):
         print('Contract not found in project')
         return
 
-    data = toml.load("jenesis.toml") 
+    network_name = cfg.profiles[profile].network.name
 
-    network = data["profile"][args.profile]["network"]
-
-    Config.update_project(os.getcwd(), args.profile, network,selected_contract)
+    Config.update_project(os.getcwd(), profile, network_name, selected_contract)
 
     return True
