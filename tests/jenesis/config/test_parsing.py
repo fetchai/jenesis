@@ -28,7 +28,7 @@ def test_new_create_project():
 
     project_name = "ProjectX"
     network = "fetchai-testnet"
-    Config.create_project(project_name, "testing")
+    Config.create_project(project_name, "testing", network)
 
     input_file_name = "jenesis.toml"
     path = os.path.join(os.getcwd(), project_name, input_file_name)
@@ -50,7 +50,7 @@ def test_init_create_project():
     """Test project creation when (init) command is selected"""
 
     network = "fetchai-testnet"
-    Config.create_project(os.getcwd(), "testing")
+    Config.create_project(os.getcwd(), "testing", network)
 
     input_file_name = "jenesis.toml"
     path = os.path.join(os.getcwd(), input_file_name)

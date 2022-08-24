@@ -16,6 +16,7 @@ from jenesis.config.extract import (extract_opt_dict, extract_opt_int,
                                  extract_req_str_list)
 from jenesis.contracts import Contract
 from jenesis.contracts.detect import detect_contracts
+from jenesis.contracts.networks import fetchai_testnet_config, fetchai_localnode_config
 
 
 @dataclass
@@ -242,7 +243,7 @@ class Config:
             toml.dump(contents, lock_file)
 
     @staticmethod
-    def create_project(path: str, profile:str):
+    def create_project(path: str, profile: str, network_name: str):
         user_name = subprocess.getoutput("git config user.name")
         user_email = subprocess.getoutput("git config user.email")
         authors = [f"{user_name} <{user_email}>"]
@@ -255,15 +256,22 @@ class Config:
         contracts = detect_contracts(project_root) or []
 
         contract_cfgs = {contract.name: Deployment(contract,
-            "fetchai-testnet", "", {arg: "" for arg in contract.init_args()},
+            network_name, "", {arg: "" for arg in contract.init_args()},
             None, None, None, None,
         ) for contract in contracts}
 
-        network = {"name": "fetchai-testnet"}
-        network.update(vars(NetworkConfig.latest_stable_testnet()))
+        if network_name == "fetchai-testnet":
+            net_config = fetchai_testnet_config()
+        elif network_name == "fetchai-localnode":
+            net_config = fetchai_localnode_config()
+        else:
+            raise ConfigurationError("Network name not recognized")
+
+        network = {"name": network_name}
+        network.update(vars(net_config))
 
         profiles = {
-            "testing": {
+            profile: {
                 "network": network,
                 "contracts": {name: vars(cfg) for (name, cfg) in contract_cfgs.items()},
             }
@@ -292,13 +300,13 @@ class Config:
                 pass
 
     @staticmethod
-    def update_project(path: str, profile:str, contract: Contract):
+    def update_project(path: str, profile:str, network: str, contract: Contract):
 
         # take the project name directly from the base name of the project
         project_root = os.path.abspath(path)
 
         contract_cfg = Deployment(contract,
-            "fetchai-testnet", "", {arg: "" for arg in contract.init_args()},
+            network, "", {arg: "" for arg in contract.init_args()},
             None, None, None, None)
 
         data = toml.load("jenesis.toml")

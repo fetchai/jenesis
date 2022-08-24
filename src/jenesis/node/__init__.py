@@ -94,7 +94,7 @@ class LedgerNodeDockerContainer:
             f'sed -i "s/stake/atestfet/" ~/.{self.config.cli_binary}/config/genesis.json',
             f'sed -i "s/enable = false/enable = true/" ~/.{self.config.cli_binary}/config/app.toml',
             f'sed -i "s/swagger = false/swagger = true/" ~/.{self.config.cli_binary}/config/app.toml',
-            f"{self.config.cli_binary} start",
+            f"{self.config.cli_binary} start --rpc.laddr tcp://0.0.0.0:26657",
         )
 
         entrypoint_file = os.path.join(tmpdirname, "run-node.sh")

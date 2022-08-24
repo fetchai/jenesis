@@ -30,7 +30,7 @@ def load_config(args: argparse.Namespace) -> dict:
         if net_config is None:
             raise RuntimeError(f'Unknown network name "{selected_profile.network}"')
 
-        if selected_profile.network in LOCAL_NODES:
+        if selected_profile.network["name"] in LOCAL_NODES:
             run_local_node(net_config)
 
         # build the ledger client
