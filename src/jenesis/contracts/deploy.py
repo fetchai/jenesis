@@ -153,10 +153,15 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
     contracts = detect_contracts(project_path)
 
     contracts_to_deploy = []  # type: List[Tuple[Contract, Deployment]]
+    profile_contracts = selected_profile.contracts
+    profile_contract_names = list(profile_contracts.keys())
 
     # determine what tasks to do
     for contract in contracts:
-        profile_contract = selected_profile.deployments.get(contract.name)
+        if contract.name in profile_contract_names:
+            profile_contract = selected_profile.deployments.get(contract.name)
+        else:
+            continue
         assert profile_contract is not None
 
         if deployer_key is not None:
