@@ -141,7 +141,7 @@ class DeployContractTask(Task):
 
 
 def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str], profile: Optional[str] = None):
-
+    # pylint: disable=all
     if profile is None:
         profile = cfg.get_default_profile()
 
