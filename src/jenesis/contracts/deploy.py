@@ -149,7 +149,7 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str, deployer_key:
         print('Not network configuration for this profile')
         return
 
-    if selected_profile.network in LOCAL_NODES:
+    if selected_profile.network["name"] in LOCAL_NODES:
         run_local_node(network_cfg)
 
     contracts = detect_contracts(project_path)

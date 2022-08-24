@@ -8,10 +8,11 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 import toml
+from cosmpy.aerial.config import NetworkConfig
 from cosmpy.crypto.address import Address
 from jenesis.config.errors import ConfigurationError
 from jenesis.config.extract import (extract_opt_dict, extract_opt_int,
-                                 extract_opt_str, extract_req_str,
+                                 extract_opt_str, extract_req_dict, extract_req_str,
                                  extract_req_str_list)
 from jenesis.contracts import Contract
 from jenesis.contracts.detect import detect_contracts
@@ -78,7 +79,7 @@ class Deployment:
 @dataclass
 class Profile:
     name: str
-    network: str
+    network: Dict[str, str]
     contracts: Dict[str, Contract]
     deployments: Dict[str, Deployment]
 
@@ -111,7 +112,7 @@ class Config:
         if deployment is None:
             deployment = Deployment(
                 contract,
-                profile.network,
+                profile.network["name"],
                 "", None, None, None, None, None
             )
 
@@ -179,7 +180,7 @@ class Config:
                 "profile lock configuration invalid, expected dictionary"
             )
 
-        network = extract_req_str(profile, "network")
+        network = extract_req_dict(profile, "network")
 
         profile_contracts = profile.get("contracts", {})
         if not isinstance(profile_contracts, dict):
@@ -191,7 +192,7 @@ class Config:
                 deployment_lock = lock_profile.get(contract_name, {})
 
                 deployment = cls._parse_contract_config(
-                    contract_settings, network, deployment_lock
+                    contract_settings, network["name"], deployment_lock
                 )
                 deployments[contract_name] = deployment
 
@@ -258,9 +259,12 @@ class Config:
             None, None, None, None,
         ) for contract in contracts}
 
+        network = {"name": "fetchai-testnet"}
+        network.update(vars(NetworkConfig.latest_stable_testnet()))
+
         profiles = {
             "testing": {
-                "network": "fetchai-testnet",
+                "network": network,
                 "contracts": {name: vars(cfg) for (name, cfg) in contract_cfgs.items()},
             }
         }
