@@ -11,10 +11,11 @@ from jenesis.config import Config, Deployment, Profile
 from jenesis.contracts import Contract
 from jenesis.contracts.detect import detect_contracts
 from jenesis.contracts.monkey import MonkeyContract
-from jenesis.contracts.networks import get_network_config
 from jenesis.keyring import query_keychain_item, LocalInfo, query_keychain_items
+from jenesis.network import run_local_node
 from jenesis.tasks import Task, TaskStatus
 from jenesis.tasks.monitor import run_tasks
+import os
 
 
 class DeployContractTask(Task):
@@ -140,25 +141,33 @@ class DeployContractTask(Task):
         self._status_text = ''
 
 
-def deploy_contracts(cfg: Config, profile: str, project_path: str, deployer_key: Optional[str]):
+def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str], profile: Optional[str] = None):
+    # pylint: disable=all
+    if profile is None:
+        profile = cfg.get_default_profile()
 
     selected_profile = cfg.profiles[profile]
-    network_cfg = get_network_config(selected_profile.network)
-    if network_cfg is None:
-        print('Not network configuration for this profile')
-        return
+
+    if selected_profile.network.is_local:
+        run_local_node(selected_profile.network)
 
     contracts = detect_contracts(project_path)
 
     contracts_to_deploy = []  # type: List[Tuple[Contract, Deployment]]
+    profile_contracts = selected_profile.contracts
+    profile_contract_names = list(profile_contracts.keys())
 
     # determine what tasks to do
     for contract in contracts:
-        profile_contract = selected_profile.deployments.get(contract.name)
+        if contract.name in profile_contract_names:
+            profile_contract = selected_profile.deployments.get(contract.name)
+        else:
+            continue
         assert profile_contract is not None
 
         if deployer_key is not None:
             profile_contract.deployer_key = deployer_key
+            Config.update_key(os.getcwd(), profile, contract, deployer_key)
 
         # simple case the contract is already deployed and we can just use the information directly from the lockfile
         if profile_contract.is_configuration_out_of_date():
@@ -181,7 +190,7 @@ def deploy_contracts(cfg: Config, profile: str, project_path: str, deployer_key:
         print('Nothing to deploy')
         return
 
-    client = LedgerClient(network_cfg)
+    client = LedgerClient(selected_profile.network)
 
     # load all the keys required for this operation
     keys = {}
