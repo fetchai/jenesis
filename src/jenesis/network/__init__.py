@@ -147,19 +147,21 @@ class LedgerNodeDockerContainer:
         )
         return container
 
-    def is_ready(self) -> bool:
+    @classmethod
+    def is_ready(cls) -> bool:
         try:
             net_config = fetchai_localnode_config()
             client = LedgerClient(net_config)
             validators = client.query_validators()
             assert len(validators) > 0
             return True
-        except Exception as ex:
+        except Exception:
             return False
 
-    def wait_until_ready(self, max_attempts: int = 15, sleep_rate: float = 1.0) -> bool:
+    @classmethod
+    def wait_until_ready(cls, max_attempts: int = 15, sleep_rate: float = 1.0) -> bool:
         for _ in range(max_attempts):
-            if self.is_ready():
+            if cls.is_ready():
                 return True
             time.sleep(sleep_rate)
         return False
