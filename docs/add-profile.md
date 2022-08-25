@@ -3,7 +3,7 @@
 You can add more profiles than the one specified using the ```new``` command by running the following ```add profile``` command:
 
 ```
-jenesis add profile my_second_profile --network fetchai-testnet
+jenesis add profile my_second_profile [--network fetchai-testnet]
 ```
 By default, the profile's network will be set to `fetchai-testnet`, but you can specify it using the --network flag. The following will be added to the existing information in your `jenesis.toml` file:
 

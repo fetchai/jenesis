@@ -26,7 +26,7 @@ There are multiple commands integrated into jenesis that allow you to perform a 
 ## Create a new project
 Create a project using the ```new``` command
 ```
-jenesis new my_project --profile my_profile --network fetchai-testnet
+jenesis new my_project [--profile my_profile] [--network fetchai-testnet]
 ```
 
 This will create a new directory called `my_project`. When flags aren't used, profile and network will be set to `testing` and `fetchai-testnet` respectively. Inside this directory a `jenesis.toml` file will be created containing the following information:
