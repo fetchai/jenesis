@@ -11,7 +11,7 @@ jenesis = 'jenesis.cli:main'
 
 [tool.poetry.dependencies]
 python = "^3.7"
-docker = "~5.0.3"
+docker = ">=5.0.3,<6.1.0"
 blessings = "^1.7"
 ptpython = "^3.0.20"
 toml = "^0.10.2"
