@@ -107,7 +107,7 @@ class Config:
         profile = self.profiles.get(profile_name)
         if profile is None:
             raise ConfigurationError(f"unable to lookup profile {profile_name}")
-            
+
         if profile.network.chain_id == "dorado_1":
             network = "fetchai-testnet"
         elif profile.network.chain_id == "localnode":
@@ -193,7 +193,7 @@ class Config:
             raise ConfigurationError(
                 "profile lock configuration invalid, expected dictionary"
             )
-   
+
         network = Network(**extract_req_dict(profile, "network"))
 
         profile_contracts = profile.get("contracts", {})
