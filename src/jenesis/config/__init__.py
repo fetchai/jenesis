@@ -108,19 +108,12 @@ class Config:
         if profile is None:
             raise ConfigurationError(f"unable to lookup profile {profile_name}")
 
-        if profile.network.chain_id == "dorado_1":
-            network = "fetchai-testnet"
-        elif profile.network.chain_id == "localnode":
-            network = "fetchai-localnode"
-        else:
-            network = ""
-
         contract = profile.contracts.get(contract_name)
         deployment = profile.deployments.get(contract_name)
         if deployment is None:
             deployment = Deployment(
                 contract,
-                network,
+                profile.network.name,
                 "", None, None, None, None, None
             )
 
