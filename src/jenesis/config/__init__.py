@@ -113,7 +113,7 @@ class Config:
         if deployment is None:
             deployment = Deployment(
                 contract,
-                profile.network["name"],
+                contract["network"],
                 "", None, None, None, None, None
             )
 
@@ -323,9 +323,20 @@ class Config:
             None, None, None, None)
 
         data = toml.load("jenesis.toml")
-
         data["profile"][profile]["contracts"][contract.name] = vars(contract_cfg)
+        project_configuration_file = os.path.join(project_root, "jenesis.toml")
 
+        with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
+            toml.dump(data, toml_file)
+
+    @staticmethod
+    def update_key(path: str, profile: str, contract: Contract, key: str):
+
+        # take the project name directly from the base name of the project
+        project_root = os.path.abspath(path)
+
+        data = toml.load("jenesis.toml")
+        data["profile"][profile]["contracts"][contract.name]["deployer_key"] = key
         project_configuration_file = os.path.join(project_root, "jenesis.toml")
 
         with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
