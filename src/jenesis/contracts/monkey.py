@@ -126,11 +126,11 @@ class MonkeyContract(LedgerContract):
 
             if resp.code_info.data_hash == self.digest:
                 return int(resp.code_info.code_id)
-        except grpc.RpcError as ex:
+        except (grpc.RpcError, RuntimeError) as ex:
             not_found = False
 
             # pylint: disable=no-member
-            if hasattr(ex, 'details') and 'not found' in ex.details():
+            if hasattr(ex, 'details') and 'not found' in ex.details() or 'not found' in str(ex):
                 not_found = True
 
             if not not_found:
