@@ -12,7 +12,7 @@ from jenesis.contracts import Contract
 from jenesis.contracts.detect import detect_contracts
 from jenesis.contracts.monkey import MonkeyContract
 from jenesis.keyring import query_keychain_item, LocalInfo, query_keychain_items
-from jenesis.node import run_local_node
+from jenesis.network import run_local_node
 from jenesis.tasks import Task, TaskStatus
 from jenesis.tasks.monitor import run_tasks
 

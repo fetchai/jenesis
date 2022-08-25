@@ -7,7 +7,7 @@ from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts
 from jenesis.contracts.monkey import MonkeyContract
 from jenesis.contracts.observer import DeploymentUpdater
-from jenesis.node import run_local_node
+from jenesis.network import run_local_node
 
 
 def load_config(args: argparse.Namespace) -> dict:

@@ -5,7 +5,7 @@ from cosmpy.aerial.client import LedgerClient
 from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts
 from jenesis.contracts.monkey import MonkeyContract
-from jenesis.contracts.networks import Network
+from jenesis.network import Network
 import toml
 
 def run(args: argparse.Namespace):

@@ -15,7 +15,7 @@ from jenesis.config.extract import (extract_opt_dict, extract_opt_int,
                                  extract_req_str_list)
 from jenesis.contracts import Contract
 from jenesis.contracts.detect import detect_contracts
-from jenesis.contracts.networks import Network, fetchai_testnet_config, fetchai_localnode_config
+from jenesis.network import Network, fetchai_testnet_config, fetchai_localnode_config
 
 
 @dataclass

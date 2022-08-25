@@ -5,10 +5,9 @@ from typing import Optional, List
 
 from docker import from_env
 from docker.types import Mount
-import requests
 
 from cosmpy.aerial.config import NetworkConfig
-from cosmpy.aerial.client import parse_url
+from cosmpy.aerial.client import LedgerClient
 
 DEFAULT_DOCKER_IMAGE_TAG = "fetchai/fetchd:0.10.5"
 DEFAULT_VALIDATOR_KEY_NAME = "validator"
@@ -75,7 +74,7 @@ class Network(NetworkConfig):
 
 class LedgerNodeDockerContainer:
 
-    PORTS = {1317: 1317, 26657: 26657}
+    PORTS = {9090: 9090, 1317: 1317, 26657: 26657}
 
     def __init__(
         self,
@@ -150,12 +149,12 @@ class LedgerNodeDockerContainer:
 
     def is_ready(self) -> bool:
         try:
-            parsed_url = parse_url(self.network.url)
-            url = f"{parsed_url.rest_url}/blocks/latest"
-            response = requests.get(url)
-            assert response.status_code == 200, ""
+            net_config = fetchai_localnode_config()
+            client = LedgerClient(net_config)
+            validators = client.query_validators()
+            assert len(validators) > 0
             return True
-        except Exception:
+        except Exception as ex:
             return False
 
     def wait_until_ready(self, max_attempts: int = 15, sleep_rate: float = 1.0) -> bool:
@@ -178,3 +177,21 @@ def run_local_node(network: Network):
         print("Stating local node...complete")
     else:
         print("Detected local node already running.")
+
+
+def fetchai_testnet_config() -> Network:
+    return Network.from_cosmpy_config("fetchai-testnet", NetworkConfig.fetchai_stable_testnet())
+
+
+def fetchai_localnode_config() -> Network:
+    return Network.from_cosmpy_config(
+        "fetchai-localnode",
+        NetworkConfig(
+            chain_id="localnode",
+            url="grpc+http://127.0.0.1:9090/",
+            fee_minimum_gas_price=5000000000,
+            fee_denomination="atestfet",
+            staking_denomination="atestfet",
+        ),
+        is_local=True,
+    )
