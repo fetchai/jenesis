@@ -15,6 +15,7 @@ from jenesis.keyring import query_keychain_item, LocalInfo, query_keychain_items
 from jenesis.node import run_local_node
 from jenesis.tasks import Task, TaskStatus
 from jenesis.tasks.monitor import run_tasks
+import os
 
 
 class DeployContractTask(Task):
@@ -166,6 +167,7 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
 
         if deployer_key is not None:
             profile_contract.deployer_key = deployer_key
+            Config.update_key(os.getcwd(), profile, contract, deployer_key)
 
         # simple case the contract is already deployed and we can just use the information directly from the lockfile
         if profile_contract.is_configuration_out_of_date():
