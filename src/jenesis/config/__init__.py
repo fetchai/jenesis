@@ -113,7 +113,7 @@ class Config:
         if deployment is None:
             deployment = Deployment(
                 contract,
-                contract["network"],
+                profile.network.name,
                 "", None, None, None, None, None
             )
 
