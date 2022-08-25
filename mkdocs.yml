@@ -8,6 +8,7 @@ site_author: developer@fetch.ai
 nav:
   - Getting started: 'index.md'
   - Working with contracts:
+    - Add profiles: 'add-profile.md'
     - Add contracts: 'add-contracts.md'
     - Compile contracts: 'compile-contracts.md'
     - Deploy contracts: 'deploy-contracts.md'
