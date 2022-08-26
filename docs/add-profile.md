@@ -18,3 +18,4 @@ is_local = false
 
 [profile.my_second_profile.contracts]
 ```
+If there are existing contracts in your project, all of them will be added to the new profile.

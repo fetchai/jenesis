@@ -2,16 +2,16 @@
 Once you have successfully created your project, you can add contract templates. You first need to navigate to your project's directory and run the following command:
 
 ```
-jenesis add contract <TEMPLATE> <NAME> [--profile <PROFILE>]
+jenesis add contract <TEMPLATE> <NAME>
 ```
 
-An example of how to add the template **starter** with the name `my_first_contract` to the profile `my_profile` is given below:
+An example of how to add the template **starter** with the name `my_first_contract` is given below:
 
 ```
-jenesis add contract starter my_first_contract --profile my_profile
+jenesis add contract starter my_first_contract
 ```
 
-If the profile is not specified as an optional argument, the contract will be automatically integrated into the first profile created when ```new``` or ```init``` command were used. This ```add contract``` command will add a contract template to your jenesis project inside `contracts/my_first_contract/` folder. It will also update the `jenesis.toml` configuration file with the contract information under the selected profile, if no profile is selected it will be set by default to the first profile you created using the ```new``` command:
+This ```add contract``` command will add a contract template to your jenesis project inside `contracts/my_first_contract/` folder. It will also update the `jenesis.toml` configuration file with the contract information under all existing profiles.
 
 ```
 [profile.my_profile.contracts.my_first_contract]
@@ -50,4 +50,3 @@ jenesis attach my_first_contract fetch18xs97q6h9zgh4sz730a42pp0dqa9sh4eef7eutfkv
 ```
 
 This will add the relevant deployment information into a `jenesis.lock` file and you will now be able to interact with `my_first_contract` using [contract interactions](use-contracts.md) 
-
