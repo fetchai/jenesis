@@ -16,9 +16,6 @@ def add_contract_command(parser):
     add_contract_cmd.add_argument("template", help="The name of the template to use")
     add_contract_cmd.add_argument("name", help="The name of contract to create")
     add_contract_cmd.add_argument(
-        "-p", "--profile", default=None, help="The profile to deploy"
-    )
-    add_contract_cmd.add_argument(
         "-b", "--branch", help="The name of the branch that should be used"
     )
     add_contract_cmd.set_defaults(handler=run_add_contract)
@@ -39,12 +36,6 @@ def run_add_contract(args: argparse.Namespace):
         return False
 
     cfg = Config.load(project_root)
-
-    if args.profile is not None and args.profile not in cfg.profiles:
-        print(f'Invalid profile name. Expected one of {",".join(cfg.profiles.keys())}')
-        return 1
-
-    profile = args.profile or cfg.get_default_profile()
 
     # check to see if the contract already exists
     if os.path.exists(contract_root):
@@ -105,9 +96,9 @@ def run_add_contract(args: argparse.Namespace):
     if selected_contract == "":
         print('Contract not found in project')
         return
-
-    network_name = cfg.profiles[profile].network.name
-
-    Config.update_project(os.getcwd(), profile, network_name, selected_contract)
+               
+    for profile in cfg.profiles.keys():
+        network_name = cfg.profiles[profile].network.name
+        Config.update_project(os.getcwd(), profile, network_name, selected_contract)
 
     return True
