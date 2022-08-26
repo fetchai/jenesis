@@ -5,13 +5,13 @@ Once you have successfully created your project, you can add contract templates.
 jenesis add contract <TEMPLATE> <NAME> [--profile <PROFILE>]
 ```
 
-An example of how to add the template **starter** with the name `my_first_contract` is given below:
+An example of how to add the template **starter** with the name `my_first_contract` to the profile `my_profile` is given below:
 
 ```
-jenesis add contract starter my_first_contract [--profile my_profile]
+jenesis add contract starter my_first_contract --profile my_profile
 ```
 
-This ```add contract``` command will add a contract template to your jenesis project inside `contracts/my_first_contract/` folder. It will also update the `jenesis.toml` configuration file with the contract information under the selected profile, if no profile is selected it will be set by default to the first profile you created using the ```new``` command:
+If the profile is not specified as an optional argument, the contract will be automatically integrated into the first profile created when ```new``` or ```init``` command were used. This ```add contract``` command will add a contract template to your jenesis project inside `contracts/my_first_contract/` folder. It will also update the `jenesis.toml` configuration file with the contract information under the selected profile, if no profile is selected it will be set by default to the first profile you created using the ```new``` command:
 
 ```
 [profile.my_profile.contracts.my_first_contract]
@@ -43,11 +43,11 @@ You can also add contracts manually by copying and pasting the contract director
 
 # Attach deployed contracts
 
-If you have added a contract into the project's contract folder that has already been deployed in the network, you can attach it to your project for future interaction using the ```attach``` command. You will need to specify the contract's name, deployment address and the profile where you wish to insert it to.
+If you have added a contract into the project's contract folder that has already been deployed in the network, you can attach it to your project for future interaction using the ```attach``` command. You will need to specify the contract's name and deployment address. You can optionally specify the profile where you wish to insert the contract into, if this is not specified, it will be integrated to the first profile you created in your project.
 
 ```
-jenesis attach my_first_contract fetch18xs97q6h9zgh4sz730a42pp0dqa9sh4eef7eutfkv69q3v2y3x8s72pkua [--profile my_profile]
+jenesis attach my_first_contract fetch18xs97q6h9zgh4sz730a42pp0dqa9sh4eef7eutfkv69q3v2y3x8s72pkua
 ```
 
-You will now be able to interact with `my_first_contract` using [contract interactions](use-contracts.md) 
+This will add the relevant deployment information into a `jenesis.lock` file and you will now be able to interact with `my_first_contract` using [contract interactions](use-contracts.md) 
 
