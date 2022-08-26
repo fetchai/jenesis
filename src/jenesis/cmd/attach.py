@@ -16,9 +16,13 @@ def run(args: argparse.Namespace):
     if not os.path.exists(os.path.join(project_path, "jenesis.toml")):
         # pylint: disable=all
         print("Please run command from project root")
-        return
+        return 1
 
     cfg = Config.load(project_path)
+
+    if args.profile is not None and args.profile not in cfg.profiles:
+        print(f'Invalid profile name. Expected one of {",".join(cfg.profiles.keys())}')
+        return 1
 
     profile_name = args.profile or cfg.get_default_profile()
 
@@ -34,7 +38,7 @@ def run(args: argparse.Namespace):
 
     if selected_contract == "":
         print('Contract not found in project')
-        return
+        return 1
 
     client = LedgerClient(selected_profile.network)
 
@@ -52,6 +56,7 @@ def run(args: argparse.Namespace):
         selected_profile.name, args.contract, digest, code_id, args.address
     )
     cfg.save(project_path)
+    return 0
 
 
 def add_attach_command(parser):

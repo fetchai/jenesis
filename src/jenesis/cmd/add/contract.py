@@ -40,6 +40,10 @@ def run_add_contract(args: argparse.Namespace):
 
     cfg = Config.load(project_root)
 
+    if args.profile is not None and args.profile not in cfg.profiles:
+        print(f'Invalid profile name. Expected one of {",".join(cfg.profiles.keys())}')
+        return 1
+
     profile = args.profile or cfg.get_default_profile()
 
     # check to see if the contract already exists
