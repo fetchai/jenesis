@@ -5,6 +5,7 @@ import subprocess
 import pytest
 import toml
 from jenesis.config import Config, ConfigurationError
+from jenesis.network import fetchai_testnet_config
 
 fail_parse_cases = (
     ({}, {}, r"unable to extract configuration string project\.name"),
@@ -27,8 +28,8 @@ def test_new_create_project():
     """Test project creation when (new) command is selected"""
 
     project_name = "ProjectX"
-    network = "fetchai-testnet"
-    Config.create_project(project_name, "testing", network)
+    network_name = "fetchai-testnet"
+    Config.create_project(project_name, "testing", network_name)
 
     input_file_name = "jenesis.toml"
     path = os.path.join(os.getcwd(), project_name, input_file_name)
@@ -41,6 +42,9 @@ def test_new_create_project():
     user_email = subprocess.getoutput("git config user.email")
     authors = [f"{user_name} <{user_email}>"]
 
+    network = {"name": network_name}
+    network.update(vars(fetchai_testnet_config()))
+
     assert toml_dict["project"]["authors"] == authors
     assert toml_dict["profile"]["testing"]["network"] == network
     shutil.rmtree(project_name)
@@ -49,8 +53,8 @@ def test_new_create_project():
 def test_init_create_project():
     """Test project creation when (init) command is selected"""
 
-    network = "fetchai-testnet"
-    Config.create_project(os.getcwd(), "testing", network)
+    network_name = "fetchai-testnet"
+    Config.create_project(os.getcwd(), "testing", network_name)
 
     input_file_name = "jenesis.toml"
     path = os.path.join(os.getcwd(), input_file_name)
@@ -62,6 +66,9 @@ def test_init_create_project():
     user_name = subprocess.getoutput("git config user.name")
     user_email = subprocess.getoutput("git config user.email")
     authors = [f"{user_name} <{user_email}>"]
+
+    network = {"name": network_name}
+    network.update(vars(fetchai_testnet_config()))
 
     assert toml_dict["project"]["authors"] == authors
     assert toml_dict["profile"]["testing"]["network"] == network

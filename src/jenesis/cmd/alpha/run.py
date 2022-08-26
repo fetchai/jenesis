@@ -21,7 +21,7 @@ def run(args: argparse.Namespace):
 def add_run_command(parser):
     run_cmd = parser.add_parser("run")
     run_cmd.add_argument(
-        "-p", "--profile", default="testing", help="The profile to use"
+        "-p", "--profile", default=None, help="The profile to use"
     )
     run_cmd.add_argument("script_path", help="The path to the script to run")
     run_cmd.set_defaults(handler=run)

@@ -17,18 +17,18 @@ def run(args: argparse.Namespace):
 
     cfg = Config.load(project_path)
 
-    if args.profile not in cfg.profiles:
+    if args.profile is not None and args.profile not in cfg.profiles:
         print(f'Invalid profile name. Expected one of {",".join(cfg.profiles.keys())}')
         return 1
 
-    deploy_contracts(cfg, args.profile, project_path, args.key)
+    deploy_contracts(cfg, project_path, args.key, profile=args.profile)
     return 0
 
 
 def add_deploy_command(parser):
     deploy_cmd = parser.add_parser("deploy")
     deploy_cmd.add_argument(
-        "-p", "--profile", default="testing", help="The profile to deploy"
+        "-p", "--profile", default=None, help="The profile to deploy"
     )
     deploy_cmd.add_argument("key", nargs="?", help="Deployer Key for all contracts")
     deploy_cmd.set_defaults(handler=run)

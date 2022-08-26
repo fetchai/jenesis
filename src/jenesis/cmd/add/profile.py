@@ -1,8 +1,9 @@
 import argparse
-
-from jenesis.config import Config
 import os
 import toml
+
+from jenesis.config import ConfigurationError
+from jenesis.network import fetchai_testnet_config, fetchai_localnode_config
 
 def run(args: argparse.Namespace):
 
@@ -14,10 +15,22 @@ def run(args: argparse.Namespace):
         print("Please run command from project root")
         return
 
-    data = toml.load("jenesis.toml") 
+    data = toml.load("jenesis.toml")
 
-    data["profile"][args.profile] = {"network": args.network,
-                                    "contracts":{}}
+    if args.network == "fetchai-testnet":
+        net_config = fetchai_testnet_config()
+    elif args.network == "fetchai-localnode":
+        net_config = fetchai_localnode_config()
+    else:
+        raise ConfigurationError("Network name not recognized")
+
+    network = {"name": "fetchai-testnet"}
+    network.update(vars(net_config))
+
+    data["profile"][args.profile] = {
+        "network": network,
+        "contracts": {}
+    }
 
     output_file_name = "jenesis.toml"
     with open(output_file_name, "w") as toml_file:

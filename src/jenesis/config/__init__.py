@@ -11,10 +11,11 @@ import toml
 from cosmpy.crypto.address import Address
 from jenesis.config.errors import ConfigurationError
 from jenesis.config.extract import (extract_opt_dict, extract_opt_int,
-                                 extract_opt_str, extract_req_str,
+                                 extract_opt_str, extract_req_dict, extract_req_str,
                                  extract_req_str_list)
 from jenesis.contracts import Contract
 from jenesis.contracts.detect import detect_contracts
+from jenesis.network import Network, fetchai_testnet_config, fetchai_localnode_config
 
 
 @dataclass
@@ -55,7 +56,7 @@ class Deployment:
         return hasher.hexdigest()
 
     def __repr__(self) -> str:
-        return f'{self.contract.name}: {self.address}'
+        return f'{self.contract["contract"]}: {self.address}'
 
     def is_configuration_out_of_date(self) -> bool:
         return self.checksum != self.compute_checksum()
@@ -78,9 +79,10 @@ class Deployment:
 @dataclass
 class Profile:
     name: str
-    network: str
+    network: Network
     contracts: Dict[str, Contract]
     deployments: Dict[str, Deployment]
+    default: bool = False
 
     def to_lockfile(self) -> Any:
         return {
@@ -111,7 +113,7 @@ class Config:
         if deployment is None:
             deployment = Deployment(
                 contract,
-                profile.network,
+                profile.network.name,
                 "", None, None, None, None, None
             )
 
@@ -125,6 +127,12 @@ class Config:
 
         profile.deployments[contract_name] = deployment
         self.profiles[profile_name] = profile
+
+    def get_default_profile(self) -> str:
+        for (name, profile) in self.profiles.items():
+            if profile.default:
+                return name
+        return self.profiles.keys()[0]
 
     @classmethod
     def load(cls, path: str) -> "Config":
@@ -179,7 +187,7 @@ class Config:
                 "profile lock configuration invalid, expected dictionary"
             )
 
-        network = extract_req_str(profile, "network")
+        network = Network(**extract_req_dict(profile, "network"))
 
         profile_contracts = profile.get("contracts", {})
         if not isinstance(profile_contracts, dict):
@@ -191,15 +199,21 @@ class Config:
                 deployment_lock = lock_profile.get(contract_name, {})
 
                 deployment = cls._parse_contract_config(
-                    contract_settings, network, deployment_lock
+                    contract_settings, network.name, deployment_lock
                 )
                 deployments[contract_name] = deployment
+
+        is_default = False
+        if "default" in profile:
+            if profile["default"]:
+                is_default = True
 
         return Profile(
             name=str(name),
             network=network,
             contracts=profile_contracts,
             deployments=deployments,
+            default=is_default,
         )
 
     @classmethod
@@ -241,7 +255,7 @@ class Config:
             toml.dump(contents, lock_file)
 
     @staticmethod
-    def create_project(path: str, profile:str, network:str):
+    def create_project(path: str, profile: str, network_name: str):
         user_name = subprocess.getoutput("git config user.name")
         user_email = subprocess.getoutput("git config user.email")
         authors = [f"{user_name} <{user_email}>"]
@@ -254,14 +268,25 @@ class Config:
         contracts = detect_contracts(project_root) or []
 
         contract_cfgs = {contract.name: Deployment(contract,
-            network, "", {arg: "" for arg in contract.init_args()},
+            network_name, "", {arg: "" for arg in contract.init_args()},
             None, None, None, None,
         ) for contract in contracts}
+
+        if network_name == "fetchai-testnet":
+            net_config = fetchai_testnet_config()
+        elif network_name == "fetchai-localnode":
+            net_config = fetchai_localnode_config()
+        else:
+            raise ConfigurationError("Network name not recognized")
+
+        network = {"name": network_name}
+        network.update(vars(net_config))
 
         profiles = {
             profile: {
                 "network": network,
                 "contracts": {name: vars(cfg) for (name, cfg) in contract_cfgs.items()},
+                "default": True,
             }
         }
 
@@ -288,19 +313,30 @@ class Config:
                 pass
 
     @staticmethod
-    def update_project(path: str, profile:str, network: str, contract: Contract):
+    def update_project(path: str, profile: str, network_name: str, contract: Contract):
 
         # take the project name directly from the base name of the project
         project_root = os.path.abspath(path)
 
         contract_cfg = Deployment(contract,
-            network, "", {arg: "" for arg in contract.init_args()},
+            network_name, "", {arg: "" for arg in contract.init_args()},
             None, None, None, None)
 
         data = toml.load("jenesis.toml")
-
         data["profile"][profile]["contracts"][contract.name] = vars(contract_cfg)
+        project_configuration_file = os.path.join(project_root, "jenesis.toml")
 
+        with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
+            toml.dump(data, toml_file)
+
+    @staticmethod
+    def update_key(path: str, profile: str, contract: Contract, key: str):
+
+        # take the project name directly from the base name of the project
+        project_root = os.path.abspath(path)
+
+        data = toml.load("jenesis.toml")
+        data["profile"][profile]["contracts"][contract.name]["deployer_key"] = key
         project_configuration_file = os.path.join(project_root, "jenesis.toml")
 
         with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
