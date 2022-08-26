@@ -4,6 +4,9 @@ import toml
 
 from jenesis.config import ConfigurationError
 from jenesis.network import fetchai_testnet_config, fetchai_localnode_config
+from jenesis.config import Deployment
+from jenesis.contracts.detect import detect_contracts
+
 
 def run(args: argparse.Namespace):
 
@@ -27,9 +30,18 @@ def run(args: argparse.Namespace):
     network = {"name": "fetchai-testnet"}
     network.update(vars(net_config))
 
+    # detect contract source code and add placeholders for key contract data
+    contracts = detect_contracts(project_path) or []
+
+    contract_cfgs = {contract.name: Deployment(contract,
+        args.network, "", {arg: "" for arg in contract.init_args()},
+        None, None, None, None,
+    ) for contract in contracts}
+
+
     data["profile"][args.profile] = {
         "network": network,
-        "contracts": {}
+        "contracts": {name: vars(cfg) for (name, cfg) in contract_cfgs.items()}
     }
 
     output_file_name = "jenesis.toml"
