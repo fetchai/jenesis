@@ -43,7 +43,7 @@ You can also add contracts manually by copying and pasting the contract director
 
 # Attach deployed contracts
 
-If you have added a contract into the project's contract folder that has already been deployed in the network, you can attach it to your project for future interaction using the ```attach``` command. You will need to specify the contract's name and deployment address. You can optionally specify the profile where you wish to insert the contract into, if this is not specified, it will be integrated to the first profile you created in your project.
+If you have added a contract into the project's contract folder that has already been deployed in the network, you can attach it to your project for future interaction using the ```attach``` command. You will need to specify the contract's name and deployment address. You can optionally specify the profile where you wish to insert the contract into. If this is not specified, the deployment will be attached to the default profile, which is the first profile created in your project, unless the `default` settings are manually changed.
 
 ```
 jenesis attach my_first_contract fetch18xs97q6h9zgh4sz730a42pp0dqa9sh4eef7eutfkv69q3v2y3x8s72pkua
