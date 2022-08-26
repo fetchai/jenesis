@@ -17,7 +17,7 @@ def run(args: argparse.Namespace):
 
     cfg = Config.load(project_path)
 
-    if args.profile not in cfg.profiles:
+    if args.profile is not None and args.profile not in cfg.profiles:
         print(f'Invalid profile name. Expected one of {",".join(cfg.profiles.keys())}')
         return 1
 

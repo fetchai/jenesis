@@ -23,6 +23,10 @@ def load_config(args: argparse.Namespace) -> dict:
 
     contract_instances = {}
 
+    if args.profile is not None and args.profile not in cfg.profiles:
+        print(f'Invalid profile name. Expected one of {",".join(cfg.profiles.keys())}')
+        return
+
     profile_name = args.profile or cfg.get_default_profile()
 
     selected_profile = cfg.profiles.get(profile_name)
