@@ -96,8 +96,8 @@ def run_add_contract(args: argparse.Namespace):
     if selected_contract == "":
         print('Contract not found in project')
         return
-    
-    for profile, _ in cfg.profiles.items():
+               
+    for profile in cfg.profiles.keys():
         network_name = cfg.profiles[profile].network.name
         Config.update_project(os.getcwd(), profile, network_name, selected_contract)
 
