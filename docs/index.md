@@ -72,7 +72,7 @@ or
 jenesis init --network fetchai-localnode
 ```
 
-The configuration can be found under the `network` heading in the `jenesis.toml' file and can be changed as desired:
+The configuration can be found under the `network` heading in the `jenesis.toml` file and can be changed as desired:
 
 ```toml
 [profile.testing.network]
