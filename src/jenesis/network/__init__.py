@@ -4,6 +4,7 @@ import time
 from typing import Optional, List
 
 from docker import from_env
+from docker.errors import DockerException
 from docker.types import Mount
 
 from cosmpy.aerial.config import NetworkConfig
@@ -168,17 +169,20 @@ class LedgerNodeDockerContainer:
 
 
 def run_local_node(network: Network):
-    local_node = LedgerNodeDockerContainer(network)
-    if not local_node.is_ready():
-        print("Starting local node...")
-        container = local_node.run()
-        if not container.status == "created":
-            raise RuntimeError('Failed to create local node.')
-        if not local_node.wait_until_ready():
-            raise RuntimeError('Failed to start local node.')
-        print("Stating local node...complete")
-    else:
-        print("Detected local node already running.")
+    try:
+        local_node = LedgerNodeDockerContainer(network)
+        if not local_node.is_ready():
+            print("Starting local node...")
+            container = local_node.run()
+            if not container.status == "created":
+                raise RuntimeError('Failed to create local node.')
+            if not local_node.wait_until_ready():
+                raise RuntimeError('Failed to start local node.')
+            print("Stating local node...complete")
+        else:
+            print("Detected local node already running.")
+    except DockerException:
+        print("Failed to start local node: looks like your docker setup isn't right, please visit https://jenesis.fetch.ai/ for more information")
 
 
 def fetchai_testnet_config() -> Network:
