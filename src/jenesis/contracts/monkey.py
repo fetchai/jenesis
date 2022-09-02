@@ -1,4 +1,3 @@
-from jsonschema import validate, ValidationError
 from typing import Optional, Any
 from abc import ABC, abstractmethod
 
@@ -9,7 +8,7 @@ from cosmpy.aerial.tx_helpers import SubmittedTx
 from cosmpy.aerial.wallet import Wallet
 from cosmpy.crypto.address import Address
 from cosmpy.protos.cosmwasm.wasm.v1.query_pb2 import QueryCodeRequest
-
+from jsonschema import validate
 from jenesis.contracts import Contract
 
 EXECUTE_MSG = "execute_msg"
