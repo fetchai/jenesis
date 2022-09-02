@@ -37,6 +37,8 @@ def load_config(args: argparse.Namespace) -> dict:
         # build the ledger client
         client = LedgerClient(selected_profile.network)
 
+        print(f'Network: {selected_profile.network.name}')
+
         print('Detecting contracts...')
 
         for contract in contracts:
