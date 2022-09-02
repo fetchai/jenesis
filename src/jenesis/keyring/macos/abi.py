@@ -1,12 +1,12 @@
 # pylint: disable=C0103
-from ctypes import c_void_p, CDLL, c_int32, c_uint32, c_int, c_char, byref
+from ctypes import CDLL, byref, c_char, c_int, c_int32, c_uint32, c_void_p
 from ctypes.util import find_library
 
 # Much of the following has been adapted from the keyring library on PyPi:
 # https://github.com/jaraco/keyring/blob/3fe6695fabe6bdc7a4f0d72b1fea8f00d62067de/keyring/backends/macOS/api.py
-_sec = CDLL(find_library('Security'))
-_core = CDLL(find_library('CoreServices'))
-_found = CDLL(find_library('Foundation'))
+_sec = CDLL(find_library("Security"))
+_core = CDLL(find_library("CoreServices"))
+_found = CDLL(find_library("Foundation"))
 
 CFDictionaryCreate = _found.CFDictionaryCreate
 CFDictionaryCreate.restype = c_void_p
@@ -97,9 +97,7 @@ def create_cfbool(b: bool):
 
 
 def create_cfstr(s: str):
-    return CFStringCreateWithCString(
-        None, s.encode('utf8'), kCFStringEncodingUTF8
-    )
+    return CFStringCreateWithCString(None, s.encode("utf8"), kCFStringEncodingUTF8)
 
 
 def get_cfstr_value(item: c_void_p) -> str:
@@ -110,6 +108,6 @@ def get_cfstr_value(item: c_void_p) -> str:
     buffer = (c_char * buffer_len)()
     status = CFStringGetCString(item, byref(buffer), buffer_len, kCFStringEncodingUTF8)
     if status != 1:
-        raise RuntimeError('Unable to get CFString value')
+        raise RuntimeError("Unable to get CFString value")
 
     return buffer.value.decode()
