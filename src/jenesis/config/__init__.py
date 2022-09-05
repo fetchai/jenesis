@@ -19,7 +19,7 @@ from jenesis.contracts.detect import detect_contracts
 from jenesis.network import (Network, fetchai_localnode_config,
                              fetchai_testnet_config)
 
-TEMPLATE_GIT_URL = "git@github.com:fetchai/jenesis-templates.git"
+TEMPLATE_GIT_URL = "https://github.com/fetchai/jenesis-templates.git"
 
 
 @dataclass
