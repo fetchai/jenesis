@@ -368,7 +368,7 @@ class Config:
 
     @staticmethod
     def add_profile(path: str, profile: str, network_name: str):
-        
+
         data = toml.load("jenesis.toml")
 
         if network_name == "fetchai-testnet":
@@ -405,6 +405,7 @@ class Config:
 
         output_file_name = "jenesis.toml"
         with open(output_file_name, "w") as toml_file:
+            # pylint: disable=all
             toml.dump(data, toml_file)
 
     @staticmethod

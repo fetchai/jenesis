@@ -177,7 +177,7 @@ def test_compile_contract():
     Config.add_contract(contract_root, template, contract_name, None)
 
     subprocess.run("jenesis compile", shell=True)
-    time.sleep(35)
+    time.sleep(15)
 
     compiled_contract = os.path.join(
         contract_root, "artifacts", contract_name + ".wasm"
