@@ -42,7 +42,7 @@ def run(args: argparse.Namespace):
 
     client = LedgerClient(selected_profile.network)
 
-    contract = MonkeyContract(selected_contract.binary_path, client, args.address)
+    contract = MonkeyContract(selected_contract, client, args.address)
     code_id = contract.code_id
     digest = contract.digest.hex()
 

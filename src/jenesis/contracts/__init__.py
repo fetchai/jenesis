@@ -29,7 +29,10 @@ class Contract:
 
     def _extract_msgs(self, msg_type: str) -> dict:
         msgs = {}
-        schemas = self.schema[msg_type]['oneOf']
+        if 'oneOf' in self.schema[msg_type]:
+            schemas = self.schema[msg_type]['oneOf']
+        else:
+            schemas = self.schema[msg_type]['anyOf']
         for schema in schemas:
             msg = schema['required'][0]
             if 'required' in schema['properties'][msg]:

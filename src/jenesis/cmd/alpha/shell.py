@@ -58,7 +58,7 @@ def load_config(args: argparse.Namespace) -> dict:
                 address = None
 
             monkey = MonkeyContract(
-                contract.binary_path,
+                contract,
                 client,
                 address=address,
                 code_id=code_id,
