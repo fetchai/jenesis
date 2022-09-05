@@ -1,14 +1,33 @@
-from ctypes import c_void_p, byref, string_at
+from ctypes import byref, c_void_p, string_at
 from io import BytesIO
 from typing import List, Union
 
-from jenesis.keyring.amino.codec import LocalInfo, OfflineInfo, unmarshal_binary_length_prefixed
-from jenesis.keyring.macos.abi import CFDictionaryCreate, _found, k_, create_cfstr, create_cfbool, SecItemCopyMatching, \
-    CFArrayGetCount, CFArrayGetValueAtIndex, CFStringGetLength, CFStringGetCString, CFDictionaryGetValue, CFShow, \
-    get_cfstr_value, CFDataGetBytePtr, CFDataGetLength
+from jenesis.keyring.amino.codec import (
+    LocalInfo,
+    OfflineInfo,
+    unmarshal_binary_length_prefixed,
+)
+from jenesis.keyring.macos.abi import (
+    CFArrayGetCount,
+    CFArrayGetValueAtIndex,
+    CFDataGetBytePtr,
+    CFDataGetLength,
+    CFDictionaryCreate,
+    CFDictionaryGetValue,
+    CFShow,
+    CFStringGetCString,
+    CFStringGetLength,
+    SecItemCopyMatching,
+    _found,
+    create_cfbool,
+    create_cfstr,
+    get_cfstr_value,
+    k_,
+)
+from src.jenesis.keyring.errors import KeychainError
 
 
-class MacOsKeychainError(RuntimeError):
+class MacOsKeychainError(KeychainError):
     pass
 
 
@@ -27,10 +46,10 @@ def _create_query(**kwargs):
 
 def query_keychain_item(name: str) -> Union[LocalInfo, OfflineInfo]:
     query = _create_query(
-        kSecClass=k_('kSecClassGenericPassword'),
-        kSecMatchLimit=k_('kSecMatchLimitOne'),
-        kSecAttrService='fetch',
-        kSecAttrAccount=f'{name}.info',
+        kSecClass=k_("kSecClassGenericPassword"),
+        kSecMatchLimit=k_("kSecMatchLimitOne"),
+        kSecAttrService="fetch",
+        kSecAttrAccount=f"{name}.info",
         kSecReturnData=create_cfbool(True),
     )
 
@@ -38,29 +57,29 @@ def query_keychain_item(name: str) -> Union[LocalInfo, OfflineInfo]:
     status = SecItemCopyMatching(query, byref(data))
 
     if status != 0:
-        raise MacOsKeychainError('Unable to query keyring items')
+        raise MacOsKeychainError("Unable to query keyring items")
 
     buffer = BytesIO(string_at(CFDataGetBytePtr(data), CFDataGetLength(data)))
     info = unmarshal_binary_length_prefixed(buffer)
     if info is None:
-        raise MacOsKeychainError('Unable to parse stored entry')
+        raise MacOsKeychainError("Unable to parse stored entry")
 
     return info
 
 
 def query_keychain_items() -> List[str]:
     query = _create_query(
-        kSecClass=k_('kSecClassGenericPassword'),
-        kSecMatchLimit=k_('kSecMatchLimitAll'),
+        kSecClass=k_("kSecClassGenericPassword"),
+        kSecMatchLimit=k_("kSecMatchLimitAll"),
         kSecReturnAttributes=create_cfbool(True),
-        kSecAttrService='fetch',
+        kSecAttrService="fetch",
     )
 
     data = c_void_p()
     status = SecItemCopyMatching(query, byref(data))
 
     if status != 0:
-        raise MacOsKeychainError('Unable to query keyring items')
+        raise MacOsKeychainError("Unable to query keyring items")
 
     key_names = []
 
@@ -71,14 +90,14 @@ def query_keychain_items() -> List[str]:
         val = CFArrayGetValueAtIndex(data, idx)
 
         # attempt to find the account ('acct') field for each item
-        item = CFDictionaryGetValue(val, create_cfstr('acct'))
+        item = CFDictionaryGetValue(val, create_cfstr("acct"))
 
         # skip all items that don't have an acct field
         if item == 0:
             continue
 
         account = get_cfstr_value(item)
-        if account.endswith('.info'):
+        if account.endswith(".info"):
             key_names.append(account[:-5])
 
     return list(set(key_names))
