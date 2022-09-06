@@ -22,7 +22,7 @@ class Contract:
         return self.schema.keys()
 
     def init_args(self) -> dict:
-        return self.schema['instantiate_msg']['properties'].keys()
+        return self.schema.get('instantiate_msg', {}).get('properties',{}).keys()
 
     def __repr__(self):
         return self.name
