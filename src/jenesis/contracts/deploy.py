@@ -104,7 +104,8 @@ class DeployContractTask(Task):
             return self.ledger_contract.deploy(
                 args=self._config.init,
                 sender=self._wallet,
-                admin_address=self._wallet.address()
+                admin_address=self._wallet.address(),
+                funds=self._config.init_funds,
             )
 
         self._future = self._executor.submit(action)
