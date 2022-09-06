@@ -11,6 +11,7 @@ from cosmpy.protos.cosmwasm.wasm.v1.query_pb2 import QueryCodeRequest
 from jsonschema import validate
 from jenesis.contracts import Contract
 
+INSTANTIATE_MSG = "instantiate_msg"
 EXECUTE_MSG = "execute_msg"
 QUERY_MSG = "query_msg"
 
@@ -41,6 +42,7 @@ class MonkeyContract(LedgerContract):
     ):
         # pylint: disable=super-init-not-called
         self._contract = contract
+        self._path = contract.binary_path
         self._client = client
         self._address = address
         self._observer = observer
@@ -59,6 +61,10 @@ class MonkeyContract(LedgerContract):
             self._code_id = self._find_contract_id_by_digest_with_hint(code_id)
         else:
             self._code_id = self._find_contract_id_by_digest(self._digest)
+
+    @property
+    def path(self) -> Optional[str]:
+        return self._contract.binary_path
 
     def store(
             self,
@@ -92,6 +98,7 @@ class MonkeyContract(LedgerContract):
                 raise InstantiateArgsError(
                     'Please provide instantiation arguments either in "args" or in the jenesis.toml configuration for this contract and profile'
                 )
+        validate(args, self._contract.schema[INSTANTIATE_MSG])
         address = super().instantiate(code_id, args, sender, label=label, gas_limit=gas_limit,
                                       admin_address=admin_address, funds=funds)
 
