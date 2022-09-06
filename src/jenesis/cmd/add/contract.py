@@ -35,8 +35,6 @@ def run_add_contract(args: argparse.Namespace):
         print("Please run command from project root")
         return False
 
-    cfg = Config.load(project_root)
-
     # check to see if the contract already exists
     if os.path.exists(contract_root):
         print(f'Contract "{name}" already exists')
@@ -96,7 +94,8 @@ def run_add_contract(args: argparse.Namespace):
     if selected_contract == "":
         print('Contract not found in project')
         return
-               
+
+    cfg = Config.load(project_root)
     for profile in cfg.profiles.keys():
         network_name = cfg.profiles[profile].network.name
         Config.update_project(os.getcwd(), profile, network_name, selected_contract)
