@@ -166,6 +166,11 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
             continue
         assert profile_contract is not None
 
+        # ensure that contract has been compiled first
+        if not os.path.isfile(contract.binary_path):
+            print(f"No contract binary found for {contract.name}. Please run 'jenesis compile' first.")
+            continue
+
         if deployer_key is not None:
             profile_contract.deployer_key = deployer_key
             Config.update_key(os.getcwd(), profile, contract, deployer_key)
