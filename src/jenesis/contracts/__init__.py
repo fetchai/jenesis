@@ -25,7 +25,7 @@ class Contract:
         return self._extract_msgs('query_msg')
 
     def init_args(self) -> dict:
-        return self.schema['instantiate_msg']['properties'].keys()
+        return self.schema.get('instantiate_msg', {}).get('properties',{}).keys()
 
     def _extract_msgs(self, msg_type: str) -> dict:
         msgs = {}

@@ -51,7 +51,11 @@ def detect_contracts(path: str) -> Optional[List[Contract]]:
         contract_name = cargo_contents['package']['name']
 
         source_path = os.path.abspath(os.path.join(contracts_folder, name))
-        binary_path = os.path.abspath(os.path.join(contracts_folder, name, 'artifacts', f'{contract_name}.wasm'))
+        if is_workspace(path):
+            artifacts_path = os.path.join(path, 'artifacts')
+        else:
+            artifacts_path = os.path.join(contracts_folder, name, 'artifacts')
+        binary_path = os.path.abspath(os.path.join(artifacts_path, f'{contract_name}.wasm'))
         schema = load_contract_schema(source_path)
 
         return Contract(
