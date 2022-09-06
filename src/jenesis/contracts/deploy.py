@@ -77,7 +77,7 @@ class DeployContractTask(Task):
 
         def action():
             return MonkeyContract(
-                self._contract.binary_path,
+                self._contract,
                 self._client,
                 code_id=self._config.code_id,
                 address=self._config.address
@@ -104,7 +104,8 @@ class DeployContractTask(Task):
             return self.ledger_contract.deploy(
                 args=self._config.init,
                 sender=self._wallet,
-                admin_address=self._wallet.address()
+                admin_address=self._wallet.address(),
+                funds=self._config.init_funds,
             )
 
         self._future = self._executor.submit(action)
@@ -164,6 +165,11 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
         else:
             continue
         assert profile_contract is not None
+
+        # ensure that contract has been compiled first
+        if not os.path.isfile(contract.binary_path):
+            print(f"No contract binary found for {contract.name}. Please run 'jenesis compile' first.")
+            continue
 
         if deployer_key is not None:
             profile_contract.deployer_key = deployer_key

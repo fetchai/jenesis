@@ -4,10 +4,16 @@ from abc import ABC, abstractmethod
 import grpc
 from cosmpy.aerial.client import LedgerClient
 from cosmpy.aerial.contract import LedgerContract, _compute_digest
+from cosmpy.aerial.tx_helpers import SubmittedTx
 from cosmpy.aerial.wallet import Wallet
 from cosmpy.crypto.address import Address
 from cosmpy.protos.cosmwasm.wasm.v1.query_pb2 import QueryCodeRequest
+from jsonschema import validate
+from jenesis.contracts import Contract
 
+INSTANTIATE_MSG = "instantiate_msg"
+EXECUTE_MSG = "execute_msg"
+QUERY_MSG = "query_msg"
 
 class InstantiateArgsError(RuntimeError):
     pass
@@ -26,7 +32,7 @@ class ContractObserver(ABC):
 class MonkeyContract(LedgerContract):
     def __init__(
         self,
-        path: Optional[str],
+        contract: Contract,
         client: LedgerClient,
         address: Optional[Address] = None,
         digest: Optional[bytes] = None,
@@ -35,15 +41,16 @@ class MonkeyContract(LedgerContract):
         init_args: Optional[dict] = None,
     ):
         # pylint: disable=super-init-not-called
-        self._path = path
+        self._contract = contract
+        self._path = contract.binary_path
         self._client = client
         self._address = address
         self._observer = observer
         self._init_args = init_args
 
         # build the digest
-        if path is not None:
-            self._digest = _compute_digest(self._path)
+        if contract.binary_path is not None:
+            self._digest = _compute_digest(contract.binary_path)
         elif digest is not None:
             self._digest = digest
         else:
@@ -87,6 +94,7 @@ class MonkeyContract(LedgerContract):
                 raise InstantiateArgsError(
                     'Please provide instantiation arguments either in "args" or in the jenesis.toml configuration for this contract and profile'
                 )
+        validate(args, self._contract.schema[INSTANTIATE_MSG])
         address = super().instantiate(code_id, args, sender, label=label, gas_limit=gas_limit,
                                       admin_address=admin_address, funds=funds)
 
@@ -116,6 +124,20 @@ class MonkeyContract(LedgerContract):
             funds=funds
         )
         return address
+
+    def execute(
+        self,
+        args: Any,
+        sender: Wallet,
+        gas_limit: Optional[int] = None,
+        funds: Optional[str] = None,
+    ) -> SubmittedTx:
+        validate(args, self._contract.schema[EXECUTE_MSG])
+        super().execute(args, sender, gas_limit, funds)
+
+    def query(self, args: Any) -> Any:
+        validate(args, self._contract.schema[QUERY_MSG])
+        super().query(args)
 
     def _find_contract_id_by_digest_with_hint(self, code_id_hint: int) -> Optional[int]:
 

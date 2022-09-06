@@ -28,6 +28,7 @@ class Deployment:
     network: str  # internal: the name of the network to deploy to
     deployer_key: str  # config: the name of the key to use for deployment
     init: Any  # config: init parameters for the contract
+    init_funds: Optional[str] # config: funds to be sent with instantiation msg
     checksum: Optional[str]  # lock: the checksum digest to detect configuration changes
     digest: Optional[str]  # lock: the contract of the deployed contract
     address: Optional[Address]  # lock: the address of the deployed contract
@@ -117,7 +118,9 @@ class Config:
         deployment = profile.deployments.get(contract_name)
         if deployment is None:
             deployment = Deployment(
-                contract, profile.network.name, "", None, None, None, None, None
+                contract,
+                profile.network.name,
+                "", "", None, None, None, None, None
             )
 
         # update the contract if necessary
@@ -240,6 +243,7 @@ class Config:
             network=str(network),
             init=extract_opt_dict(contract, "init"),
             deployer_key=extract_req_str(contract, "deployer_key"),
+            init_funds=extract_opt_str(contract, "init_funds"),
             digest=extract_opt_str(lock, "digest"),
             address=opt_address(extract_opt_str(lock, "address")),
             code_id=extract_opt_int(lock, "code_id"),
@@ -270,20 +274,12 @@ class Config:
         # detect contract source code and add placeholders for key contract data
         contracts = detect_contracts(project_root) or []
 
-        contract_cfgs = {
-            contract.name: Deployment(
-                contract,
-                network_name,
-                "",
-                {arg: "" for arg in contract.init_args()},
-                "",
-                None,
-                None,
-                None,
-                None,
-            )
-            for contract in contracts
-        }
+
+        contract_cfgs = {contract.name: Deployment(contract,
+            network_name, "", {arg: "" for arg in contract.init_args()},
+            "", None, None, None, None,
+        ) for contract in contracts}
+
 
         if network_name == "fetchai-testnet":
             net_config = fetchai_testnet_config()
@@ -331,17 +327,11 @@ class Config:
         # take the project name directly from the base name of the project
         project_root = os.path.abspath(path)
 
-        contract_cfg = Deployment(
-            contract,
-            network_name,
-            "",
-            {arg: "" for arg in contract.init_args()},
-            "",
-            None,
-            None,
-            None,
-            None,
-        )
+
+        contract_cfg = Deployment(contract,
+            network_name, "", {arg: "" for arg in contract.init_args()},
+            "", None, None, None, None)
+
 
         data = toml.load("jenesis.toml")
 

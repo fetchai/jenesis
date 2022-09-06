@@ -17,6 +17,7 @@ def run(args: argparse.Namespace):
     Config.add_profile(project_path, args.profile, args.network)
 
 
+
 def add_profile_command(parser):
     profile_cmd = parser.add_parser("profile")
     profile_cmd.add_argument("profile", default="testing", help="The profile to create")
