@@ -1,12 +1,20 @@
 import hashlib
 import io
 from dataclasses import dataclass
-from typing import IO, Union, Optional, Generator, Tuple
+from typing import IO, Generator, Optional, Tuple, Union
 
-LOCAL_INFO_PREFIX = b'\x0d\xad\x15\x3d'  # = build_prefix_from_string('crypto/keys/localInfo')
-OFFLINE_INFO_PREFIX = b'\x1f\x4d\x3e\xd6'  # = build_prefix_from_string('crypto/keys/offlineInfo')
-PUBLIC_KEY_SECP256K1_PREFIX = b'\xeb\x5a\xe9\x87'  # = build_prefix_from_string('tendermint/PubKeySecp256k1')
-PRIVATE_KEY_SECP256K1_PREFIX = b'\xe1\xb0\xf7\x9b'  # = build_prefix_from_string('tendermint/PrivKeySecp256k1')
+LOCAL_INFO_PREFIX = (
+    b"\x0d\xad\x15\x3d"  # = build_prefix_from_string('crypto/keys/localInfo')
+)
+OFFLINE_INFO_PREFIX = (
+    b"\x1f\x4d\x3e\xd6"  # = build_prefix_from_string('crypto/keys/offlineInfo')
+)
+PUBLIC_KEY_SECP256K1_PREFIX = (
+    b"\xeb\x5a\xe9\x87"  # = build_prefix_from_string('tendermint/PubKeySecp256k1')
+)
+PRIVATE_KEY_SECP256K1_PREFIX = (
+    b"\xe1\xb0\xf7\x9b"  # = build_prefix_from_string('tendermint/PrivKeySecp256k1')
+)
 PUBLIC_KEY_SECP256K1_LENGTH = 33
 PRIVATE_KEY_SECP256K1_LENGTH = 32
 
@@ -41,7 +49,7 @@ def compute_prefix(data: bytes) -> bytes:
     if data[skip_length] == 0:
         skip_length += 1
 
-    return data[skip_length:skip_length + 4]
+    return data[skip_length : skip_length + 4]
 
 
 def build_prefix_from_string(name: str) -> bytes:
@@ -55,7 +63,7 @@ def parse_uvarint(data: IO[bytes]) -> int:
     while True:
         data_bytes = data.read(1)
         if len(data_bytes) == 0:
-            raise CodecParseError('Reached the end of the binary stream')
+            raise CodecParseError("Reached the end of the binary stream")
 
         # add the bits to the value
         value = (value << 7) | (data_bytes[0] & 0x7F)
@@ -70,9 +78,11 @@ def parse_uvarint(data: IO[bytes]) -> int:
 def extract_bytes(data: IO[bytes], length: int) -> bytes:
     value = data.read(length)
     if len(value) == 0:
-        raise CodecParseError('reached the EOF prematurely during processing')
+        raise CodecParseError("reached the EOF prematurely during processing")
     if len(value) != length:
-        raise CodecParseError(f'unable to read expected number of bytes (wanted: {length} received: {len(value)}')
+        raise CodecParseError(
+            f"unable to read expected number of bytes (wanted: {length} received: {len(value)}"
+        )
     return value
 
 
@@ -84,14 +94,14 @@ def extract_byte(data: IO[bytes]) -> int:
 def unmarshal_fields(data: IO[bytes]) -> Generator[Tuple[int, bytes], None, None]:
     while True:
         prefix = data.read(1)
-        if prefix == b'':
+        if prefix == b"":
             break
 
         # extract the field and type
-        field_index = (prefix[0] >> 3) & 0x1f
+        field_index = (prefix[0] >> 3) & 0x1F
         field_type = prefix[0] & 0x7
         if field_type != 2:
-            raise CodecParseError(f'unexpected field type {field_type}')
+            raise CodecParseError(f"unexpected field type {field_type}")
 
         # extract the length
         length = parse_uvarint(data)
@@ -103,11 +113,11 @@ def unmarshal_fields(data: IO[bytes]) -> Generator[Tuple[int, bytes], None, None
 def unmarshal_public_key(data: IO[bytes]) -> bytes:
     prefix = extract_bytes(data, 4)
     if prefix != PUBLIC_KEY_SECP256K1_PREFIX:
-        raise CodecParseError(f'invalid public key prefix 0x{prefix.hex()}')
+        raise CodecParseError(f"invalid public key prefix 0x{prefix.hex()}")
 
     length = parse_uvarint(data)
     if length != PUBLIC_KEY_SECP256K1_LENGTH:
-        raise CodecParseError(f'invalid public key length {length}')
+        raise CodecParseError(f"invalid public key length {length}")
 
     return extract_bytes(data, length)
 
@@ -115,11 +125,11 @@ def unmarshal_public_key(data: IO[bytes]) -> bytes:
 def unmarshal_private_key(data: IO[bytes]) -> bytes:
     prefix = extract_bytes(data, 4)
     if prefix != PRIVATE_KEY_SECP256K1_PREFIX:
-        raise CodecParseError(f'invalid private key prefix 0x{prefix.hex()}')
+        raise CodecParseError(f"invalid private key prefix 0x{prefix.hex()}")
 
     length = parse_uvarint(data)
     if length != PRIVATE_KEY_SECP256K1_LENGTH:
-        raise CodecParseError(f'invalid private key length {length}')
+        raise CodecParseError(f"invalid private key length {length}")
 
     return extract_bytes(data, length)
 
@@ -129,15 +139,15 @@ def unmarshal_local_info(data: IO[bytes]) -> LocalInfo:
 
     for idx, field in unmarshal_fields(data):
         if idx == 1:
-            parameters['name'] = field.decode()
+            parameters["name"] = field.decode()
         elif idx == 2:
-            parameters['public_key'] = unmarshal_public_key(io.BytesIO(field))
+            parameters["public_key"] = unmarshal_public_key(io.BytesIO(field))
         elif idx == 3:
-            parameters['private_key'] = unmarshal_private_key(io.BytesIO(field))
+            parameters["private_key"] = unmarshal_private_key(io.BytesIO(field))
         elif idx == 4:
-            parameters['algorithm'] = field.decode()
+            parameters["algorithm"] = field.decode()
         else:
-            raise CodecParseError(f'unexpected field index {idx} for LocalInfo')
+            raise CodecParseError(f"unexpected field index {idx} for LocalInfo")
 
     return LocalInfo(**parameters)
 
@@ -147,13 +157,13 @@ def unmarshal_offline_info(data: IO[bytes]) -> OfflineInfo:
 
     for idx, field in unmarshal_fields(data):
         if idx == 1:
-            parameters['name'] = field.decode()
+            parameters["name"] = field.decode()
         elif idx == 2:
-            parameters['public_key'] = unmarshal_public_key(io.BytesIO(field))
+            parameters["public_key"] = unmarshal_public_key(io.BytesIO(field))
         elif idx == 3:
-            parameters['algorithm'] = field.decode()
+            parameters["algorithm"] = field.decode()
         else:
-            raise CodecParseError(f'unexpected field index {idx} for LocalInfo')
+            raise CodecParseError(f"unexpected field index {idx} for LocalInfo")
 
     return OfflineInfo(**parameters)
 
@@ -168,7 +178,9 @@ def unmarshal_binary_bare(data: IO[bytes]) -> Optional[Union[LocalInfo, OfflineI
     return None
 
 
-def unmarshal_binary_length_prefixed(data: IO[bytes]) -> Optional[Union[LocalInfo, OfflineInfo]]:
+def unmarshal_binary_length_prefixed(
+    data: IO[bytes],
+) -> Optional[Union[LocalInfo, OfflineInfo]]:
     length = parse_uvarint(data)
     raw_data = extract_bytes(data, length)
 

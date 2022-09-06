@@ -23,6 +23,7 @@ def run(args: argparse.Namespace):
         return 1
 
     if is_workspace(project_path):
+        print(term.green("Detected cargo workspace"))
         build_workspace(project_path, contracts)
         return 0
 
