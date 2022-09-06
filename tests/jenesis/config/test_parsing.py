@@ -157,7 +157,7 @@ def test_add_contract():
     os.remove("jenesis.toml")
     shutil.rmtree("contracts")
 
-
+@pytest.mark.skip
 def test_compile_contract():
     """Test compile contract"""
 
