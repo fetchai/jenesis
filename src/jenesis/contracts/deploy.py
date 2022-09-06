@@ -77,7 +77,7 @@ class DeployContractTask(Task):
 
         def action():
             return MonkeyContract(
-                self._contract.binary_path,
+                self._contract,
                 self._client,
                 code_id=self._config.code_id,
                 address=self._config.address
