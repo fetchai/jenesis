@@ -62,10 +62,6 @@ class MonkeyContract(LedgerContract):
         else:
             self._code_id = self._find_contract_id_by_digest(self._digest)
 
-    @property
-    def path(self) -> Optional[str]:
-        return self._contract.binary_path
-
     def store(
             self,
             sender: Wallet,
