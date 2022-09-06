@@ -115,7 +115,7 @@ class Config:
             deployment = Deployment(
                 contract,
                 profile.network.name,
-                "", None, None, None, None, None, None
+                "", "", None, None, None, None, None
             )
 
         # update the contract if necessary
@@ -271,7 +271,7 @@ class Config:
 
         contract_cfgs = {contract.name: Deployment(contract,
             network_name, "", {arg: "" for arg in contract.init_args()},
-            None, None, None, None, None,
+            "", None, None, None, None,
         ) for contract in contracts}
 
         if network_name == "fetchai-testnet":
@@ -322,7 +322,7 @@ class Config:
 
         contract_cfg = Deployment(contract,
             network_name, "", {arg: "" for arg in contract.init_args()},
-            None, None, None, None, None)
+            "", None, None, None, None)
 
         data = toml.load("jenesis.toml")
         data["profile"][profile]["contracts"][contract.name] = vars(contract_cfg)

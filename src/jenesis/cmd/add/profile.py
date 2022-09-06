@@ -35,7 +35,7 @@ def run(args: argparse.Namespace):
 
     contract_cfgs = {contract.name: Deployment(contract,
         args.network, "", {arg: "" for arg in contract.init_args()},
-        None, None, None, None,
+        "", None, None, None, None,
     ) for contract in contracts}
 
 
