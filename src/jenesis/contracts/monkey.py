@@ -133,11 +133,11 @@ class MonkeyContract(LedgerContract):
         funds: Optional[str] = None,
     ) -> SubmittedTx:
         validate(args, self._contract.schema[EXECUTE_MSG])
-        super().execute(args, sender, gas_limit, funds)
+        return super().execute(args, sender, gas_limit, funds)
 
     def query(self, args: Any) -> Any:
         validate(args, self._contract.schema[QUERY_MSG])
-        super().query(args)
+        return super().query(args)
 
     def _find_contract_id_by_digest_with_hint(self, code_id_hint: int) -> Optional[int]:
 

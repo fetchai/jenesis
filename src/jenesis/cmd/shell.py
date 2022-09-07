@@ -50,6 +50,7 @@ def load_config(args: argparse.Namespace) -> dict:
 
             # select the metadata for the contract
             selected_contract = selected_profile.deployments.get(contract.name)
+
             if selected_contract is not None:
                 address = selected_contract.address
                 code_id = selected_contract.code_id

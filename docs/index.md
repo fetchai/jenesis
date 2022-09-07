@@ -17,12 +17,10 @@ There are multiple commands integrated into jenesis that allow you to perform a 
 - `update`
 - `attach`
 - `compile`
-- `keys` (alpha)
-- `deploy` (alpha)
-- `run` (alpha)
-- `shell` (alpha)
-
-> *NOTE: The alpha commands are in the very early stages of development and may perform unexpectedly*
+- `keys`
+- `deploy`
+- `run`
+- `shell`
 
 ## Create a new project
 Create a project using the ```new``` command
