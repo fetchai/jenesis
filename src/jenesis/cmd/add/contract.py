@@ -1,14 +1,9 @@
 import argparse
 import os
-import shutil
-import subprocess
-from tempfile import mkdtemp
-from jenesis.contracts.detect import detect_contracts
 
 from jenesis.config import Config
-import toml
+from jenesis.contracts.detect import detect_contracts
 
-TEMPLATE_GIT_URL = "git@github.com:fetchai/jenesis-templates.git"
 
 def add_contract_command(parser):
 
@@ -40,48 +35,7 @@ def run_add_contract(args: argparse.Namespace):
         print(f'Contract "{name}" already exists')
         return False
 
-    # create the temporary clone folder
-    temp_clone_path = mkdtemp(prefix="jenesis-", suffix="-tmpl")
-
-    # clone the templates folder out in the temporary file
-    print("Downloading template...")
-    cmd = ["git", "clone", "--single-branch"]
-    if branch is not None:
-        cmd += ["--branch", branch]
-    cmd += [TEMPLATE_GIT_URL, "."]
-    with open(os.devnull, "w", encoding="utf8") as null_file:
-        subprocess.check_call(
-            cmd, stdout=null_file, stderr=subprocess.STDOUT, cwd=temp_clone_path
-        )
-
-    # find the target contract
-    contract_template_path = os.path.join(temp_clone_path, "contracts", template)
-    if not os.path.isdir(contract_template_path):
-        print(f"Unknown template {template}")
-        return False
-    print("Downloading template...complete")
-
-    # process all the files as part of the template
-    print("Rendering template...")
-    for root, _, files in os.walk(contract_template_path):
-        for filename in files:
-            file_path = os.path.join(root, filename)
-            rel_path = os.path.relpath(file_path, contract_template_path)
-
-            output_filepath = os.path.join(contract_root, rel_path)
-            os.makedirs(os.path.dirname(output_filepath), exist_ok=True)
-            with open(file_path, "r", encoding="utf8") as input_file:
-                with open(output_filepath, "w", encoding="utf8") as output_file:
-                    contents = input_file.read()
-
-                    # replace the templating parameters here
-                    contents = contents.replace("<<NAME>>", name)
-
-                    output_file.write(contents)
-    print("Rendering template...complete")
-
-    # clean up the temporary folder
-    shutil.rmtree(temp_clone_path)
+    Config.add_contract(contract_root, template, name, branch)
 
     contracts = detect_contracts(project_root)
 
@@ -92,10 +46,12 @@ def run_add_contract(args: argparse.Namespace):
             continue
 
     if selected_contract == "":
-        print('Contract not found in project')
+        print("Contract not found in project")
         return
 
+
     cfg = Config.load(project_root)
+
     for profile in cfg.profiles.keys():
         network_name = cfg.profiles[profile].network.name
         Config.update_project(os.getcwd(), profile, network_name, selected_contract)

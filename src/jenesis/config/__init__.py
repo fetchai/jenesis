@@ -1,26 +1,30 @@
 import hashlib
 import json
 import os
+import shutil
 import struct
 import subprocess
-import sys
 from dataclasses import dataclass
+from tempfile import mkdtemp
 from typing import Any, Dict, List, Optional
 
 import toml
 from cosmpy.crypto.address import Address
 from jenesis.config.errors import ConfigurationError
 from jenesis.config.extract import (extract_opt_dict, extract_opt_int,
-                                 extract_opt_str, extract_req_dict, extract_req_str,
-                                 extract_req_str_list)
+                                    extract_opt_str, extract_req_dict,
+                                    extract_req_str, extract_req_str_list)
 from jenesis.contracts import Contract
 from jenesis.contracts.detect import detect_contracts
-from jenesis.network import Network, fetchai_testnet_config, fetchai_localnode_config
+from jenesis.network import (Network, fetchai_localnode_config,
+                             fetchai_testnet_config)
+
+TEMPLATE_GIT_URL = "https://github.com/fetchai/jenesis-templates.git"
 
 
 @dataclass
 class Deployment:
-    contract: Contract # internal: the contract that is deployed
+    contract: Contract  # internal: the contract that is deployed
     network: str  # internal: the name of the network to deploy to
     deployer_key: str  # config: the name of the key to use for deployment
     init: Any  # config: init parameters for the contract
@@ -87,7 +91,8 @@ class Profile:
 
     def to_lockfile(self) -> Any:
         return {
-            name: deployment.to_lockfile() for name, deployment in self.deployments.items()
+            name: deployment.to_lockfile()
+            for name, deployment in self.deployments.items()
         }
 
 
@@ -269,10 +274,12 @@ class Config:
         # detect contract source code and add placeholders for key contract data
         contracts = detect_contracts(project_root) or []
 
+
         contract_cfgs = {contract.name: Deployment(contract,
             network_name, "", {arg: "" for arg in contract.init_args()},
             "", None, None, None, None,
         ) for contract in contracts}
+
 
         if network_name == "fetchai-testnet":
             net_config = fetchai_testnet_config()
@@ -320,11 +327,14 @@ class Config:
         # take the project name directly from the base name of the project
         project_root = os.path.abspath(path)
 
+
         contract_cfg = Deployment(contract,
             network_name, "", {arg: "" for arg in contract.init_args()},
             "", None, None, None, None)
 
+
         data = toml.load("jenesis.toml")
+
         data["profile"][profile]["contracts"][contract.name] = vars(contract_cfg)
         project_configuration_file = os.path.join(project_root, "jenesis.toml")
 
@@ -337,9 +347,102 @@ class Config:
         # take the project name directly from the base name of the project
         project_root = os.path.abspath(path)
 
-        data = toml.load("jenesis.toml")
+        input_file_name = "jenesis.toml"
+        path = os.path.join(os.getcwd(), input_file_name)
+        with open(path, encoding="utf-8") as toml_file:
+            data = toml.load(toml_file)
+
         data["profile"][profile]["contracts"][contract.name]["deployer_key"] = key
         project_configuration_file = os.path.join(project_root, "jenesis.toml")
 
         with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
             toml.dump(data, toml_file)
+
+    @staticmethod
+    def add_profile(path: str, profile: str, network_name: str):
+
+        data = toml.load("jenesis.toml")
+
+        if network_name == "fetchai-testnet":
+            net_config = fetchai_testnet_config()
+        elif network_name == "fetchai-localnode":
+            net_config = fetchai_localnode_config()
+        else:
+            raise ConfigurationError("Network name not recognized")
+
+        network = {"name": ""}
+        network.update(vars(net_config))
+
+        # detect contract source code and add placeholders for key contract data
+        contracts = detect_contracts(path) or []
+
+        contract_cfgs = {
+            contract.name: Deployment(
+                contract,
+                network_name,
+                "",
+                {arg: "" for arg in contract.init_args()},
+                "",
+                None,
+                None,
+                None,
+                None,
+            )
+            for contract in contracts
+        }
+
+        data["profile"][profile] = {
+            "network": network,
+            "contracts": {name: vars(cfg) for (name, cfg) in contract_cfgs.items()},
+        }
+
+        output_file_name = "jenesis.toml"
+        with open(output_file_name, "w") as toml_file:
+            # pylint: disable=all
+            toml.dump(data, toml_file)
+
+    @staticmethod
+    def add_contract(contract_path: str, template: str, name: str, branch: str):
+
+        # create the temporary clone folder
+        temp_clone_path = mkdtemp(prefix="jenesis-", suffix="-tmpl")
+
+        # clone the templates folder out in the temporary file
+        print("Downloading template...")
+        cmd = ["git", "clone", "--single-branch"]
+        if branch is not None:
+            cmd += ["--branch", branch]
+        cmd += [TEMPLATE_GIT_URL, "."]
+        with open(os.devnull, "w", encoding="utf8") as null_file:
+            subprocess.check_call(
+                cmd, stdout=null_file, stderr=subprocess.STDOUT, cwd=temp_clone_path
+            )
+
+        # find the target contract
+        contract_template_path = os.path.join(temp_clone_path, "contracts", template)
+        if not os.path.isdir(contract_template_path):
+            print(f"Unknown template {template}")
+            return
+        print("Downloading template...complete")
+
+        # process all the files as part of the template
+        print("Rendering template...")
+        for root, _, files in os.walk(contract_template_path):
+            for filename in files:
+                file_path = os.path.join(root, filename)
+                rel_path = os.path.relpath(file_path, contract_template_path)
+
+                output_filepath = os.path.join(contract_path, rel_path)
+                os.makedirs(os.path.dirname(output_filepath), exist_ok=True)
+                with open(file_path, "r", encoding="utf8") as input_file:
+                    with open(output_filepath, "w", encoding="utf8") as output_file:
+                        contents = input_file.read()
+
+                        # replace the templating parameters here
+                        contents = contents.replace("<<NAME>>", name)
+
+                        output_file.write(contents)
+        print("Rendering template...complete")
+
+        # clean up the temporary folder
+        shutil.rmtree(temp_clone_path)
