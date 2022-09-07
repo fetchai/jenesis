@@ -38,8 +38,17 @@ If your contract requires nested instantiation messages you may add fields follo
 price = {amount = 1000, denom = DLS}
 info = {performance = {max_speed = 200, unit = kph}, fuel = {consumption = 7, unit = kmpl}}
 ```
+> *NOTE: Before editing the `jenesis.toml` configuration file with the desired `deployer_key` and `init` parameters, make sure to first [compile](compile-contracts.md) your contract. All configuration parameters will restart every time a contract is compiled to make sure everything is up to date.*
 
 You can also add contracts manually by copying and pasting the contract directory from another project you may have, however, they need to follow the same directory structure as the **starter** template mentioned above.
+
+When you add a contract manually, you need to update the `jenesis.toml` file with the contract information by running:
+
+```
+jenesis update
+```
+The `update` command will automatically detect which contract is missing in the `jenesis.toml` configuration file by revising the contracts directory.
+
 
 # Attach deployed contracts
 
