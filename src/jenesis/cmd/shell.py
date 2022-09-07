@@ -2,11 +2,14 @@ import argparse
 import os
 
 from cosmpy.aerial.client import LedgerClient
+from cosmpy.aerial.wallet import LocalWallet
+from cosmpy.crypto.keypairs import PrivateKey
 from ptpython import embed
 from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts
 from jenesis.contracts.monkey import MonkeyContract
 from jenesis.contracts.observer import DeploymentUpdater
+from jenesis.keyring import query_keychain_items, query_keychain_item
 from jenesis.network import run_local_node
 
 
@@ -76,11 +79,17 @@ def load_config(args: argparse.Namespace) -> dict:
 
         print('Detecting contracts...complete')
 
+    wallets = {}
+    for key in query_keychain_items():
+        info = query_keychain_item(key)
+        wallets[key] = LocalWallet(PrivateKey(info.private_key))
+
     shell_globals = {}
     shell_globals["cfg"] = cfg
     shell_globals["project_path"] = project_path
     shell_globals["profile"] = profile_name
     shell_globals["contracts"] = {contract.name: contract for contract in contracts}
+    shell_globals["wallets"] = wallets
     for (name, instance) in contract_instances.items():
         shell_globals[name] = instance
 
