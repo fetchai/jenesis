@@ -2,11 +2,15 @@ import argparse
 import os
 
 from cosmpy.aerial.client import LedgerClient
+from cosmpy.aerial.faucet import FaucetApi
+from cosmpy.aerial.wallet import LocalWallet
+from cosmpy.crypto.keypairs import PrivateKey
 from ptpython import embed
 from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts
 from jenesis.contracts.monkey import MonkeyContract
 from jenesis.contracts.observer import DeploymentUpdater
+from jenesis.keyring import query_keychain_items, query_keychain_item
 from jenesis.network import run_local_node
 
 
@@ -21,6 +25,7 @@ def load_config(args: argparse.Namespace) -> dict:
     cfg = Config.load(project_path)
     contracts = detect_contracts(project_path)
 
+    shell_globals = {}
     contract_instances = {}
 
     if args.profile is not None and args.profile not in cfg.profiles:
@@ -75,12 +80,24 @@ def load_config(args: argparse.Namespace) -> dict:
             contract_instances[contract.name] = monkey
 
         print('Detecting contracts...complete')
+        
+        shell_globals["ledger"] = LedgerClient(selected_profile.network)
+        if selected_profile.network.faucet_url is not None:
+            shell_globals["faucet"] = FaucetApi(selected_profile.network)
 
-    shell_globals = {}
+    wallets = {}
+    for key in query_keychain_items():
+        try:
+            info = query_keychain_item(key)
+            wallets[key] = LocalWallet(PrivateKey(info.private_key))
+        except Exception:
+            print(f"Failed to import local key '{key}'")
+
     shell_globals["cfg"] = cfg
     shell_globals["project_path"] = project_path
     shell_globals["profile"] = profile_name
     shell_globals["contracts"] = {contract.name: contract for contract in contracts}
+    shell_globals["wallets"] = wallets
     for (name, instance) in contract_instances.items():
         shell_globals[name] = instance
 
