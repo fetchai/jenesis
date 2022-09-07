@@ -1,8 +1,7 @@
-> *NOTE: ```keys``` command is still under active development and currently only supported in MacOS*
 
 With the ```keys``` command you can either list all the locally available keys or show the address of a specific key. To list all the keys available run the following command:
 ```
-jenesis alpha keys list
+jenesis keys list
 ```
 
 To look up the address for a specified key you can use the ```show``` command and pass the key name as an argument:

@@ -24,7 +24,7 @@ from jenesis.keyring.macos.abi import (
     get_cfstr_value,
     k_,
 )
-from src.jenesis.keyring.errors import KeychainError
+from jenesis.keyring.errors import KeychainError
 
 
 class MacOsKeychainError(KeychainError):

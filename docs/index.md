@@ -14,14 +14,13 @@ There are multiple commands integrated into jenesis that allow you to perform a 
 - `new` 
 - `init`
 - `add`
+- `update`
 - `attach`
 - `compile`
-- `keys` (alpha)
-- `deploy` (alpha)
-- `run` (alpha)
-- `shell` (alpha)
-
-> *NOTE: The alpha commands are in the very early stages of development and may perform unexpectedly*
+- `keys`
+- `deploy`
+- `run`
+- `shell`
 
 ## Create a new project
 Create a project using the ```new``` command
@@ -60,6 +59,8 @@ jenesis init
 ```
 
 This command will create the same files and folders inside your project directory as the ones described for the ```new``` command.
+
+If using a cargo workspace, you just need to navigate to the top level of your project and run the ```init``` command shown above. This will create the `jenesis.toml` configuration file inside your workspace including all the relevant information from existing contracts.
 
 ## Configure a network
 
