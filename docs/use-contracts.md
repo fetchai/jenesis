@@ -1,11 +1,14 @@
 # Contract Interaction
 
-> *NOTE: ```shell``` and ```run``` commands are still under active development*
-
 You can interact with your project's contracts by using the ```shell``` command:
 
 ```
-jenesis alpha shell
+jenesis shell
+```
+If a profile is not selected, the default profile will be selected automatically. You can specify any profile using the `--profile` optional argument:
+
+```
+jenesis shell --profile my_profile
 ```
 
 You will observe the following text indicating the available contracts in your project.
@@ -16,7 +19,7 @@ C my_first_contract
 C cw20
 Detecting contracts...complete
 ```
-> *NOTE: `jenesis alpha shell` currently requires that contract names use accepted python variable names. For example, using `my-first-contract` instead of `my_first_contract` will generate an error when trying to interact with it.*
+> *NOTE: `jenesis shell` currently requires that contract names use accepted python variable names. For example, using `my-first-contract` instead of `my_first_contract` will generate an error when trying to interact with it.*
 
 In this case, we can see that `my_first_contract` and `cw20` contracts are available for this project. If these contracts have been already deployed you can directly interact with them by performing contract executions such as:
 
@@ -101,9 +104,9 @@ print("wallet2 final cw20 balance: " , cw20.query({"balance":{"address":wallet2.
 If we paste the above code into the file script.py inside the project's directory, we can run it with:
 
 ```
-jenesis alpha run script.py
+jenesis run script.py
 ```
 
-And you will observe the same output as before.
+And you will observe the same output as before. You can also specify the profile as an optional argument using `--profile`.
 
 You can visit [CosmPy](https://docs.fetch.ai/CosmPy/) for more contract interaction examples.
