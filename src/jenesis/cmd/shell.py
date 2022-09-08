@@ -86,12 +86,18 @@ def load_config(args: argparse.Namespace) -> dict:
             shell_globals["faucet"] = FaucetApi(selected_profile.network)
 
     wallets = {}
-    for key in query_keychain_items():
-        try:
-            info = query_keychain_item(key)
-            wallets[key] = LocalWallet(PrivateKey(info.private_key))
-        except Exception:
-            print(f"Failed to import local key '{key}'")
+    print("Detecting local wallet keys...")
+    try:
+        for key in query_keychain_items():
+            try:
+                info = query_keychain_item(key)
+                wallets[key] = LocalWallet(PrivateKey(info.private_key))
+                print(f"Importing wallets['{key}']")
+            except Exception:
+                print(f"Failed to import local key '{key}'")
+        print("Detecting local wallet keys...complete")
+    except Exception:
+        print("No local keychain found")
 
     shell_globals["cfg"] = cfg
     shell_globals["project_path"] = project_path
