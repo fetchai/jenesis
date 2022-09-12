@@ -21,9 +21,10 @@ class ContractBuildTask(Task):
 
     BUILD_CONTAINER = 'cosmwasm/rust-optimizer:0.12.5'
 
-    def __init__(self, contract: Contract, optimize: bool):
+    def __init__(self, contract: Contract, optimize: bool, rebuild: bool):
         self.contract = contract
         self._optimize = optimize
+        self._rebuild = rebuild
         self._container = None
         self._status = TaskStatus.IDLE
         self._status_text = ''
@@ -46,7 +47,7 @@ class ContractBuildTask(Task):
             return
 
         # if the contract is not out of date then no build is required
-        if self._container is None and not self._is_out_of_date():
+        if self._container is None and not self._is_out_of_date() and not self._rebuild:
             self._status = TaskStatus.COMPLETE
             self._status_text = ''
             return
@@ -149,12 +150,15 @@ def build_contracts(
     contracts: List[Contract],
     batch_size: Optional[int] = None,
     optimize: Optional[bool] = False,
+    rebuild: Optional[bool] = False,
 ):
     """
     Will attempt to build all the specified contracts (provided they are out of date)
 
     :param contracts: The list of contracts to build
     :param batch_size: The max number of builds to do in parallel. If None then will attempt to all in parallel
+    :param optimize: Whether to perform and optimized build
+    :param rebuild: Whether to force a rebuild of the contracts
     :return:
     """
     # create all the tasks to be done
@@ -163,6 +167,7 @@ def build_contracts(
             ContractBuildTask,
             contracts,
             [optimize] * len(contracts),
+            [rebuild] * len(contracts),
         )
     )
 
@@ -175,10 +180,11 @@ class WorkspaceBuildTask(Task):
 
     BUILD_CONTAINER = 'cosmwasm/workspace-optimizer:0.12.5'
 
-    def __init__(self, path: str, contracts: List[Contract], optimize: bool):
+    def __init__(self, path: str, contracts: List[Contract], optimize: bool, rebuild: bool):
         self._path = path
         self._contracts = contracts
         self._optimize = optimize
+        self._rebuild = rebuild
         self._container = None
         self._status = TaskStatus.IDLE
         self._status_text = ''
@@ -205,7 +211,7 @@ class WorkspaceBuildTask(Task):
             return
 
         # if the contract is not out of date then no build is required
-        if self._container is None and not self._is_out_of_date():
+        if self._container is None and not self._is_out_of_date() and not self._rebuild:
             self._status = TaskStatus.COMPLETE
             self._status_text = ''
             return
@@ -313,14 +319,21 @@ class WorkspaceBuildTask(Task):
         )
 
 
-def build_workspace(path: str, contracts: List[Contract], optimize: Optional[bool] = False):
+def build_workspace(
+    path: str,
+    contracts: List[Contract],
+    optimize: Optional[bool] = False,
+    rebuild: Optional[bool] = False
+):
     """
     Will attempt to build the cargo workspace including all contracts
 
+    :param optimize: Whether to perform and optimized build
+    :param rebuild: Whether to force a rebuild of the workspace
     :return:
     """
     # create all the tasks to be done
-    tasks = [WorkspaceBuildTask(path, contracts, optimize)]
+    tasks = [WorkspaceBuildTask(path, contracts, optimize, rebuild)]
 
     # run the tasks
     run_tasks(tasks)

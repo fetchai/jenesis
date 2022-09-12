@@ -24,11 +24,11 @@ def run(args: argparse.Namespace):
 
     if is_workspace(project_path):
         print(term.green("Detected cargo workspace"))
-        build_workspace(project_path, contracts, optimize=args.optimize)
+        build_workspace(project_path, contracts, optimize=args.optimize, rebuild=args.rebuild)
         return 0
 
     # build the contracts
-    build_contracts(contracts, batch_size=args.batch_size, optimize=args.optimize)
+    build_contracts(contracts, batch_size=args.batch_size, optimize=args.optimize,rebuild=args.rebuild)
     return 0
 
 
@@ -45,5 +45,11 @@ def add_compile_command(parser):
         "--optimize",
         action = "store_true",
         help="Optimize build",
+    )
+    compile_cmd.add_argument(
+        "-r",
+        "--rebuild",
+        action = "store_true",
+        help="Force rebuild",
     )
     compile_cmd.set_defaults(handler=run)
