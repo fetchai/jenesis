@@ -11,7 +11,7 @@ from jenesis.tasks import Task, TaskStatus
 from jenesis.tasks.monitor import run_tasks
 from jenesis.config import Config
 
-ENTRYPOINT_LINES = [
+DEFAULT_BUILD_STEPS = [
     "RUSTFLAGS='-C link-arg=-s' cargo build --release --target wasm32-unknown-unknown",
     "mkdir -p artifacts",
     "mv target/wasm32-unknown-unknown/release/*.wasm artifacts/",
@@ -117,7 +117,7 @@ class ContractBuildTask(Task):
 
         # start the container
         entrypoint = None if optimize else "/bin/sh"
-        args = None if optimize else ["-c", " && ".join(ENTRYPOINT_LINES)]
+        args = None if optimize else ["-c", " && ".join(DEFAULT_BUILD_STEPS)]
         return client.containers.run(cls.BUILD_CONTAINER, args, mounts=mounts, entrypoint=entrypoint, detach=True)
 
     @staticmethod
@@ -157,7 +157,7 @@ def build_contracts(
 
     :param contracts: The list of contracts to build
     :param batch_size: The max number of builds to do in parallel. If None then will attempt to all in parallel
-    :param optimize: Whether to perform and optimized build
+    :param optimize: Whether to perform an optimized build
     :param rebuild: Whether to force a rebuild of the contracts
     :return:
     """
@@ -280,7 +280,7 @@ class WorkspaceBuildTask(Task):
 
         # start the container
         entrypoint = None if optimize else "/bin/sh"
-        args = None if optimize else ["-c", " && ".join(ENTRYPOINT_LINES)]
+        args = None if optimize else ["-c", " && ".join(DEFAULT_BUILD_STEPS)]
         return client.containers.run(cls.BUILD_CONTAINER, args, mounts=mounts, entrypoint=entrypoint, detach=True)
 
     @staticmethod
