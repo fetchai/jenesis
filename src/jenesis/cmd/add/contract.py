@@ -49,7 +49,6 @@ def run_add_contract(args: argparse.Namespace):
         print("Contract not found in project")
         return
 
-
     cfg = Config.load(project_root)
 
     for profile in cfg.profiles.keys():

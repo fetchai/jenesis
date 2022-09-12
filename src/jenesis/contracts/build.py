@@ -9,7 +9,6 @@ from docker.types import Mount
 from jenesis.contracts import Contract
 from jenesis.tasks import Task, TaskStatus
 from jenesis.tasks.monitor import run_tasks
-from jenesis.config import Config
 
 DEFAULT_BUILD_STEPS = [
     "RUSTFLAGS='-C link-arg=-s' cargo build --release --target wasm32-unknown-unknown",
@@ -55,15 +54,10 @@ class ContractBuildTask(Task):
         # if we get this far we either need to schedule a docker build of the contract or we need to monitor
         # the progress of a docker build
         if self._container is None:
-            cfg = Config.load(os.getcwd())
             try:
                 self._container = self._schedule_build_container(self.contract, self._optimize)
                 self._status = TaskStatus.IN_PROGRESS
                 self._status_text = 'Building...'
-                for profile in cfg.profiles.keys():
-                    # pylint: disable=all
-                    network_name = cfg.profiles[profile].network.name
-                    Config.update_project(os.getcwd(), profile, network_name, self.contract)
             except DockerException:
                 print("Error: looks like your docker setup isn't right, please visit https://jenesis.fetch.ai/ for more information")
                 self._container = None
@@ -219,18 +213,10 @@ class WorkspaceBuildTask(Task):
         # if we get this far we either need to schedule a docker build of the workspace or we need to monitor
         # the progress of a docker build
         if self._container is None:
-            cfg = Config.load(os.getcwd())
             try:
                 self._container = self._schedule_build_container(self._path, self._optimize)
                 self._status = TaskStatus.IN_PROGRESS
                 self._status_text = 'Building...'
-
-                for profile in cfg.profiles.keys():
-                    # pylint: disable=all
-                    network_name = cfg.profiles[profile].network.name
-                    for contract in self._contracts:
-                        Config.update_project(os.getcwd(), profile, network_name, contract)
-                        
             except DockerException:
                 self._container = None
                 self._status = TaskStatus.FAILED
