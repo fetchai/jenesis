@@ -12,7 +12,7 @@ from jenesis.tasks.monitor import run_tasks
 from jenesis.config import Config
 
 ENTRYPOINT_LINES = [
-    "RUSTFLAGS='-C link-arg=-s' cargo wasm",
+    "RUSTFLAGS='-C link-arg=-s' cargo build --release --target wasm32-unknown-unknown",
     "mkdir -p artifacts",
     "mv target/wasm32-unknown-unknown/release/*.wasm artifacts/",
 ]
@@ -328,7 +328,7 @@ def build_workspace(
     """
     Will attempt to build the cargo workspace including all contracts
 
-    :param optimize: Whether to perform and optimized build
+    :param optimize: Whether to perform an optimized build
     :param rebuild: Whether to force a rebuild of the workspace
     :return:
     """
