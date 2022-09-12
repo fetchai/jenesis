@@ -40,6 +40,7 @@ class Network(NetworkConfig):
         password: Optional[str] = None,
         moniker: Optional[str] = None,
         genesis_accounts: Optional[List[str]] = None,
+        debug_trace: bool = True,
     ):
         super().__init__(
             chain_id,
@@ -58,6 +59,7 @@ class Network(NetworkConfig):
             self.password = password or DEFAULT_PASSWORD
             self.moniker = moniker or DEFAULT_MONIKER
             self.genesis_accounts = genesis_accounts or [DEFAULT_GENESIS_ACCOUNT]
+            self.debug_trace = debug_trace
 
     @classmethod
     def from_cosmpy_config(cls, name: str, net_config: NetworkConfig, is_local: bool = False):
@@ -101,6 +103,7 @@ class LedgerNodeDockerContainer:
 
     def _make_entrypoint_file(self, tmpdirname) -> None:
         """Make a temporary entrypoint file to setup and run the test ledger node"""
+        trace_flag = '--trace' if self.network.debug_trace else ''
         run_node_lines = [
             "#!/usr/bin/env bash",
             # variables
@@ -127,7 +130,7 @@ class LedgerNodeDockerContainer:
             f'sed -i "s/stake/atestfet/" ~/.{self.network.cli_binary}/config/genesis.json',
             f'sed -i "s/enable = false/enable = true/" ~/.{self.network.cli_binary}/config/app.toml',
             f'sed -i "s/swagger = false/swagger = true/" ~/.{self.network.cli_binary}/config/app.toml',
-            f"{self.network.cli_binary} start --rpc.laddr tcp://0.0.0.0:26657",
+            f"{self.network.cli_binary} start --rpc.laddr tcp://0.0.0.0:26657 {trace_flag}",
         ])
         entrypoint_file = os.path.join(tmpdirname, "run-node.sh")
         with open(entrypoint_file, "w", encoding="utf-8") as file:
@@ -181,8 +184,8 @@ def run_local_node(network: Network):
             print("Stating local node...complete")
         else:
             print("Detected local node already running.")
-    except DockerException:
-        print("Failed to start local node: looks like your docker setup isn't right, please visit https://jenesis.fetch.ai/ for more information")
+    except DockerException as ex:
+        print(f"Failed to start local node: looks like your docker setup isn't right, please visit https://jenesis.fetch.ai/ for more information:\n\n{ex}")
 
 
 def fetchai_testnet_config() -> Network:
