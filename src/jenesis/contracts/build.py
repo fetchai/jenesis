@@ -11,12 +11,20 @@ from jenesis.tasks import Task, TaskStatus
 from jenesis.tasks.monitor import run_tasks
 from jenesis.config import Config
 
+DEFAULT_BUILD_STEPS = [
+    "RUSTFLAGS='-C link-arg=-s' cargo build --release --target wasm32-unknown-unknown",
+    "mkdir -p artifacts",
+    "mv target/wasm32-unknown-unknown/release/*.wasm artifacts/",
+]
+
 class ContractBuildTask(Task):
 
     BUILD_CONTAINER = 'cosmwasm/rust-optimizer:0.12.5'
 
-    def __init__(self, contract: Contract):
+    def __init__(self, contract: Contract, optimize: bool, rebuild: bool):
         self.contract = contract
+        self._optimize = optimize
+        self._rebuild = rebuild
         self._container = None
         self._status = TaskStatus.IDLE
         self._status_text = ''
@@ -39,7 +47,7 @@ class ContractBuildTask(Task):
             return
 
         # if the contract is not out of date then no build is required
-        if self._container is None and not self._is_out_of_date():
+        if self._container is None and not self._is_out_of_date() and not self._rebuild:
             self._status = TaskStatus.COMPLETE
             self._status_text = ''
             return
@@ -49,7 +57,7 @@ class ContractBuildTask(Task):
         if self._container is None:
             cfg = Config.load(os.getcwd())
             try:
-                self._container = self._schedule_build_container(self.contract)
+                self._container = self._schedule_build_container(self.contract, self._optimize)
                 self._status = TaskStatus.IN_PROGRESS
                 self._status_text = 'Building...'
                 for profile in cfg.profiles.keys():
@@ -97,7 +105,7 @@ class ContractBuildTask(Task):
         return contract_source_timestamp > compiled_contract_timestamp
 
     @classmethod
-    def _schedule_build_container(cls, contract: Contract):
+    def _schedule_build_container(cls, contract: Contract, optimize: bool):
         mounts = [
             Mount('/code/target', f'contract_{contract.name}_cache'),
             Mount('/usr/local/cargo/registry', 'registry_cache'),
@@ -108,7 +116,9 @@ class ContractBuildTask(Task):
         client = from_env()
 
         # start the container
-        return client.containers.run(cls.BUILD_CONTAINER, mounts=mounts, detach=True)
+        entrypoint = None if optimize else "/bin/sh"
+        args = None if optimize else ["-c", " && ".join(DEFAULT_BUILD_STEPS)]
+        return client.containers.run(cls.BUILD_CONTAINER, args, mounts=mounts, entrypoint=entrypoint, detach=True)
 
     @staticmethod
     def _get_src_files(path: str):
@@ -136,12 +146,19 @@ def _chunks(values: List[Any], batch_size: Optional[int]):
             yield values[i:i + batch_size]
 
 
-def build_contracts(contracts: List[Contract], batch_size: Optional[int] = None):
+def build_contracts(
+    contracts: List[Contract],
+    batch_size: Optional[int] = None,
+    optimize: Optional[bool] = False,
+    rebuild: Optional[bool] = False,
+):
     """
     Will attempt to build all the specified contracts (provided they are out of date)
 
     :param contracts: The list of contracts to build
     :param batch_size: The max number of builds to do in parallel. If None then will attempt to all in parallel
+    :param optimize: Whether to perform an optimized build
+    :param rebuild: Whether to force a rebuild of the contracts
     :return:
     """
     # create all the tasks to be done
@@ -149,6 +166,8 @@ def build_contracts(contracts: List[Contract], batch_size: Optional[int] = None)
         map(
             ContractBuildTask,
             contracts,
+            [optimize] * len(contracts),
+            [rebuild] * len(contracts),
         )
     )
 
@@ -161,9 +180,11 @@ class WorkspaceBuildTask(Task):
 
     BUILD_CONTAINER = 'cosmwasm/workspace-optimizer:0.12.5'
 
-    def __init__(self, path: str, contracts: List[Contract]):
+    def __init__(self, path: str, contracts: List[Contract], optimize: bool, rebuild: bool):
         self._path = path
         self._contracts = contracts
+        self._optimize = optimize
+        self._rebuild = rebuild
         self._container = None
         self._status = TaskStatus.IDLE
         self._status_text = ''
@@ -190,7 +211,7 @@ class WorkspaceBuildTask(Task):
             return
 
         # if the contract is not out of date then no build is required
-        if self._container is None and not self._is_out_of_date():
+        if self._container is None and not self._is_out_of_date() and not self._rebuild:
             self._status = TaskStatus.COMPLETE
             self._status_text = ''
             return
@@ -200,7 +221,7 @@ class WorkspaceBuildTask(Task):
         if self._container is None:
             cfg = Config.load(os.getcwd())
             try:
-                self._container = self._schedule_build_container(self._path)
+                self._container = self._schedule_build_container(self._path, self._optimize)
                 self._status = TaskStatus.IN_PROGRESS
                 self._status_text = 'Building...'
 
@@ -247,7 +268,7 @@ class WorkspaceBuildTask(Task):
         return contract_source_timestamp > workspace_build_timestamp
 
     @classmethod
-    def _schedule_build_container(cls, path: str):
+    def _schedule_build_container(cls, path: str, optimize: bool):
         mounts = [
             Mount('/code/target', f'workspace_{os.path.basename(path)}_cache'),
             Mount('/usr/local/cargo/registry', 'registry_cache'),
@@ -258,7 +279,9 @@ class WorkspaceBuildTask(Task):
         client = from_env()
 
         # start the container
-        return client.containers.run(cls.BUILD_CONTAINER, mounts=mounts, detach=True)
+        entrypoint = None if optimize else "/bin/sh"
+        args = None if optimize else ["-c", " && ".join(DEFAULT_BUILD_STEPS)]
+        return client.containers.run(cls.BUILD_CONTAINER, args, mounts=mounts, entrypoint=entrypoint, detach=True)
 
     @staticmethod
     def _get_src_files(contracts: List[Contract]):
@@ -296,14 +319,21 @@ class WorkspaceBuildTask(Task):
         )
 
 
-def build_workspace(path: str, contracts: List[Contract]):
+def build_workspace(
+    path: str,
+    contracts: List[Contract],
+    optimize: Optional[bool] = False,
+    rebuild: Optional[bool] = False
+):
     """
     Will attempt to build the cargo workspace including all contracts
 
+    :param optimize: Whether to perform an optimized build
+    :param rebuild: Whether to force a rebuild of the workspace
     :return:
     """
     # create all the tasks to be done
-    tasks = [WorkspaceBuildTask(path, contracts)]
+    tasks = [WorkspaceBuildTask(path, contracts, optimize, rebuild)]
 
     # run the tasks
     run_tasks(tasks)
