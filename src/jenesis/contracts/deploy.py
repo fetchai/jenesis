@@ -1,4 +1,7 @@
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as ConcurrentTimeoutError
+from concurrent.futures import (
+    ThreadPoolExecutor,
+    TimeoutError as ConcurrentTimeoutError,
+)
 from typing import Optional, Tuple, List
 
 from cosmpy.aerial.client import LedgerClient
@@ -16,6 +19,16 @@ from jenesis.network import run_local_node
 from jenesis.tasks import Task, TaskStatus
 from jenesis.tasks.monitor import run_tasks
 import os
+import toml
+
+
+# Recursive function to insert deployed contract address into instantiation msg
+def insert_address(data, contract_name, address):
+    for key, value in data.items() if isinstance(data, dict) else enumerate(data):
+        if value == contract_name:
+            data[key] = address
+        elif isinstance(value, (dict, list)):
+            insert_address(value, contract_name, address)
 
 
 class DeployContractTask(Task):
@@ -55,8 +68,6 @@ class DeployContractTask(Task):
         return self._status_text
 
     def poll(self):
-        # print('POLL', self._state, self._status, self._status_text, self.name)
-
         if self._state == 'idle':
             self._schedule_build_contract()
         elif self._state == 'wait-for-ledger-contract':
@@ -143,7 +154,6 @@ class DeployContractTask(Task):
 
 
 def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str], profile: Optional[str] = None):
-    # pylint: disable=all
     if profile is None:
         profile = cfg.get_default_profile()
 
@@ -154,87 +164,133 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
 
     contracts = detect_contracts(project_path)
 
-    contracts_to_deploy = []  # type: List[Tuple[Contract, Deployment]]
     profile_contracts = selected_profile.contracts
     profile_contract_names = list(profile_contracts.keys())
 
-    # determine what tasks to do
-    for contract in contracts:
-        if contract.name in profile_contract_names:
-            profile_contract = selected_profile.deployments.get(contract.name)
-        else:
+    hierarchies = [
+        selected_profile.contracts[contract.name]["hierarchy"] for contract in contracts
+    ]
+    deployment_order = range(1, max(hierarchies) + 1)
+
+    for h in deployment_order:
+        contracts_to_deploy = []  # type: List[Tuple[Contract, Deployment]]
+
+        # determine what tasks to do
+        for contract in contracts:
+            if contract.name in profile_contract_names:
+                profile_contract = selected_profile.deployments.get(contract.name)
+            else:
+                continue
+            assert profile_contract is not None
+
+            contract_hierarchy = selected_profile.contracts[contract.name]["hierarchy"]
+
+            if contract_hierarchy == h:
+
+                # ensure that contract has been compiled first
+                if not os.path.isfile(contract.binary_path):
+                    print(
+                        f"No contract binary found for {contract.name}. Please run 'jenesis compile' first."
+                    )
+                    continue
+
+                if deployer_key is not None:
+                    profile_contract.deployer_key = deployer_key
+                    Config.update_key(os.getcwd(), profile, contract, deployer_key)
+
+                # simple case the contract is already deployed and we can just use the information directly from the lockfile
+                if profile_contract.is_configuration_out_of_date():
+                    contracts_to_deploy.append((contract, profile_contract))
+                    continue
+
+                digest = contract.digest()
+                if digest is None:
+                    continue  # we can't process any contracts where we don't have
+
+                assert digest is not None
+
+                # if the digest of the contract has changed then we need to add it to the list of contracts to deploy
+                if profile_contract.digest != digest:
+                    contracts_to_deploy.append((contract, profile_contract))
+                    continue
+
+        # exit if there is nothing to do
+        if len(contracts_to_deploy) == 0:
+            print(f"Hierarchy {h}: nothing to deploy")
+            # return
             continue
-        assert profile_contract is not None
 
-        # ensure that contract has been compiled first
-        if not os.path.isfile(contract.binary_path):
-            print(f"No contract binary found for {contract.name}. Please run 'jenesis compile' first.")
-            continue
+        client = LedgerClient(selected_profile.network)
 
-        if deployer_key is not None:
-            profile_contract.deployer_key = deployer_key
-            Config.update_key(os.getcwd(), profile, contract, deployer_key)
+        # load all the keys required for this operation
+        keys = {}
+        available_key_names = set(query_keychain_items())
+        all_keys = set(settings.deployer_key for _, settings in contracts_to_deploy)
 
-        # simple case the contract is already deployed and we can just use the information directly from the lockfile
-        if profile_contract.is_configuration_out_of_date():
-            contracts_to_deploy.append((contract, profile_contract))
-            continue
+        for key_name in all_keys:
+            if key_name not in available_key_names:
+                print(f"Unknown deployment key {key_name}")
+                return
 
-        digest = contract.digest()
-        if digest is None:
-            continue  # we can't process any contracts where we don't have
+            info = query_keychain_item(key_name)
+            if not isinstance(info, LocalInfo):
+                print(f"Unable to lookup local key {key_name}")
+                return
 
-        assert digest is not None
+            keys[key_name] = PrivateKey(info.private_key)
+        print(f"Hierarchy {h}: deploying...")
 
-        # if the digest of the contract has changed then we need to add it to the list of contracts to deploy
-        if profile_contract.digest != digest:
-            contracts_to_deploy.append((contract, profile_contract))
-            continue
+        for contract, _ in contracts_to_deploy:
+            # reset this contracts metadata
+            contract_settings = selected_profile.deployments[contract.name]
+            contract_settings.address = None  # clear the old address
 
-    # exit if there is nothing to do
-    if len(contracts_to_deploy) == 0:
-        print('Nothing to deploy')
-        return
+            init_args = selected_profile.contracts[contract.name]["init"]
 
-    client = LedgerClient(selected_profile.network)
+            # check if there are contract addresses to insert
+            if "addresses" in init_args:
+                file_name = "jenesis.toml"
+                data = toml.load(file_name)
 
-    # load all the keys required for this operation
-    keys = {}
-    available_key_names = set(query_keychain_items())
-    all_keys = set(settings.deployer_key for _, settings in contracts_to_deploy)
+                # iterate over the addresses to insert
+                for _, C in enumerate(init_args["addresses"]):
+                    if C in profile_contract_names:
+                        init_data = data["profile"][profile]["contracts"][contract.name]["init"]
+                        deployed_contract_address = selected_profile.deployments[C].address
 
-    for key_name in all_keys:
-        if key_name not in available_key_names:
-            print(f'Unknown deployment key {key_name}')
-            return
+                        if deployed_contract_address is not None:
+                            # insert deployed contract address in instantiation msg
+                            insert_address(init_data, C, str(deployed_contract_address))
+                        else:
+                            print(f"Contract {C} address not found")
+                            return
+                    else:
+                        print(f"Contract name: ({C}) not found")
+                        return
 
-        info = query_keychain_item(key_name)
-        if not isinstance(info, LocalInfo):
-            print(f'Unable to lookup local key {key_name}')
-            return
+                contract_settings.init = init_data
 
-        keys[key_name] = PrivateKey(info.private_key)
+                # save the modified init msg in config file
+                data["profile"][profile]["contracts"][contract.name]["init"] = init_data
+                with open(file_name, "w") as toml_file:
+                    # pylint: disable=all
+                    toml.dump(data, toml_file)
 
-    for contract, _ in contracts_to_deploy:
-        # reset this contracts metadata
-        contract_settings = selected_profile.deployments[contract.name]
-        contract_settings.address = None  # clear the old address
+            # lookup the wallet key
+            wallet = LocalWallet(keys[contract_settings.deployer_key])
 
-        # lookup the wallet key
-        wallet = LocalWallet(keys[contract_settings.deployer_key])
+            # create the deployment task
+            task = DeployContractTask(
+                project_path,
+                cfg,
+                selected_profile,
+                contract,
+                contract_settings,
+                client,
+                wallet,
+            )
 
-        # create the deployment task
-        task = DeployContractTask(
-            project_path,
-            cfg,
-            selected_profile,
-            contract,
-            contract_settings,
-            client,
-            wallet,
-        )
-
-        # run the deployment task
-        run_tasks([task])
+            # run the deployment task
+            run_tasks([task])
 
     return
