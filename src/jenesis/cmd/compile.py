@@ -37,10 +37,10 @@ def run(args: argparse.Namespace):
 
     # update project file
     cfg = Config.load(os.getcwd())
-    for profile in cfg.profiles.keys():
-        network_name = cfg.profiles[profile].network.name
+    for (profile_name, profile) in cfg.profiles.items():
+        network_name = profile.network.name
         for contract in contracts:
-            Config.update_project(os.getcwd(), profile, network_name, contract)
+            Config.update_project(os.getcwd(), profile_name, network_name, contract)
 
     return 0
 
