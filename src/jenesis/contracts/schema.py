@@ -12,8 +12,6 @@ SCHEMA_BUILD_STEPS = ["cargo schema"]
 
 class ContractSchemaTask(ContractBuildTask):
 
-    BUILD_CONTAINER = 'cosmwasm/rust-optimizer:0.12.5'
-
     def __init__(self, contract: Contract, rebuild: bool):
         super().__init__(contract, False, rebuild)
         self._build_steps = SCHEMA_BUILD_STEPS
