@@ -26,8 +26,7 @@ def compute_init_checksum(path, contract_name):
         hasher.update(encoded_value.encode())
         return hasher.hexdigest()
 
-    else:
-        return ""
+    return ""
 
 
 def run(args: argparse.Namespace):
