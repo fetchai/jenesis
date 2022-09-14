@@ -62,6 +62,11 @@ class MonkeyContract(LedgerContract):
         else:
             self._code_id = self._find_contract_id_by_digest(self._digest)
 
+        # add methods based on schema
+        if contract.schema is not None:
+            self._add_queries()
+            self._add_executions()
+
     def store(
             self,
             sender: Wallet,
@@ -159,6 +164,18 @@ class MonkeyContract(LedgerContract):
                 raise
 
         return self._find_contract_id_by_digest(self._digest)
+
+    def _add_queries(self):
+        for query_msg in self._contract.query_msgs():
+            def query():
+                return 1
+            setattr(self, query_msg, query)
+
+    def _add_executions(self):
+        for execute_msg in self._contract.execute_msgs():
+            def execute():
+                return 1
+            setattr(self, execute_msg, execute)
 
     def __repr__(self):
         return str(self._address)
