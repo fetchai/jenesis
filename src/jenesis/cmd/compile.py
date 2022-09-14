@@ -43,7 +43,7 @@ def run(args: argparse.Namespace):
         print(term.red("Unable to detect any contracts"))
         return 1
 
-    init_checksums = {contract.name: compute_init_schema(project_path, contract.name) for contract in contracts}
+    init_checksums = {contract.name: compute_init_checksum(project_path, contract.name) for contract in contracts}
 
     if is_workspace(project_path):
         print(term.green("\nBuilding cargo workspace..."))
@@ -58,7 +58,7 @@ def run(args: argparse.Namespace):
 
     cfg = Config.load(os.getcwd())
     for contract in contracts:
-        if compute_init_schema(project_path, contract.name) != init_checksums[contract.name]:
+        if compute_init_checksum(project_path, contract.name) != init_checksums[contract.name]:
             print("ding ding")
             # update project file
             for (profile_name, profile) in cfg.profiles.items():
