@@ -263,12 +263,6 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
 
             contract_settings.init = init_data
 
-            # save the modified init msg in config file
-            data["profile"][profile]["contracts"][contract_to_deploy[0].name]["init"] = init_data
-            with open(file_name, "w") as toml_file:
-                # pylint: disable=all
-                toml.dump(data, toml_file)
-
         # lookup the wallet key
         wallet = LocalWallet(keys[contract_settings.deployer_key])
 
