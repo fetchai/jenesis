@@ -327,11 +327,9 @@ class Config:
         # take the project name directly from the base name of the project
         project_root = os.path.abspath(path)
 
-
         contract_cfg = Deployment(contract,
             network_name, "", {arg: "" for arg in contract.init_args()},
             "", None, None, None, None)
-
 
         data = toml.load("jenesis.toml")
 
