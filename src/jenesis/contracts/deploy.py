@@ -1,26 +1,25 @@
-from concurrent.futures import (
-    ThreadPoolExecutor,
-    TimeoutError as ConcurrentTimeoutError,
-)
-from typing import Optional, Tuple, List
+import graphlib as gl
+import os
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as ConcurrentTimeoutError
+from typing import Optional
 
+import toml
 from cosmpy.aerial.client import LedgerClient
 from cosmpy.aerial.contract import LedgerContract
 from cosmpy.aerial.wallet import LocalWallet, Wallet
 from cosmpy.crypto.address import Address
 from cosmpy.crypto.keypairs import PrivateKey
-
 from jenesis.config import Config, Deployment, Profile
 from jenesis.contracts import Contract
 from jenesis.contracts.detect import detect_contracts
 from jenesis.contracts.monkey import MonkeyContract
-from jenesis.keyring import query_keychain_item, LocalInfo, query_keychain_items
+from jenesis.keyring import (LocalInfo, query_keychain_item,
+                             query_keychain_items)
 from jenesis.network import run_local_node
 from jenesis.tasks import Task, TaskStatus
 from jenesis.tasks.monitor import run_tasks
-import os
-import toml
-import graphlib as gl
+
 
 # Recursive function to insert deployed contract address into instantiation msg
 def insert_address(data, contract_name, address):
@@ -154,6 +153,7 @@ class DeployContractTask(Task):
 
 
 def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str], profile: Optional[str] = None):
+    # pylint: disable=all
     if profile is None:
         profile = cfg.get_default_profile()
 
@@ -171,8 +171,8 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
                      {val for val in profile_contracts[contract.name]["init_addresses"]}
                       for contract in contracts}
 
-    ts = gl.TopologicalSorter(init_addresses)
-    deployment_order = list(ts.static_order())
+    sorter = gl.TopologicalSorter(init_addresses)
+    deployment_order = list(sorter.static_order())
     contract_to_deploy = ""
 
     for C in deployment_order:
@@ -281,3 +281,4 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
         run_tasks([task])
 
     return
+    
