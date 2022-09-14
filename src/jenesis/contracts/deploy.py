@@ -163,6 +163,7 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
         run_local_node(selected_profile.network)
 
     contracts = detect_contracts(project_path)
+    contracts_list = {contract.name: contract for contract in contracts}
 
     profile_contracts = selected_profile.contracts
     profile_contract_names = list(profile_contracts.keys())
@@ -176,43 +177,40 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
     contract_to_deploy = ""
 
     for C in deployment_order:
+        if C in contracts_list:
+            contract = contracts_list[C]
+        else:
+            print(f"Contract name {C} not found")
+            return
 
-        # determine what tasks to do
-        for contract in contracts:
+        if contract.name in profile_contract_names:
+            profile_contract = selected_profile.deployments.get(contract.name)
+        else:
+            continue
+        assert profile_contract is not None
 
-            if contract.name != C:
-                continue
+        # ensure that contract has been compiled first
+        if not os.path.isfile(contract.binary_path):
+            print(f"No contract binary found for {contract.name}. Please run 'jenesis compile' first.")
+            continue
 
-            if contract.name in profile_contract_names:
-                profile_contract = selected_profile.deployments.get(contract.name)
-            else:
-                continue
-            assert profile_contract is not None
+        if deployer_key is not None:
+            profile_contract.deployer_key = deployer_key
+            Config.update_key(os.getcwd(), profile, contract, deployer_key)
 
-            # ensure that contract has been compiled first
-            if not os.path.isfile(contract.binary_path):
-                print(f"No contract binary found for {contract.name}. Please run 'jenesis compile' first.")
-                continue
+        # simple case the contract is already deployed and we can just use the information directly from the lockfile
+        if profile_contract.is_configuration_out_of_date():
+            contract_to_deploy = (contract, profile_contract)
 
-            if deployer_key is not None:
-                profile_contract.deployer_key = deployer_key
-                Config.update_key(os.getcwd(), profile, contract, deployer_key)
+        digest = contract.digest()
+        if digest is None:
+            continue  # we can't process any contracts where we don't have
 
-            # simple case the contract is already deployed and we can just use the information directly from the lockfile
-            if profile_contract.is_configuration_out_of_date():
-                contract_to_deploy = (contract, profile_contract)
-                continue
+        assert digest is not None
 
-            digest = contract.digest()
-            if digest is None:
-                continue  # we can't process any contracts where we don't have
-
-            assert digest is not None
-
-            # if the digest of the contract has changed then we need to add it to the list of contracts to deploy
-            if profile_contract.digest != digest:
-                contract_to_deploy = (contract, profile_contract)
-                continue
+        # if the digest of the contract has changed then we need to add it to the list of contracts to deploy
+        if profile_contract.digest != digest:
+            contract_to_deploy = (contract, profile_contract)
 
         if contract_to_deploy == "":
             continue
@@ -241,6 +239,7 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
         contract_settings.address = None  # clear the old address
 
         addresses_names = selected_profile.contracts[contract_to_deploy[0].name]["init_addresses"]
+        
         if len(addresses_names) > 0:
             file_name = "jenesis.toml"
             data = toml.load(file_name)
