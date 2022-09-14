@@ -10,7 +10,7 @@ from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts, is_workspace
 from jenesis.contracts.schema import generate_schemas
 
-def compute_init_schema(path, contract_name):
+def compute_init_checksum(path, contract_name):
 
     file_name = "instantiate_msg.json"
     file_path = os.path.join(path, "contracts", contract_name,"schema", file_name)
