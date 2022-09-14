@@ -215,8 +215,7 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
                 continue
 
         if contract_to_deploy == "":
-            print(f"Contract {C} not found")
-            return
+            continue
 
         client = LedgerClient(selected_profile.network)
 
