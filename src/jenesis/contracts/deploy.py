@@ -160,12 +160,13 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
 
     # determine what tasks to do
     for (contract_name, profile_contract) in profile_contracts.items():
+        contract = contracts[profile_contract['contract']]
         if contract_name in contracts:
             contract = contracts[profile_contract['contract']]
             deployment = selected_profile.deployments.get(contract_name)
         else:
             continue
-        assert profile_contract is not None
+        assert deployment is not None
 
         # ensure that contract has been compiled first
         if not os.path.isfile(contract.binary_path):
