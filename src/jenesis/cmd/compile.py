@@ -15,16 +15,19 @@ def compute_init_checksum(path, contract_name):
     file_name = "instantiate_msg.json"
     file_path = os.path.join(path, "contracts", contract_name,"schema", file_name)
 
-    with open(file_path , 'r', encoding="utf-8") as file:
-        data = json.load(file)
+    if os.path.exists(path):
+        with open(file_path , 'r', encoding="utf-8") as file:
+            data = json.load(file)
 
-    hasher = hashlib.sha256()
-    encoded_value = "" if data is None else str(data)
+        hasher = hashlib.sha256()
+        encoded_value = "" if data is None else str(data)
 
-    hasher.update(struct.pack(">Q", len(encoded_value)))
-    hasher.update(encoded_value.encode())
-    print(hasher.hexdigest())
-    return hasher.hexdigest()
+        hasher.update(struct.pack(">Q", len(encoded_value)))
+        hasher.update(encoded_value.encode())
+        return hasher.hexdigest()
+
+    else:
+        return ""
 
 
 def run(args: argparse.Namespace):
