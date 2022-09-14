@@ -59,7 +59,6 @@ def run(args: argparse.Namespace):
     cfg = Config.load(os.getcwd())
     for contract in contracts:
         if compute_init_checksum(project_path, contract.name) != init_checksums[contract.name]:
-            print("ding ding")
             # update project file
             for (profile_name, profile) in cfg.profiles.items():
                 network_name = profile.network.name
