@@ -34,7 +34,7 @@ def run(args: argparse.Namespace):
     for contract in contracts:
         if contract.name == args.contract:
             selected_contract = contract
-            continue
+            break
 
     if selected_contract == "":
         print('Contract not found in project')

@@ -43,7 +43,7 @@ def run_add_contract(args: argparse.Namespace):
     for contract in contracts:
         if contract.name == name:
             selected_contract = contract
-            continue
+            break
 
     if selected_contract == "":
         print("Contract not found in project")
