@@ -152,16 +152,17 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
     if selected_profile.network.is_local:
         run_local_node(selected_profile.network)
 
-    contracts = detect_contracts(project_path)
+    contracts = {contract.name: contract for contract in detect_contracts(project_path)}
 
     contracts_to_deploy = []  # type: List[Tuple[Contract, Deployment]]
     profile_contracts = selected_profile.contracts
     profile_contract_names = list(profile_contracts.keys())
 
     # determine what tasks to do
-    for contract in contracts:
-        if contract.name in profile_contract_names:
-            profile_contract = selected_profile.deployments.get(contract.name)
+    for (contract_name, profile_contract) in profile_contracts.items():
+        if contract_name in contracts:
+            contract = contracts[profile_contract['contract']]
+            deployment = selected_profile.deployments.get(contract_name)
         else:
             continue
         assert profile_contract is not None

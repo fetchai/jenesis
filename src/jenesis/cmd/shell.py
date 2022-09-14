@@ -23,7 +23,7 @@ def load_config(args: argparse.Namespace) -> dict:
         raise RuntimeError("Please run command from project root or create project first")
 
     cfg = Config.load(project_path)
-    contracts = detect_contracts(project_path)
+    contracts = {contract.name: contract for contract in detect_contracts(project_path)}
 
     shell_globals = {}
     contract_instances = {}
@@ -35,6 +35,9 @@ def load_config(args: argparse.Namespace) -> dict:
     profile_name = args.profile or cfg.get_default_profile()
 
     selected_profile = cfg.profiles.get(profile_name)
+
+    profile_contracts = selected_profile.contracts
+
     if selected_profile is not None:
         if selected_profile.network.is_local:
             run_local_node(selected_profile.network)
@@ -46,15 +49,16 @@ def load_config(args: argparse.Namespace) -> dict:
 
         print('Detecting contracts...')
 
-        for contract in contracts:
-            print("C", contract)
+        for (contract_name, profile_contract) in profile_contracts.items():
+            contract = contracts[profile_contract['contract']]
+            print("C", contract_name)
 
             # skip contracts that we have not compiled
             if contract.digest() is None:
                 continue
 
             # select the metadata for the contract
-            selected_contract = selected_profile.deployments.get(contract.name)
+            selected_contract = selected_profile.deployments.get(contract_name)
 
             if selected_contract is not None:
                 address = selected_contract.address
@@ -72,12 +76,12 @@ def load_config(args: argparse.Namespace) -> dict:
                     cfg,
                     project_path,
                     profile_name,
-                    contract.name,
+                    contract_name,
                 ),
                 init_args=selected_contract.init,
             )
 
-            contract_instances[contract.name] = monkey
+            contract_instances[contract_name] = monkey
 
         print('Detecting contracts...complete')
         
@@ -102,7 +106,7 @@ def load_config(args: argparse.Namespace) -> dict:
     shell_globals["cfg"] = cfg
     shell_globals["project_path"] = project_path
     shell_globals["profile"] = profile_name
-    shell_globals["contracts"] = {contract.name: contract for contract in contracts}
+    shell_globals["contracts"] = contracts
     shell_globals["wallets"] = wallets
     for (name, instance) in contract_instances.items():
         shell_globals[name] = instance
