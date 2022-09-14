@@ -10,6 +10,7 @@ class Contract:
     name: str
     source_path: str
     binary_path: str
+    cargo_root: str
     schema: dict
 
     def digest(self) -> Optional[str]:

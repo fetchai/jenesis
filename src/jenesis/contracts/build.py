@@ -1,15 +1,14 @@
-import fnmatch
 import os
-from typing import List, Optional, Any
+from typing import List, Optional
 
 from docker import from_env
-from docker.errors import DockerException
+from docker.models.containers import Container
 from docker.types import Mount
 
 from jenesis.contracts import Contract
-from jenesis.tasks import Task, TaskStatus
+from jenesis.tasks.container import ContainerTask
 from jenesis.tasks.monitor import run_tasks
-from jenesis.config import Config
+from jenesis.tasks.utils import chunks, get_last_modified_timestamp
 
 DEFAULT_BUILD_STEPS = [
     "RUSTFLAGS='-C link-arg=-s' cargo build --release --target wasm32-unknown-unknown",
@@ -17,82 +16,28 @@ DEFAULT_BUILD_STEPS = [
     "mv target/wasm32-unknown-unknown/release/*.wasm artifacts/",
 ]
 
-class ContractBuildTask(Task):
+
+class ContractBuildTask(ContainerTask):
 
     BUILD_CONTAINER = 'cosmwasm/rust-optimizer:0.12.5'
 
     def __init__(self, contract: Contract, optimize: bool, rebuild: bool):
+        super().__init__()
         self.contract = contract
         self._optimize = optimize
         self._rebuild = rebuild
-        self._container = None
-        self._status = TaskStatus.IDLE
-        self._status_text = ''
+        self._build_steps = DEFAULT_BUILD_STEPS
+        self._working_dir = '/code'
+        self._in_progress_text = 'Building...'
 
     @property
     def name(self) -> str:
         return self.contract.name
 
-    @property
-    def status_text(self) -> str:
-        return self._status_text
-
-    @property
-    def status(self) -> TaskStatus:
-        return self._status
-
-    def poll(self):
-        # no further processing required if it has either completed or failed
-        if self.is_done:
-            return
-
-        # if the contract is not out of date then no build is required
-        if self._container is None and not self._is_out_of_date() and not self._rebuild:
-            self._status = TaskStatus.COMPLETE
-            self._status_text = ''
-            return
-
-        # if we get this far we either need to schedule a docker build of the contract or we need to monitor
-        # the progress of a docker build
-        if self._container is None:
-            cfg = Config.load(os.getcwd())
-            try:
-                self._container = self._schedule_build_container(self.contract, self._optimize)
-                self._status = TaskStatus.IN_PROGRESS
-                self._status_text = 'Building...'
-                for profile in cfg.profiles.keys():
-                    # pylint: disable=all
-                    network_name = cfg.profiles[profile].network.name
-                    Config.update_project(os.getcwd(), profile, network_name, self.contract)
-            except DockerException:
-                print("Error: looks like your docker setup isn't right, please visit https://jenesis.fetch.ai/ for more information")
-                self._container = None
-                self._status = TaskStatus.FAILED
-                self._status_text = ''
-
-            # exit if we do not have docker or some such installed
-            if self._container is None:
-                return
-
-        assert self._container is not None
-
-        # check on the progress of the container
-        self._container.reload()
-
-        if self._container.status == 'exited':
-            exit_code = int(self._container.attrs['State']['ExitCode'])
-            if exit_code == 0:
-                self._status = TaskStatus.COMPLETE
-                self._status_text = ''
-
-                # clean up the container if it was successful, otherwise keep if for the logs
-                self._container.remove()
-
-            else:
-                self._status = TaskStatus.FAILED
-                self._status_text = ''
-
     def _is_out_of_date(self) -> bool:
+        if self._rebuild:
+            return True
+
         # determine the timestamp of the compiled contract
         if os.path.isfile(self.contract.binary_path):
             compiled_contract_timestamp = os.path.getmtime(self.contract.binary_path)
@@ -100,50 +45,31 @@ class ContractBuildTask(Task):
             compiled_contract_timestamp = 0
 
         # determine the timestamp of the contract source
-        contract_source_timestamp = self._get_contract_modified_timestamp(self.contract.source_path)
+        contract_source_timestamp = get_last_modified_timestamp([self.contract.source_path], 'rs')
 
         return contract_source_timestamp > compiled_contract_timestamp
 
-    @classmethod
-    def _schedule_build_container(cls, contract: Contract, optimize: bool):
+    def _schedule_container(self) -> Container:
         mounts = [
-            Mount('/code/target', f'contract_{contract.name}_cache'),
+            Mount('/code/target', f'contract_{self.contract.name}_cache'),
             Mount('/usr/local/cargo/registry', 'registry_cache'),
-            Mount('/code', os.path.abspath(contract.source_path), type='bind'),
+            Mount('/code', os.path.abspath(self.contract.cargo_root), type='bind'),
         ]
 
         # get the docker client
         client = from_env()
 
         # start the container
-        entrypoint = None if optimize else "/bin/sh"
-        args = None if optimize else ["-c", " && ".join(DEFAULT_BUILD_STEPS)]
-        return client.containers.run(cls.BUILD_CONTAINER, args, mounts=mounts, entrypoint=entrypoint, detach=True)
-
-    @staticmethod
-    def _get_src_files(path: str):
-        for root, _, files in os.walk(path):
-            for filename in fnmatch.filter(files, '*.rs'):
-                yield os.path.join(root, filename)
-
-    @classmethod
-    def _get_contract_modified_timestamp(cls, path: str) -> float:
-        src_path = os.path.join(path, 'src')
-        return max(
-            map(
-                os.path.getmtime,
-                cls._get_src_files(src_path)
-            ),
-            default=0
+        entrypoint = None if self._optimize else "/bin/sh"
+        args = None if self._optimize else ["-c", " && ".join(self._build_steps)]
+        return client.containers.run(
+            self.BUILD_CONTAINER,
+            args,
+            mounts=mounts,
+            working_dir=self._working_dir,
+            entrypoint=entrypoint,
+            detach=True,
         )
-
-
-def _chunks(values: List[Any], batch_size: Optional[int]):
-    if batch_size is None:
-        yield values
-    else:
-        for i in range(0, len(values), batch_size):
-            yield values[i:i + batch_size]
 
 
 def build_contracts(
@@ -172,22 +98,20 @@ def build_contracts(
     )
 
     # run the tasks (in batches if configured)
-    for batch in _chunks(tasks, batch_size=batch_size):
+    for batch in chunks(tasks, batch_size=batch_size):
         run_tasks(batch)
 
 
-class WorkspaceBuildTask(Task):
+class WorkspaceBuildTask(ContainerTask):
 
     BUILD_CONTAINER = 'cosmwasm/workspace-optimizer:0.12.5'
 
     def __init__(self, path: str, contracts: List[Contract], optimize: bool, rebuild: bool):
+        super().__init__()
         self._path = path
         self._contracts = contracts
         self._optimize = optimize
         self._rebuild = rebuild
-        self._container = None
-        self._status = TaskStatus.IDLE
-        self._status_text = ''
 
     @property
     def name(self) -> str:
@@ -197,125 +121,39 @@ class WorkspaceBuildTask(Task):
     def path(self) -> str:
         return self._path
 
-    @property
-    def status_text(self) -> str:
-        return self._status_text
-
-    @property
-    def status(self) -> TaskStatus:
-        return self._status
-
-    def poll(self):
-        # no further processing required if it has either completed or failed
-        if self.is_done:
-            return
-
-        # if the contract is not out of date then no build is required
-        if self._container is None and not self._is_out_of_date() and not self._rebuild:
-            self._status = TaskStatus.COMPLETE
-            self._status_text = ''
-            return
-
-        # if we get this far we either need to schedule a docker build of the workspace or we need to monitor
-        # the progress of a docker build
-        if self._container is None:
-            cfg = Config.load(os.getcwd())
-            try:
-                self._container = self._schedule_build_container(self._path, self._optimize)
-                self._status = TaskStatus.IN_PROGRESS
-                self._status_text = 'Building...'
-
-                for profile in cfg.profiles.keys():
-                    # pylint: disable=all
-                    network_name = cfg.profiles[profile].network.name
-                    for contract in self._contracts:
-                        Config.update_project(os.getcwd(), profile, network_name, contract)
-                        
-            except DockerException:
-                self._container = None
-                self._status = TaskStatus.FAILED
-                self._status_text = ''
-
-            # exit if we do not have docker or some such installed
-            if self._container is None:
-                return
-
-        assert self._container is not None
-
-        # check on the progress of the container
-        self._container.reload()
-
-        if self._container.status == 'exited':
-            exit_code = int(self._container.attrs['State']['ExitCode'])
-            if exit_code == 0:
-                self._status = TaskStatus.COMPLETE
-                self._status_text = ''
-
-                # clean up the container if it was successful, otherwise keep if for the logs
-                self._container.remove()
-
-            else:
-                self._status = TaskStatus.FAILED
-                self._status_text = ''
-
     def _is_out_of_date(self) -> bool:
+        if self._rebuild:
+            return True
+
         # determine the most recent timestamp of the compiled workspace files
-        workspace_build_timestamp = self._get_workspace_build_timestamp(self._path)
+        build_path = os.path.join(self._path, 'artifacts')
+        workspace_build_timestamp = get_last_modified_timestamp([build_path], 'wasm')
 
         # determine the timestamp of the contract source
-        contract_source_timestamp = self._get_contract_modified_timestamp(self._contracts)
+        contract_src_paths = [f'{contract.source_path}/src' for contract in self._contracts]
+        contract_source_timestamp = get_last_modified_timestamp(contract_src_paths, 'rs')
 
         return contract_source_timestamp > workspace_build_timestamp
 
-    @classmethod
-    def _schedule_build_container(cls, path: str, optimize: bool):
+    def _schedule_container(self) -> Container:
         mounts = [
-            Mount('/code/target', f'workspace_{os.path.basename(path)}_cache'),
+            Mount('/code/target', f'workspace_{os.path.basename(self.path)}_cache'),
             Mount('/usr/local/cargo/registry', 'registry_cache'),
-            Mount('/code', os.path.abspath(path), type='bind'),
+            Mount('/code', os.path.abspath(self.path), type='bind'),
         ]
 
         # get the docker client
         client = from_env()
 
         # start the container
-        entrypoint = None if optimize else "/bin/sh"
-        args = None if optimize else ["-c", " && ".join(DEFAULT_BUILD_STEPS)]
-        return client.containers.run(cls.BUILD_CONTAINER, args, mounts=mounts, entrypoint=entrypoint, detach=True)
-
-    @staticmethod
-    def _get_src_files(contracts: List[Contract]):
-        for contract in contracts:
-            src_path = os.path.join(contract.source_path, 'src')
-            for root, _, files in os.walk(src_path):
-                for filename in fnmatch.filter(files, '*.rs'):
-                    yield os.path.join(root, filename)
-
-    @staticmethod
-    def _get_build_files(path: str):
-        for root, _, files in os.walk(path):
-            for filename in fnmatch.filter(files, '*.wasm'):
-                yield os.path.join(root, filename)
-
-    @classmethod
-    def _get_contract_modified_timestamp(cls, contracts: List[Contract]) -> float:
-        return max(
-            map(
-                os.path.getmtime,
-                cls._get_src_files(contracts)
-            ),
-            default=0
-        )
-
-    @classmethod
-    def _get_workspace_build_timestamp(cls, path: str) -> float:
-        build_path = os.path.join(path, 'artifacts')
-        return max(
-            map(
-                os.path.getmtime,
-                cls._get_build_files(build_path)
-            ),
-            default=0
+        entrypoint = None if self._optimize else "/bin/sh"
+        args = None if self._optimize else ["-c", " && ".join(DEFAULT_BUILD_STEPS)]
+        return client.containers.run(
+            self.BUILD_CONTAINER,
+            args,
+            mounts=mounts,
+            entrypoint=entrypoint,
+            detach=True,
         )
 
 

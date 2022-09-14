@@ -3,7 +3,9 @@ import os
 
 from blessings import Terminal
 from jenesis.contracts.build import build_contracts, build_workspace
+from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts, is_workspace
+from jenesis.contracts.schema import generate_schemas
 
 
 def run(args: argparse.Namespace):
@@ -23,12 +25,23 @@ def run(args: argparse.Namespace):
         return 1
 
     if is_workspace(project_path):
-        print(term.green("Detected cargo workspace"))
+        print(term.green("\nBuilding cargo workspace..."))
         build_workspace(project_path, contracts, optimize=args.optimize, rebuild=args.rebuild)
-        return 0
+    else:
+        print(term.green("\nBuilding contracts..."))
+        build_contracts(contracts, batch_size=args.batch_size, optimize=args.optimize,rebuild=args.rebuild)
 
-    # build the contracts
-    build_contracts(contracts, batch_size=args.batch_size, optimize=args.optimize,rebuild=args.rebuild)
+    # generate the schemas
+    print(term.green("\nGenerating contract schemas..."))
+    generate_schemas(contracts, batch_size=args.batch_size, rebuild=args.rebuild)
+
+    # update project file
+    cfg = Config.load(os.getcwd())
+    for (profile_name, profile) in cfg.profiles.items():
+        network_name = profile.network.name
+        for contract in contracts:
+            Config.update_project(os.getcwd(), profile_name, network_name, contract)
+
     return 0
 
 
