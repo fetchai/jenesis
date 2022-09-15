@@ -428,6 +428,14 @@ protobuf = ">=3.15.0,<5.0.0dev"
 grpc = ["grpcio (>=1.0.0,<2.0.0dev)"]
 
 [[package]]
+name = "graphlib-backport"
+version = "1.0.3"
+description = "Backport of the Python 3.9 graphlib module for Python 3.6+"
+category = "main"
+optional = false
+python-versions = ">=3.6,<4.0"
+
+[[package]]
 name = "grpcio"
 version = "1.48.0"
 description = "HTTP/2-based RPC framework"
@@ -1249,7 +1257,7 @@ testing = ["func-timeout", "jaraco.itertools", "pytest (>=6)", "pytest-black (>=
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "40e82cecd2fa7b8864bf1d16459fbc8588e0f972d70709c6041d92c1d17b54e0"
+content-hash = "7ef059d4042081b3a6a0003762b7f9c61462476311f1d5f7344274f08f85dab0"
 
 [metadata.files]
 appdirs = [
@@ -1610,6 +1618,10 @@ google-auth-httplib2 = [
 googleapis-common-protos = [
     {file = "googleapis-common-protos-1.56.4.tar.gz", hash = "sha256:c25873c47279387cfdcbdafa36149887901d36202cb645a0e4f29686bf6e4417"},
     {file = "googleapis_common_protos-1.56.4-py2.py3-none-any.whl", hash = "sha256:8eb2cbc91b69feaf23e32452a7ae60e791e09967d81d4fcc7fc388182d1bd394"},
+]
+graphlib-backport = [
+    {file = "graphlib_backport-1.0.3-py3-none-any.whl", hash = "sha256:24246967b9e7e6a91550bc770e6169585d35aa32790258579a8a3899a8c18fde"},
+    {file = "graphlib_backport-1.0.3.tar.gz", hash = "sha256:7bb8fc7757b8ae4e6d8000a26cd49e9232aaa9a3aa57edb478474b8424bfaae2"},
 ]
 grpcio = [
     {file = "grpcio-1.48.0-cp310-cp310-linux_armv7l.whl", hash = "sha256:4a049a032144641ed5d073535c0dc69eb6029187cc729a66946c86dcc8eec3a1"},

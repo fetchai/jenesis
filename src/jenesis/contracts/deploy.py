@@ -1,21 +1,68 @@
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as ConcurrentTimeoutError
-from typing import Optional, Tuple, List
+import graphlib as gl
+import os
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as ConcurrentTimeoutError
+from typing import Optional
 
+import toml
 from cosmpy.aerial.client import LedgerClient
 from cosmpy.aerial.contract import LedgerContract
 from cosmpy.aerial.wallet import LocalWallet, Wallet
 from cosmpy.crypto.address import Address
 from cosmpy.crypto.keypairs import PrivateKey
-
 from jenesis.config import Config, Deployment, Profile
 from jenesis.contracts import Contract
 from jenesis.contracts.detect import detect_contracts
 from jenesis.contracts.monkey import MonkeyContract
-from jenesis.keyring import query_keychain_item, LocalInfo, query_keychain_items
+from jenesis.keyring import (LocalInfo, query_keychain_item,
+                             query_keychain_items)
 from jenesis.network import run_local_node
 from jenesis.tasks import Task, TaskStatus
 from jenesis.tasks.monitor import run_tasks
-import os
+
+
+# Recursive function to insert deployed contract address into instantiation msg
+def insert(data, contract_name, address):
+    for key, value in data.items() if isinstance(data, dict) else enumerate(data):
+        if value == contract_name:
+            data[key] = address
+        elif isinstance(value, (dict, list)):
+            insert(value, contract_name, address)
+
+
+def insert_address(addresses, contract, selected_profile):
+    file_name = "jenesis.toml"
+    data = toml.load(file_name)
+
+    profile = selected_profile.name
+    profile_contracts = selected_profile.contracts
+    contract_names = list(profile_contracts.keys())
+
+    # iterate over the addresses to insert
+    for name in addresses:
+        if name in contract_names:
+            init_data = data["profile"][profile]["contracts"][contract.name]["init"]
+            deployed_contract_address = selected_profile.deployments[name].address
+
+            assert deployed_contract_address is not None, f"Contract {name} address not found"
+
+            # insert deployed contract address in instantiation msg
+            insert(init_data, name, str(deployed_contract_address))
+
+    return init_data
+
+def load_keys(contract):
+    keys = {}
+    available_key_names = set(query_keychain_items())
+    key_name = contract.deployer_key
+
+    assert key_name in available_key_names, f"Unknown deployment key {key_name}"
+
+    info = query_keychain_item(key_name)
+    assert isinstance(info, LocalInfo), f"Unable to lookup local key {key_name}"
+
+    keys[key_name] = PrivateKey(info.private_key)
+    return keys
 
 
 class DeployContractTask(Task):
@@ -55,8 +102,6 @@ class DeployContractTask(Task):
         return self._status_text
 
     def poll(self):
-        # print('POLL', self._state, self._status, self._status_text, self.name)
-
         if self._state == 'idle':
             self._schedule_build_contract()
         elif self._state == 'wait-for-ledger-contract':
@@ -143,7 +188,6 @@ class DeployContractTask(Task):
 
 
 def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str], profile: Optional[str] = None):
-    # pylint: disable=all
     if profile is None:
         profile = cfg.get_default_profile()
 
@@ -153,13 +197,24 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
         run_local_node(selected_profile.network)
 
     contracts = detect_contracts(project_path)
+    contracts_list = {contract.name: contract for contract in contracts}
 
-    contracts_to_deploy = []  # type: List[Tuple[Contract, Deployment]]
     profile_contracts = selected_profile.contracts
     profile_contract_names = list(profile_contracts.keys())
 
-    # determine what tasks to do
-    for contract in contracts:
+    init_addresses = {
+        name: set(profile_contracts[name]["init_addresses"])
+        for name in contracts_list.keys()
+    }
+
+    sorter = gl.TopologicalSorter(init_addresses)
+    deployment_order = list(sorter.static_order())
+
+    for contract_turn in deployment_order:
+
+        assert contract_turn in contracts_list, f"Contract name {contract_turn} not found"
+        contract = contracts_list[contract_turn]
+
         if contract.name in profile_contract_names:
             profile_contract = selected_profile.deployments.get(contract.name)
         else:
@@ -175,50 +230,28 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
             profile_contract.deployer_key = deployer_key
             Config.update_key(os.getcwd(), profile, contract, deployer_key)
 
-        # simple case the contract is already deployed and we can just use the information directly from the lockfile
-        if profile_contract.is_configuration_out_of_date():
-            contracts_to_deploy.append((contract, profile_contract))
-            continue
-
         digest = contract.digest()
         if digest is None:
             continue  # we can't process any contracts where we don't have
 
         assert digest is not None
 
-        # if the digest of the contract has changed then we need to add it to the list of contracts to deploy
-        if profile_contract.digest != digest:
-            contracts_to_deploy.append((contract, profile_contract))
+        if not profile_contract.is_configuration_out_of_date() and profile_contract.digest == digest:
             continue
 
-    # exit if there is nothing to do
-    if len(contracts_to_deploy) == 0:
-        print('Nothing to deploy')
-        return
+        client = LedgerClient(selected_profile.network)
 
-    client = LedgerClient(selected_profile.network)
+        # load all the keys required for this operation
+        keys = load_keys(profile_contract)
 
-    # load all the keys required for this operation
-    keys = {}
-    available_key_names = set(query_keychain_items())
-    all_keys = set(settings.deployer_key for _, settings in contracts_to_deploy)
-
-    for key_name in all_keys:
-        if key_name not in available_key_names:
-            print(f'Unknown deployment key {key_name}')
-            return
-
-        info = query_keychain_item(key_name)
-        if not isinstance(info, LocalInfo):
-            print(f'Unable to lookup local key {key_name}')
-            return
-
-        keys[key_name] = PrivateKey(info.private_key)
-
-    for contract, _ in contracts_to_deploy:
         # reset this contracts metadata
         contract_settings = selected_profile.deployments[contract.name]
         contract_settings.address = None  # clear the old address
+
+        addresses_names = selected_profile.contracts[contract.name]["init_addresses"]
+
+        if len(addresses_names) > 0:
+            contract_settings.init = insert_address(addresses_names, contract, selected_profile)
 
         # lookup the wallet key
         wallet = LocalWallet(keys[contract_settings.deployer_key])
@@ -236,5 +269,4 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
 
         # run the deployment task
         run_tasks([task])
-
-    return
+    
