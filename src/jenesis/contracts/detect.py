@@ -1,7 +1,6 @@
 import os
 from typing import List, Optional
 
-import json
 import toml
 
 from jenesis.contracts import Contract

@@ -20,6 +20,7 @@ class ContractSchemaTask(ContractBuildTask):
         self._in_progress_text = "Generating schemas..."
 
     def _is_out_of_date(self) -> bool:
+        #  pylint: disable=duplicate-code
         if self._rebuild:
             return True
 

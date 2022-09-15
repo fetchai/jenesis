@@ -35,6 +35,7 @@ class ContractBuildTask(ContainerTask):
         return self.contract.name
 
     def _is_out_of_date(self) -> bool:
+        #  pylint: disable=duplicate-code
         if self._rebuild:
             return True
 
