@@ -30,7 +30,7 @@ def insert(data, contract_name, address):
             insert(value, contract_name, address)
 
 
-def insert_address(addresses, contract_to_deploy, selected_profile):
+def insert_address(addresses, contract, selected_profile):
     file_name = "jenesis.toml"
     data = toml.load(file_name)
 
@@ -41,7 +41,7 @@ def insert_address(addresses, contract_to_deploy, selected_profile):
     # iterate over the addresses to insert
     for name in addresses:
         if name in contract_names:
-            init_data = data["profile"][profile]["contracts"][contract_to_deploy[0].name]["init"]
+            init_data = data["profile"][profile]["contracts"][contract.name]["init"]
             deployed_contract_address = selected_profile.deployments[name].address
 
             assert deployed_contract_address is not None, f"Contract {name} address not found"
@@ -51,10 +51,10 @@ def insert_address(addresses, contract_to_deploy, selected_profile):
 
     return init_data
 
-def load_keys(contract_to_deploy):
+def load_keys(contract):
     keys = {}
     available_key_names = set(query_keychain_items())
-    key_name = contract_to_deploy[1].deployer_key
+    key_name = contract.deployer_key
 
     assert key_name in available_key_names, f"Unknown deployment key {key_name}"
 
@@ -209,7 +209,6 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
 
     sorter = gl.TopologicalSorter(init_addresses)
     deployment_order = list(sorter.static_order())
-    contract_to_deploy = ""
 
     for contract_turn in deployment_order:
 
@@ -231,36 +230,28 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
             profile_contract.deployer_key = deployer_key
             Config.update_key(os.getcwd(), profile, contract, deployer_key)
 
-        # simple case the contract is already deployed and we can just use the information directly from the lockfile
-        if profile_contract.is_configuration_out_of_date():
-            contract_to_deploy = (contract, profile_contract)
-
         digest = contract.digest()
         if digest is None:
             continue  # we can't process any contracts where we don't have
 
         assert digest is not None
 
-        # if the digest of the contract has changed then we need to add it to the list of contracts to deploy
-        if profile_contract.digest != digest:
-            contract_to_deploy = (contract, profile_contract)
-
-        if contract_to_deploy == "":
+        if not profile_contract.is_configuration_out_of_date() and profile_contract.digest == digest:
             continue
 
         client = LedgerClient(selected_profile.network)
 
         # load all the keys required for this operation
-        keys = load_keys(contract_to_deploy)
+        keys = load_keys(profile_contract)
 
         # reset this contracts metadata
-        contract_settings = selected_profile.deployments[contract_to_deploy[0].name]
+        contract_settings = selected_profile.deployments[contract.name]
         contract_settings.address = None  # clear the old address
 
-        addresses_names = selected_profile.contracts[contract_to_deploy[0].name]["init_addresses"]
+        addresses_names = selected_profile.contracts[contract.name]["init_addresses"]
 
         if len(addresses_names) > 0:
-            contract_settings.init = insert_address(addresses_names, contract_to_deploy, selected_profile)
+            contract_settings.init = insert_address(addresses_names, contract, selected_profile)
 
         # lookup the wallet key
         wallet = LocalWallet(keys[contract_settings.deployer_key])
@@ -270,7 +261,7 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
             project_path,
             cfg,
             selected_profile,
-            contract_to_deploy[0],
+            contract,
             contract_settings,
             client,
             wallet,
