@@ -22,12 +22,47 @@ from jenesis.tasks.monitor import run_tasks
 
 
 # Recursive function to insert deployed contract address into instantiation msg
-def insert_address(data, contract_name, address):
+def insert(data, contract_name, address):
     for key, value in data.items() if isinstance(data, dict) else enumerate(data):
         if value == contract_name:
             data[key] = address
         elif isinstance(value, (dict, list)):
-            insert_address(value, contract_name, address)
+            insert(value, contract_name, address)
+
+
+def insert_address(addresses, contract_to_deploy, selected_profile):
+    file_name = "jenesis.toml"
+    data = toml.load(file_name)
+
+    profile = selected_profile.name
+    profile_contracts = selected_profile.contracts
+    contract_names = list(profile_contracts.keys())
+
+    # iterate over the addresses to insert
+    for name in addresses:
+        if name in contract_names:
+            init_data = data["profile"][profile]["contracts"][contract_to_deploy[0].name]["init"]
+            deployed_contract_address = selected_profile.deployments[name].address
+
+            assert deployed_contract_address is not None, f"Contract {name} address not found"
+
+            # insert deployed contract address in instantiation msg
+            insert(init_data, name, str(deployed_contract_address))
+
+    return init_data
+
+def load_keys(contract_to_deploy):
+    keys = {}
+    available_key_names = set(query_keychain_items())
+    key_name = contract_to_deploy[1].deployer_key
+
+    assert key_name in available_key_names, f"Unknown deployment key {key_name}"
+
+    info = query_keychain_item(key_name)
+    assert isinstance(info, LocalInfo), f"Unable to lookup local key {key_name}"
+
+    keys[key_name] = PrivateKey(info.private_key)
+    return keys
 
 
 class DeployContractTask(Task):
@@ -153,7 +188,6 @@ class DeployContractTask(Task):
 
 
 def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str], profile: Optional[str] = None):
-    # pylint: disable=all
     if profile is None:
         profile = cfg.get_default_profile()
 
@@ -168,20 +202,19 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
     profile_contracts = selected_profile.contracts
     profile_contract_names = list(profile_contracts.keys())
 
-    init_addresses = {contract.name: 
-                     {val for val in profile_contracts[contract.name]["init_addresses"]}
-                      for contract in contracts}
+    init_addresses = {
+        name: set(profile_contracts[name]["init_addresses"])
+        for name in contracts_list.keys()
+    }
 
     sorter = gl.TopologicalSorter(init_addresses)
     deployment_order = list(sorter.static_order())
     contract_to_deploy = ""
 
-    for C in deployment_order:
-        if C in contracts_list:
-            contract = contracts_list[C]
-        else:
-            print(f"Contract name {C} not found")
-            return
+    for contract_turn in deployment_order:
+
+        assert contract_turn in contracts_list, f"Contract name {contract_turn} not found"
+        contract = contracts_list[contract_turn]
 
         if contract.name in profile_contract_names:
             profile_contract = selected_profile.deployments.get(contract.name)
@@ -218,49 +251,16 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
         client = LedgerClient(selected_profile.network)
 
         # load all the keys required for this operation
-        keys = {}
-        available_key_names = set(query_keychain_items())
-        all_keys = set(settings.deployer_key for settings in [contract_to_deploy[1]])
-
-        for key_name in all_keys:
-            if key_name not in available_key_names:
-                print(f"Unknown deployment key {key_name}")
-                return
-
-            info = query_keychain_item(key_name)
-            if not isinstance(info, LocalInfo):
-                print(f"Unable to lookup local key {key_name}")
-                return
-
-            keys[key_name] = PrivateKey(info.private_key)
+        keys = load_keys(contract_to_deploy)
 
         # reset this contracts metadata
         contract_settings = selected_profile.deployments[contract_to_deploy[0].name]
         contract_settings.address = None  # clear the old address
 
         addresses_names = selected_profile.contracts[contract_to_deploy[0].name]["init_addresses"]
-        
+
         if len(addresses_names) > 0:
-            file_name = "jenesis.toml"
-            data = toml.load(file_name)
-
-            # iterate over the addresses to insert
-            for name in addresses_names:
-                if name in profile_contract_names:
-                    init_data = data["profile"][profile]["contracts"][contract_to_deploy[0].name]["init"]
-                    deployed_contract_address = selected_profile.deployments[name].address
-
-                    if deployed_contract_address is not None:
-                        # insert deployed contract address in instantiation msg
-                        insert_address(init_data, name, str(deployed_contract_address))
-                    else:
-                        print(f"Contract {name} address not found")
-                        return
-                else:
-                    print(f"Contract name: ({name}) not found")
-                    return
-
-            contract_settings.init = init_data
+            contract_settings.init = insert_address(addresses_names, contract_to_deploy, selected_profile)
 
         # lookup the wallet key
         wallet = LocalWallet(keys[contract_settings.deployer_key])
@@ -278,6 +278,4 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
 
         # run the deployment task
         run_tasks([task])
-
-    return
     
