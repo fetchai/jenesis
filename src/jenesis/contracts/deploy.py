@@ -223,8 +223,17 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
 
         # ensure that contract has been compiled first
         if not os.path.isfile(contract.binary_path):
-            print(f"No contract binary found for {contract.name}. Please run 'jenesis compile' first.")
-            continue
+
+            # ensure contract file name is written with underscores
+            path, file = os.path.split(contract.binary_path)
+            new_file = file.replace("-", "_" )
+            new_path = os.path.join(path, new_file)
+
+            if not os.path.isfile(new_path):
+                print(f"No contract binary found for {contract.name}. Please run 'jenesis compile' first.")
+                continue
+
+            contract.binary_path = new_path
 
         if deployer_key is not None:
             profile_contract.deployer_key = deployer_key
