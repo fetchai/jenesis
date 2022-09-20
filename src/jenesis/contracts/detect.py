@@ -57,6 +57,10 @@ def detect_contracts(path: str) -> Optional[List[Contract]]:
             cargo_root = os.path.join(contracts_folder, name)
         artifacts_path = os.path.join(cargo_root, 'artifacts')
         binary_path = os.path.abspath(os.path.join(artifacts_path, f'{contract_name}.wasm'))
+
+        # replace hyphens with underscores to match rust naming convention
+        binary_path = binary_path.replace("-", "_")
+
         schema = load_contract_schema(source_path)
 
         return Contract(
