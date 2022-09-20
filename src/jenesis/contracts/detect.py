@@ -59,7 +59,7 @@ def detect_contracts(path: str) -> Optional[List[Contract]]:
         binary_path = os.path.abspath(os.path.join(artifacts_path, f'{contract_name}.wasm'))
 
         # replace hyphens with underscores to match rust naming convention
-        binary_path = binary_path.replace("-", "_" )
+        binary_path = binary_path.replace("-", "_")
 
         schema = load_contract_schema(source_path)
 
