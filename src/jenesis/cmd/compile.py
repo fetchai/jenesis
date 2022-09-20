@@ -1,11 +1,32 @@
+import hashlib
 import argparse
 import os
+import json
+import struct
 
 from blessings import Terminal
 from jenesis.contracts.build import build_contracts, build_workspace
 from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts, is_workspace
 from jenesis.contracts.schema import generate_schemas
+
+def compute_init_checksum(path, contract_name):
+
+    file_name = "instantiate_msg.json"
+    file_path = os.path.join(path, "contracts", contract_name,"schema", file_name)
+
+    if os.path.exists(path):
+        with open(file_path , 'r', encoding="utf-8") as file:
+            data = json.load(file)
+
+        hasher = hashlib.sha256()
+        encoded_value = "" if data is None else str(data)
+
+        hasher.update(struct.pack(">Q", len(encoded_value)))
+        hasher.update(encoded_value.encode())
+        return hasher.hexdigest()
+
+    return ""
 
 
 def run(args: argparse.Namespace):
@@ -24,6 +45,8 @@ def run(args: argparse.Namespace):
         print(term.red("Unable to detect any contracts"))
         return 1
 
+    init_checksums = {contract.name: compute_init_checksum(project_path, contract.name) for contract in contracts}
+
     if is_workspace(project_path):
         print(term.green("\nBuilding cargo workspace..."))
         build_workspace(project_path, contracts, optimize=args.optimize, rebuild=args.rebuild)
@@ -35,12 +58,13 @@ def run(args: argparse.Namespace):
     print(term.green("\nGenerating contract schemas..."))
     generate_schemas(contracts, batch_size=args.batch_size, rebuild=args.rebuild)
 
-    # update project file
     cfg = Config.load(os.getcwd())
-    for (profile_name, profile) in cfg.profiles.items():
-        network_name = profile.network.name
-        for contract in contracts:
-            Config.update_project(os.getcwd(), profile_name, network_name, contract)
+    for contract in contracts:
+        if compute_init_checksum(project_path, contract.name) != init_checksums[contract.name]:
+            # update project file
+            for (profile_name, profile) in cfg.profiles.items():
+                network_name = profile.network.name
+                Config.update_project(project_path, profile_name, network_name, contract)
 
     return 0
 
