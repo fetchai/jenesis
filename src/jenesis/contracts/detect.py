@@ -47,8 +47,8 @@ def detect_contracts(path: str) -> Optional[List[Contract]]:
         with open(cargo_file_path, 'r', encoding="utf-8") as cargo_file:
             cargo_contents = toml.load(cargo_file)
 
-        # extract the contract name
-        contract_name = cargo_contents['package']['name']
+        # extract the contract name and replace hyphens with underscores
+        contract_name = cargo_contents['package']['name'].replace("-", "_")
 
         source_path = os.path.abspath(os.path.join(contracts_folder, name))
         if is_workspace(path):
@@ -57,9 +57,6 @@ def detect_contracts(path: str) -> Optional[List[Contract]]:
             cargo_root = os.path.join(contracts_folder, name)
         artifacts_path = os.path.join(cargo_root, 'artifacts')
         binary_path = os.path.abspath(os.path.join(artifacts_path, f'{contract_name}.wasm'))
-
-        # replace hyphens with underscores to match rust naming convention
-        binary_path = binary_path.replace("-", "_")
 
         schema = load_contract_schema(source_path)
 
