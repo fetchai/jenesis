@@ -1,10 +1,10 @@
 import os
 from typing import List, Optional
 
-import json
 import toml
 
 from jenesis.contracts import Contract
+from jenesis.contracts.schema import load_contract_schema
 
 
 def is_workspace(path: str) -> bool:
@@ -57,6 +57,10 @@ def detect_contracts(path: str) -> Optional[List[Contract]]:
             cargo_root = os.path.join(contracts_folder, name)
         artifacts_path = os.path.join(cargo_root, 'artifacts')
         binary_path = os.path.abspath(os.path.join(artifacts_path, f'{contract_name}.wasm'))
+
+        # replace hyphens with underscores to match rust naming convention
+        binary_path = binary_path.replace("-", "_")
+
         schema = load_contract_schema(source_path)
 
         return Contract(
@@ -76,19 +80,3 @@ def detect_contracts(path: str) -> Optional[List[Contract]]:
     )
 
     return list(contracts)
-
-
-def load_contract_schema(source_path: str) -> dict:
-    schema_folder = os.path.join(source_path, 'schema')
-    if not os.path.isdir(schema_folder):
-        return None
-
-    schema = {}
-    for filename in os.listdir(schema_folder):
-        if filename.endswith('.json'):
-            msg_name = os.path.splitext(os.path.basename(filename))[0]
-            full_path = os.path.join(schema_folder, filename)
-            with open(full_path, 'r', encoding="utf-8") as msg_schema_file:
-                msg_schema = json.load(msg_schema_file)
-            schema[msg_name] = msg_schema
-    return schema
