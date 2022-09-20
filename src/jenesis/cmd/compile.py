@@ -60,8 +60,6 @@ def run(args: argparse.Namespace):
 
     cfg = Config.load(os.getcwd())
     for contract in contracts:
-        # print(init_checksums['tokenizer'])
-        # print(compute_init_checksum(project_path, contract.name))
         if compute_init_checksum(project_path, contract.name) != init_checksums[contract.name]:
             # update project file
             for (profile_name, profile) in cfg.profiles.items():
