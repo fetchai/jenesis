@@ -16,7 +16,17 @@ class ContractSchemaTask(ContractBuildTask):
     def __init__(self, contract: Contract, rebuild: bool):
         super().__init__(contract, False, rebuild)
         self._build_steps = SCHEMA_BUILD_STEPS
-        self._working_dir = os.path.join('/code', 'contracts', os.path.basename(contract.source_path))
+
+        # set working directory according to whether project is a cargo workspace
+        if contract.source_path == contract.cargo_root:
+            self._working_dir = '/code'
+        else: # cargo workspace case
+            self._working_dir = os.path.join(
+                '/code',
+                'contracts',
+                os.path.basename(contract.source_path)
+            )
+
         self._in_progress_text = "Generating schemas..."
 
     def _is_out_of_date(self) -> bool:
