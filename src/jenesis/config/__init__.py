@@ -118,15 +118,6 @@ class Config:
 
         deployment = profile.deployments.get(deployment_name)
         assert deployment is not None, f"Deployment not found: {deployment_name}"
-        # if deployment is None:
-        #     deployment = Deployment(
-        #         contract,
-        #         profile.network.name,
-        #         "", "", [],None, None, None, None, None
-        #     )
-
-        # project_contracts = {contract.name: contract for contract in detect_contracts(os.getcwd())}
-        # contract = project_contracts.get(deployment.contract)
 
         # update the contract if necessary
         if digest is not None:
