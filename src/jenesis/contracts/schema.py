@@ -14,7 +14,7 @@ SCHEMA_BUILD_STEPS = ["cargo schema"]
 class ContractSchemaTask(ContractBuildTask):
 
     def __init__(self, contract: Contract, rebuild: bool):
-        super().__init__(contract, False, rebuild)
+        super().__init__(contract, False, rebuild, False)
         self._build_steps = SCHEMA_BUILD_STEPS
 
         # set working directory according to whether project is a cargo workspace

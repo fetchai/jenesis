@@ -58,12 +58,17 @@ class ContainerTask(Task):
                 self._status = TaskStatus.COMPLETE
                 self._status_text = ''
 
+                log = self._container.logs()
+                self._show_logs(log, False)
+
                 # clean up the container if it was successful, otherwise keep if for the logs
                 self._container.remove()
 
             else:
                 self._status = TaskStatus.FAILED
                 self._status_text = ''
+                log = self._container.logs()
+                self._show_logs(log, True)
 
     @abstractmethod
     def _is_out_of_date(self) -> bool:

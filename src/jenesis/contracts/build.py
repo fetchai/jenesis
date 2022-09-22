@@ -21,11 +21,12 @@ class ContractBuildTask(ContainerTask):
 
     BUILD_CONTAINER = 'cosmwasm/rust-optimizer:0.12.5'
 
-    def __init__(self, contract: Contract, optimize: bool, rebuild: bool):
+    def __init__(self, contract: Contract, optimize: bool, rebuild: bool, log: bool):
         super().__init__()
         self.contract = contract
         self._optimize = optimize
         self._rebuild = rebuild
+        self._log = log
         self._build_steps = DEFAULT_BUILD_STEPS
         self._working_dir = '/code'
         self._in_progress_text = 'Building...'
@@ -73,12 +74,22 @@ class ContractBuildTask(ContainerTask):
             detach=True,
         )
 
+    def _show_logs(self, log, failure):
+        if failure or self._log:
+            print("")
+            print("Container Logs:")
+            print("---")
+            print(log)
+            print("---")
+            print("---")
+
 
 def build_contracts(
     contracts: List[Contract],
     batch_size: Optional[int] = None,
     optimize: Optional[bool] = False,
     rebuild: Optional[bool] = False,
+    log: Optional[bool] = False,
 ):
     """
     Will attempt to build all the specified contracts (provided they are out of date)
@@ -89,6 +100,7 @@ def build_contracts(
     :param rebuild: Whether to force a rebuild of the contracts
     :return:
     """
+
     # create all the tasks to be done
     tasks = list(
         map(
@@ -96,6 +108,7 @@ def build_contracts(
             contracts,
             [optimize] * len(contracts),
             [rebuild] * len(contracts),
+            [log] * len(contracts),
         )
     )
 
@@ -108,12 +121,13 @@ class WorkspaceBuildTask(ContainerTask):
 
     BUILD_CONTAINER = 'cosmwasm/workspace-optimizer:0.12.5'
 
-    def __init__(self, path: str, contracts: List[Contract], optimize: bool, rebuild: bool):
+    def __init__(self, path: str, contracts: List[Contract], optimize: bool, rebuild: bool, log: bool):
         super().__init__()
         self._path = path
         self._contracts = contracts
         self._optimize = optimize
         self._rebuild = rebuild
+        self._log = log
 
     @property
     def name(self) -> str:
@@ -158,12 +172,22 @@ class WorkspaceBuildTask(ContainerTask):
             detach=True,
         )
 
+    def _show_logs(self, log, failure):
+        if failure or self._log:
+            print("")
+            print("Container Logs:")
+            print("---")
+            print(log)
+            print("---")
+            print("---")
+
 
 def build_workspace(
     path: str,
     contracts: List[Contract],
     optimize: Optional[bool] = False,
-    rebuild: Optional[bool] = False
+    rebuild: Optional[bool] = False,
+    log: Optional[bool] = False
 ):
     """
     Will attempt to build the cargo workspace including all contracts
@@ -173,7 +197,7 @@ def build_workspace(
     :return:
     """
     # create all the tasks to be done
-    tasks = [WorkspaceBuildTask(path, contracts, optimize, rebuild)]
+    tasks = [WorkspaceBuildTask(path, contracts, optimize, rebuild, log)]
 
     # run the tasks
     run_tasks(tasks)
