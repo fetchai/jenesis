@@ -2,7 +2,7 @@ import graphlib as gl
 import os
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as ConcurrentTimeoutError
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Set, Union
 
 from cosmpy.aerial.client import LedgerClient
 from cosmpy.aerial.contract import LedgerContract
@@ -47,7 +47,7 @@ def insert_address(contract_address_names: List[str], deployment: Deployment, pr
     return init_data
 
 
-def load_keys(key_names: set[str]) -> Dict[str, PrivateKey]:
+def load_keys(key_names: Set[str]) -> Dict[str, PrivateKey]:
     keys = {}
     available_key_names = set(query_keychain_items())
     for key_name in key_names:
