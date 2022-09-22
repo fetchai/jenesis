@@ -77,3 +77,7 @@ class ContainerTask(Task):
     @abstractmethod
     def _schedule_container(self) -> Container:
         pass
+
+    @abstractmethod
+    def _show_logs(self, log: bytes, failure: bool):
+        pass

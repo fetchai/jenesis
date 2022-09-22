@@ -31,9 +31,6 @@ def compute_init_checksum(path, contract_name):
 
 def run(args: argparse.Namespace):
 
-    # Cambia poetry!
-    # ultimo print no se hace
-
     project_path = os.getcwd()
 
     # check that we are actually running the command from the project root
