@@ -25,6 +25,7 @@ TEMPLATE_GIT_URL = "https://github.com/fetchai/jenesis-templates.git"
 
 @dataclass
 class Deployment:
+    name: str # internal: the name for the deployment
     contract: str  # internal: the name of the contract to deploy
     network: str  # internal: the name of the network to deploy to
     deployer_key: str  # config: the name of the key to use for deployment
@@ -106,7 +107,7 @@ class Config:
     def update_deployment(
         self,
         profile_name: str,
-        contract_name: str,
+        deployment_name: str,
         digest: str,
         code_id: int,
         address: Address,
@@ -115,16 +116,17 @@ class Config:
         if profile is None:
             raise ConfigurationError(f"unable to lookup profile {profile_name}")
 
-        contracts = {contract.name: contract for contract in detect_contracts(os.getcwd())}
-        contract = contracts.get(contract_name)
+        deployment = profile.deployments.get(deployment_name)
+        assert deployment is not None, f"Deployment not found: {deployment_name}"
+        # if deployment is None:
+        #     deployment = Deployment(
+        #         contract,
+        #         profile.network.name,
+        #         "", "", [],None, None, None, None, None
+        #     )
 
-        deployment = profile.deployments.get(contract_name)
-        if deployment is None:
-            deployment = Deployment(
-                contract,
-                profile.network.name,
-                "", "", [],None, None, None, None, None
-            )
+        # project_contracts = {contract.name: contract for contract in detect_contracts(os.getcwd())}
+        # contract = project_contracts.get(deployment.contract)
 
         # update the contract if necessary
         if digest is not None:
@@ -134,7 +136,7 @@ class Config:
         if address is not None:
             deployment.address = Address(address)
 
-        profile.deployments[contract_name] = deployment
+        profile.deployments[deployment_name] = deployment
         self.profiles[profile_name] = profile
 
     def get_default_profile(self) -> str:
@@ -204,13 +206,13 @@ class Config:
 
         deployments = {}
         if "contracts" in profile:
-            for contract_name, contract_cfg in profile_contracts.items():
-                deployment_lock = lock_profile.get(contract_name, {})
+            for deployment_name, contract_cfg in profile_contracts.items():
+                deployment_lock = lock_profile.get(deployment_name, {})
 
                 deployment = cls._parse_contract_config(
-                    contract_cfg, network.name, deployment_lock
+                    deployment_name, contract_cfg, network.name, deployment_lock
                 )
-                deployments[contract_name] = deployment
+                deployments[deployment_name] = deployment
 
         is_default = False
         if "default" in profile:
@@ -226,7 +228,7 @@ class Config:
 
     @classmethod
     def _parse_contract_config(
-        cls, contract_cfg: dict, network: str, lock: Any
+        cls, deployment_name: str, contract_cfg: dict, network: str, lock: Any
     ) -> Deployment:
         if not isinstance(contract_cfg, dict):
             raise ConfigurationError(
@@ -241,6 +243,7 @@ class Config:
             return None if value is None else Address(value)
 
         return Deployment(
+            name=str(deployment_name),
             contract=extract_req_str(contract_cfg, "contract"),
             network=str(network),
             init=extract_opt_dict(contract_cfg, "init"),
@@ -277,7 +280,7 @@ class Config:
         # detect contract source code and add placeholders for key contract data
         contracts = detect_contracts(project_root) or []
 
-        deployments = {contract.name: Deployment(contract,
+        deployments = {contract.name: Deployment(contract.name, contract.name,
             network_name, "", {arg: "" for arg in contract.init_args()},
             "",[], None, None, None, None,
         ) for contract in contracts}
@@ -328,7 +331,10 @@ class Config:
         # take the project name directly from the base name of the project
         project_root = os.path.abspath(path)
 
-        deployment = Deployment(contract,
+        # set deployment name to contract name by default
+        deployment_name = contract.name
+
+        deployment = Deployment(deployment_name, contract.name,
             network_name, "", {arg: "" for arg in contract.init_args()},
             "",[], None, None, None, None)
 
@@ -377,7 +383,8 @@ class Config:
 
         contract_cfgs = {
             contract.name: Deployment(
-                contract,
+                contract.name,
+                contract.name,
                 network_name,
                 "",
                 {arg: "" for arg in contract.init_args()},

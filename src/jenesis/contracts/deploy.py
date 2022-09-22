@@ -66,13 +66,13 @@ def load_keys(key_names: set[str]) -> Dict[str, PrivateKey]:
 
 
 class DeployContractTask(Task):
-    def __init__(self, project_path: str, cfg: Config, profile: Profile, contract: Contract, config: Deployment,
-                 client: LedgerClient, wallet: Wallet):
+    def __init__(self, project_path: str, cfg: Config, profile: Profile, contract: Contract,
+                 deployment: Deployment, client: LedgerClient, wallet: Wallet):
         self._project_path = project_path
         self._cfg = cfg
         self._profile = profile
         self._contract = contract
-        self._config = config
+        self._deployment = deployment
         self._client = client
         self._wallet = wallet
 
@@ -91,7 +91,7 @@ class DeployContractTask(Task):
 
     @property
     def name(self) -> str:
-        return self._contract.name
+        return self._deployment.name
 
     @property
     def status(self) -> TaskStatus:
@@ -124,8 +124,8 @@ class DeployContractTask(Task):
             return MonkeyContract(
                 self._contract,
                 self._client,
-                code_id=self._config.code_id,
-                address=self._config.address
+                code_id=self._deployment.code_id,
+                address=self._deployment.address
             )
 
         self._future = self._executor.submit(action)
@@ -147,10 +147,10 @@ class DeployContractTask(Task):
 
         def action():
             return self.ledger_contract.deploy(
-                args=self._config.init,
+                args=self._deployment.init,
                 sender=self._wallet,
                 admin_address=self._wallet.address(),
-                funds=self._config.init_funds,
+                funds=self._deployment.init_funds,
             )
 
         self._future = self._executor.submit(action)
@@ -168,7 +168,7 @@ class DeployContractTask(Task):
 
     def _complete(self):
         # update the configuration and save it to disk
-        self._cfg.update_deployment(self._profile.name, self._contract.name,
+        self._cfg.update_deployment(self._profile.name, self._deployment.name,
                                     self.ledger_contract.digest.hex(),
                                     self.ledger_contract.code_id, self.contract_address)
         self._cfg.save(self._project_path)
@@ -239,7 +239,7 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
                 print(f"Skipping {deployment_name}: configuration is up to date")
                 continue
 
-            if contract.digest == deployment.digest():
+            if contract.digest() == deployment.digest:
                 print(f"Skipping {deployment_name}: digest has not changed")
                 continue
 
