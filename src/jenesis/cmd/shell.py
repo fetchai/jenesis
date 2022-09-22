@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 from cosmpy.aerial.client import LedgerClient
 from cosmpy.aerial.faucet import FaucetApi
@@ -19,7 +20,6 @@ def load_config(args: argparse.Namespace) -> dict:
 
     # check that we are actually running the command from the project root
     if not os.path.exists(os.path.join(project_path, "jenesis.toml")):
-        # pylint: disable=all
         raise RuntimeError("Please run command from project root or create project first")
 
     cfg = Config.load(project_path)
@@ -30,13 +30,13 @@ def load_config(args: argparse.Namespace) -> dict:
 
     if args.profile is not None and args.profile not in cfg.profiles:
         print(f'Invalid profile name. Expected one of {",".join(cfg.profiles.keys())}')
-        return
+        sys.exit(1)
 
     profile_name = args.profile or cfg.get_default_profile()
 
     selected_profile = cfg.profiles.get(profile_name)
 
-    profile_contracts = selected_profile.contracts
+    deployments = selected_profile.deployments
 
     if selected_profile is not None:
         if selected_profile.network.is_local:
@@ -49,42 +49,32 @@ def load_config(args: argparse.Namespace) -> dict:
 
         print('Detecting contracts...')
 
-        for (contract_name, profile_contract) in profile_contracts.items():
-            contract = contracts[profile_contract['contract']]
-            print("C", contract_name)
+        for (deployment_name, deployment) in deployments.items():
+            contract = contracts[deployment.contract]
+            print("C", deployment_name)
 
             # skip contracts that we have not compiled
             if contract.digest() is None:
                 continue
 
-            # select the metadata for the contract
-            selected_contract = selected_profile.deployments.get(contract_name)
-
-            if selected_contract is not None:
-                address = selected_contract.address
-                code_id = selected_contract.code_id
-            else:
-                code_id = None
-                address = None
-
             monkey = MonkeyContract(
                 contract,
                 client,
-                address=address,
-                code_id=code_id,
+                address=deployment.address,
+                code_id=deployment.code_id,
                 observer=DeploymentUpdater(
                     cfg,
                     project_path,
                     profile_name,
-                    contract_name,
+                    deployment_name,
                 ),
-                init_args=selected_contract.init,
+                init_args=deployment.init,
             )
 
-            contract_instances[contract_name] = monkey
+            contract_instances[deployment_name] = monkey
 
         print('Detecting contracts...complete')
-        
+
         shell_globals["ledger"] = LedgerClient(selected_profile.network)
         if selected_profile.network.faucet_url is not None:
             shell_globals["faucet"] = FaucetApi(selected_profile.network)

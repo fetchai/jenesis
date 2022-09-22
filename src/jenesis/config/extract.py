@@ -82,5 +82,9 @@ def extract_req_list(data: Any, path: str) -> List[Any]:
     return _required(_extract_type(data, path, list))
 
 
+def extract_opt_list(data: Any, path: str) -> Optional[list]:
+    return _extract_type(data, path, list)
+
+
 def extract_req_str_list(data: Any, path: str) -> List[str]:
     return _required(_extract_list_type(data, path, str))

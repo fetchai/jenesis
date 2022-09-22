@@ -2,9 +2,8 @@ import graphlib as gl
 import os
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as ConcurrentTimeoutError
-from typing import Optional
+from typing import Dict, List, Optional, Union
 
-import toml
 from cosmpy.aerial.client import LedgerClient
 from cosmpy.aerial.contract import LedgerContract
 from cosmpy.aerial.wallet import LocalWallet, Wallet
@@ -22,7 +21,7 @@ from jenesis.tasks.monitor import run_tasks
 
 
 # Recursive function to insert deployed contract address into instantiation msg
-def insert(data, contract_name, address):
+def insert(data: Union[Dict, List], contract_name: str, address: str):
     for key, value in data.items() if isinstance(data, dict) else enumerate(data):
         if value == contract_name:
             data[key] = address
@@ -30,19 +29,15 @@ def insert(data, contract_name, address):
             insert(value, contract_name, address)
 
 
-def insert_address(addresses, contract, selected_profile):
-    file_name = "jenesis.toml"
-    data = toml.load(file_name)
+def insert_address(contract_address_names: List[str], deployment: Deployment, profile: Profile) -> dict:
 
-    profile = selected_profile.name
-    profile_contracts = selected_profile.contracts
-    contract_names = list(profile_contracts.keys())
+    deployment_names = list(profile.deployments.keys())
 
     # iterate over the addresses to insert
-    for name in addresses:
-        if name in contract_names:
-            init_data = data["profile"][profile]["contracts"][contract.name]["init"]
-            deployed_contract_address = selected_profile.deployments[name].address
+    for name in contract_address_names:
+        if name in deployment_names:
+            init_data = deployment.init
+            deployed_contract_address = profile.deployments[name].address
 
             assert deployed_contract_address is not None, f"Contract {name} address not found"
 
@@ -51,17 +46,22 @@ def insert_address(addresses, contract, selected_profile):
 
     return init_data
 
-def load_keys(contract):
+
+def load_keys(key_names: set[str]) -> Dict[str, PrivateKey]:
     keys = {}
     available_key_names = set(query_keychain_items())
-    key_name = contract.deployer_key
+    for key_name in key_names:
 
-    assert key_name in available_key_names, f"Unknown deployment key {key_name}"
+        if key_name not in available_key_names:
+            print(f"Key not found: {key_name}")
+            continue
 
-    info = query_keychain_item(key_name)
-    assert isinstance(info, LocalInfo), f"Unable to lookup local key {key_name}"
+        info = query_keychain_item(key_name)
+        if not isinstance(info, LocalInfo):
+            print(f"Failed to retrieve local key: {key_name}")
+            continue
 
-    keys[key_name] = PrivateKey(info.private_key)
+        keys[key_name] = PrivateKey(info.private_key)
     return keys
 
 
@@ -187,45 +187,38 @@ class DeployContractTask(Task):
         self._status_text = ''
 
 
-def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str], profile: Optional[str] = None):
-    if profile is None:
-        profile = cfg.get_default_profile()
+def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str], profile_name: Optional[str] = None):
+    if profile_name is None:
+        profile_name = cfg.get_default_profile()
 
-    selected_profile = cfg.profiles[profile]
+    profile = cfg.profiles[profile_name]
 
-    if selected_profile.network.is_local:
-        run_local_node(selected_profile.network)
+    if profile.network.is_local:
+        run_local_node(profile.network)
 
-    contracts = {contract.name: contract for contract in detect_contracts(project_path)}
-
-    profile_contracts = selected_profile.contracts
-    profile_contract_names = list(profile_contracts.keys())
-
-    # determine what tasks to do
-    for (contract_name, profile_contract) in profile_contracts.items():
-        contract = contracts[profile_contract['contract']]
-        if contract_name in contracts:
-            contract = contracts[profile_contract['contract']]
-            deployment = selected_profile.deployments.get(contract_name)
+    project_contracts = {contract.name: contract for contract in detect_contracts(project_path)}
+    deployments = profile.deployments
 
     init_addresses = {
-        name: set(profile_contracts[name]["init_addresses"])
-        for name in contracts
+        name: set(deployment.init_addresses)
+        for (name, deployment) in deployments.items()
     }
+
+    # load all the keys required for this operation
+    key_names = {deployment.deployer_key for deployment in deployments.values()} | {deployer_key}
+    keys = load_keys(key_names)
 
     sorter = gl.TopologicalSorter(init_addresses)
     deployment_order = list(sorter.static_order())
 
-    for contract_turn in deployment_order:
+    for deployment_name in deployment_order:
+        deployment = deployments[deployment_name]
 
-        assert contract_turn in contracts, f"Contract name {contract_turn} not found"
-        contract = contracts[contract_turn]
-
-        if contract.name in profile_contract_names:
-            profile_contract = selected_profile.deployments.get(contract.name)
-        else:
+        # ensure specified contract is in project
+        if deployment.contract not in project_contracts:
+            print(f"Contract {deployment_name} not found in project")
             continue
-        assert deployment is not None
+        contract = project_contracts[deployment.contract]
 
         # ensure that contract has been compiled first
         if not os.path.isfile(contract.binary_path):
@@ -233,46 +226,45 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
             continue
 
         if deployer_key is not None:
-            profile_contract.deployer_key = deployer_key
-            Config.update_key(os.getcwd(), profile, contract, deployer_key)
 
-        digest = contract.digest()
-        if digest is None:
-            continue  # we can't process any contracts where we don't have
+            if deployer_key not in keys:
+                print(f"Skipping {deployment_name}: deployer key {deployer_key} not available")
+                continue
 
-        assert digest is not None
+            deployment.deployer_key = deployer_key
+            Config.update_key(os.getcwd(), profile_name, deployment_name, deployer_key)
 
-        if not profile_contract.is_configuration_out_of_date() and profile_contract.digest == digest:
-            continue
+        if deployment.address is not None:
+            if not deployment.is_configuration_out_of_date():
+                print(f"Skipping {deployment_name}: configuration is up to date")
+                continue
 
-        client = LedgerClient(selected_profile.network)
+            if contract.digest == deployment.digest():
+                print(f"Skipping {deployment_name}: digest has not changed")
+                continue
 
-        # load all the keys required for this operation
-        keys = load_keys(profile_contract)
+        client = LedgerClient(profile.network)
 
-        # reset this contracts metadata
-        contract_settings = selected_profile.deployments[contract.name]
-        contract_settings.address = None  # clear the old address
+        deployment.address = None  # clear the old address
 
-        addresses_names = selected_profile.contracts[contract.name]["init_addresses"]
+        contract_address_names = init_addresses[deployment_name]
 
-        if len(addresses_names) > 0:
-            contract_settings.init = insert_address(addresses_names, contract, selected_profile)
+        if len(contract_address_names) > 0:
+            deployment.init = insert_address(contract_address_names, deployment, profile)
 
         # lookup the wallet key
-        wallet = LocalWallet(keys[contract_settings.deployer_key])
+        wallet = LocalWallet(keys[deployment.deployer_key])
 
         # create the deployment task
         task = DeployContractTask(
             project_path,
             cfg,
-            selected_profile,
+            profile,
             contract,
-            contract_settings,
+            deployment,
             client,
             wallet,
         )
 
         # run the deployment task
         run_tasks([task])
-    
