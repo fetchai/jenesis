@@ -22,7 +22,7 @@ def test_add_contract():
     project_root = os.path.abspath(os.getcwd())
     contract_root = os.path.join(project_root, "contracts", contract_name)
 
-    Config.add_contract(contract_root, template, contract_name, None)
+    Config.add_contract(project_root, template, contract_name, None)
 
     contracts = detect_contracts(project_root)
     contract = contracts[0]
