@@ -74,14 +74,8 @@ class ContractBuildTask(ContainerTask):
             detach=True,
         )
 
-    def _show_logs(self, log, failure):
-        if failure or self._log:
-            print("")
-            print("Container Logs:")
-            print("---")
-            print(log)
-            print("---")
-            print("---")
+    def _show_logs(self):
+        return self._log
 
 
 def build_contracts(
@@ -172,15 +166,8 @@ class WorkspaceBuildTask(ContainerTask):
             detach=True,
         )
 
-    def _show_logs(self, log, failure):
-        if failure or self._log:
-            print("")
-            print("Container Logs:")
-            print("---")
-            print(log)
-            print("---")
-            print("---")
-
+    def _show_logs(self):
+        return self._log
 
 def build_workspace(
     path: str,

@@ -22,6 +22,11 @@ class Task(ABC):
 
     @property
     @abstractmethod
+    def logs_text(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
     def status_text(self) -> str:
         pass
 

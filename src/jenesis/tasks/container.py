@@ -11,6 +11,11 @@ class ContainerTask(Task):
         self._status = TaskStatus.IDLE
         self._status_text = ''
         self._in_progress_text = 'Building...'
+        self._logs = ''
+
+    @property
+    def logs_text(self) -> str:
+        return self._logs
 
     @property
     def status_text(self) -> str:
@@ -58,8 +63,9 @@ class ContainerTask(Task):
                 self._status = TaskStatus.COMPLETE
                 self._status_text = ''
 
-                log = self._container.logs()
-                self._show_logs(log, False)
+                if self._show_logs():
+                    log_text = self._container.logs().decode("utf-8")
+                    self._logs = log_text
 
                 # clean up the container if it was successful, otherwise keep if for the logs
                 self._container.remove()
@@ -67,8 +73,8 @@ class ContainerTask(Task):
             else:
                 self._status = TaskStatus.FAILED
                 self._status_text = ''
-                log = self._container.logs()
-                self._show_logs(log, True)
+                log_text = self._container.logs().decode("utf-8")
+                self._logs = log_text
 
     @abstractmethod
     def _is_out_of_date(self) -> bool:
@@ -79,5 +85,5 @@ class ContainerTask(Task):
         pass
 
     @abstractmethod
-    def _show_logs(self, log: bytes, failure: bool):
+    def _show_logs(self):
         pass
