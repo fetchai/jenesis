@@ -35,6 +35,7 @@ class ContractBuildTask(ContainerTask):
         return self.contract.name
 
     def _is_out_of_date(self) -> bool:
+        #  pylint: disable=duplicate-code
         if self._rebuild:
             return True
 
@@ -45,7 +46,8 @@ class ContractBuildTask(ContainerTask):
             compiled_contract_timestamp = 0
 
         # determine the timestamp of the contract source
-        contract_source_timestamp = get_last_modified_timestamp([self.contract.source_path], 'rs')
+        src_path = os.path.join(self.contract.source_path, 'src')
+        contract_source_timestamp = get_last_modified_timestamp([src_path], 'rs')
 
         return contract_source_timestamp > compiled_contract_timestamp
 
