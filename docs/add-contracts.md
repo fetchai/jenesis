@@ -52,15 +52,15 @@ The `update` command will automatically detect which contract is missing in the 
 
 # Attach deployed contracts
 
-If you have added a contract into the project's contract folder that has already been deployed in the network, you can attach it to your project for future interaction using the ```attach``` command.
+If you add a contract into the project's contract folder that has already been deployed in the network, you can attach it to your project for future interaction using the ```attach``` command.
 
-First, you need to add the contract to your project:
+To add a contract to yout project you can run:
 
 ```
 jenesis add contract starter my_first_contract
 ```
 
-If you added the contract just by copying and pasting it, you will need to run:
+If you add the contract just by copying and pasting it, you will need to run:
 
 ```
 jenesis update
