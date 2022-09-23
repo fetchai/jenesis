@@ -70,7 +70,8 @@ class TaskStatusDisplay:
             else:
                 glyph = self._term.magenta(self.IN_PROGRESS_GLYPHS[progress])
                 progress_text = self._task_status_text[name]
-
+                
+            # render the status
             print(f'  {glyph} {self._term.blue(name)}: {progress_text}'.ljust(self._term.width))
 
         self._first_render = False
