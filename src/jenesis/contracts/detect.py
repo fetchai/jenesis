@@ -23,6 +23,34 @@ def is_workspace(path: str) -> bool:
     return True
 
 
+def parse_contract(path: str, name: str) -> Contract:
+    contracts_folder = os.path.join(path, 'contracts')
+    cargo_file_path = os.path.join(contracts_folder, name, 'Cargo.toml')
+    with open(cargo_file_path, 'r', encoding="utf-8") as cargo_file:
+        cargo_contents = toml.load(cargo_file)
+
+    # extract the contract name and replace hyphens with underscores
+    contract_name = cargo_contents['package']['name'].replace("-", "_")
+
+    source_path = os.path.abspath(os.path.join(contracts_folder, name))
+    if is_workspace(path):
+        cargo_root = path
+    else:
+        cargo_root = os.path.join(contracts_folder, name)
+    artifacts_path = os.path.join(cargo_root, 'artifacts')
+    binary_path = os.path.abspath(os.path.join(artifacts_path, f'{contract_name}.wasm'))
+
+    schema = load_contract_schema(source_path)
+
+    return Contract(
+        name=name,
+        source_path=source_path,
+        binary_path=binary_path,
+        cargo_root=cargo_root,
+        schema=schema,
+    )
+
+
 def detect_contracts(path: str) -> Optional[List[Contract]]:
     contracts_folder = os.path.join(path, 'contracts')
     if not os.path.isdir(contracts_folder):
@@ -42,38 +70,15 @@ def detect_contracts(path: str) -> Optional[List[Contract]]:
 
         return True
 
-    def parse_contract(name: str) -> Contract:
-        cargo_file_path = os.path.join(contracts_folder, name, 'Cargo.toml')
-        with open(cargo_file_path, 'r', encoding="utf-8") as cargo_file:
-            cargo_contents = toml.load(cargo_file)
-
-        # extract the contract name and replace hyphens with underscores
-        contract_name = cargo_contents['package']['name'].replace("-", "_")
-
-        source_path = os.path.abspath(os.path.join(contracts_folder, name))
-        if is_workspace(path):
-            cargo_root = path
-        else:
-            cargo_root = os.path.join(contracts_folder, name)
-        artifacts_path = os.path.join(cargo_root, 'artifacts')
-        binary_path = os.path.abspath(os.path.join(artifacts_path, f'{contract_name}.wasm'))
-
-        schema = load_contract_schema(source_path)
-
-        return Contract(
-            name=name,
-            source_path=source_path,
-            binary_path=binary_path,
-            cargo_root=cargo_root,
-            schema=schema,
-        )
+    contract_list = list(filter(
+        is_contract,
+        os.listdir(contracts_folder)
+    ))
 
     contracts = map(
         parse_contract,
-        filter(
-            is_contract,
-            os.listdir(contracts_folder)
-        )
+        [path] * len(contract_list),
+        contract_list,
     )
 
     return list(contracts)

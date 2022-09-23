@@ -2,7 +2,6 @@ import argparse
 import os
 
 from jenesis.config import Config
-from jenesis.contracts.detect import detect_contracts
 
 
 def add_contract_command(parser):
@@ -26,7 +25,6 @@ def run_add_contract(args: argparse.Namespace):
 
     # check that we are actually running the command from the project root
     if not os.path.exists(os.path.join(project_root, "jenesis.toml")):
-        # pylint: disable=all
         print("Please run command from project root")
         return False
 
@@ -35,24 +33,12 @@ def run_add_contract(args: argparse.Namespace):
         print(f'Contract "{name}" already exists')
         return False
 
-    Config.add_contract(contract_root, template, name, branch)
-
-    contracts = detect_contracts(project_root)
-
-    selected_contract = ""
-    for contract in contracts:
-        if contract.name == name:
-            selected_contract = contract
-            continue
-
-    if selected_contract == "":
-        print("Contract not found in project")
-        return
+    selected_contract = Config.add_contract(project_root, template, name, branch)
 
     cfg = Config.load(project_root)
 
-    for profile in cfg.profiles.keys():
-        network_name = cfg.profiles[profile].network.name
-        Config.update_project(os.getcwd(), profile, network_name, selected_contract)
+    for (profile_name, profile) in cfg.profiles.items():
+        network_name = profile.network.name
+        Config.update_project(os.getcwd(), profile_name, network_name, selected_contract)
 
     return True
