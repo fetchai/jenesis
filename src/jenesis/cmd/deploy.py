@@ -11,7 +11,6 @@ def run(args: argparse.Namespace):
 
     # check that we are actually running the command from the project root
     if not os.path.exists(os.path.join(project_path, "jenesis.toml")):
-        # pylint: disable=all
         print("Please run command from project root")
         return 1
 
@@ -21,7 +20,7 @@ def run(args: argparse.Namespace):
         print(f'Invalid profile name. Expected one of {",".join(cfg.profiles.keys())}')
         return 1
 
-    deploy_contracts(cfg, project_path, args.key, profile=args.profile)
+    deploy_contracts(cfg, project_path, args.key, profile_name=args.profile)
     return 0
 
 

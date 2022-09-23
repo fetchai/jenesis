@@ -28,21 +28,16 @@ def run(args: argparse.Namespace):
 
     selected_profile = cfg.profiles[profile_name]
 
-    contracts = detect_contracts(project_path)
-
-    selected_contract = ""
-    for contract in contracts:
-        if contract.name == args.contract:
-            selected_contract = contract
-            continue
-
-    if selected_contract == "":
-        print('Contract not found in project')
+    if args.contract not in selected_profile.deployments:
+        print('Deployment not found in project')
         return 1
+    deployment = selected_profile.deployments[args.contract]
 
     client = LedgerClient(selected_profile.network)
 
-    contract = MonkeyContract(selected_contract, client, args.address)
+    project_contracts = {contract.name: contract for contract in detect_contracts(project_path)}
+
+    contract = MonkeyContract(project_contracts[deployment.contract], client, args.address)
     code_id = contract.code_id
     digest = contract.digest.hex()
 
@@ -50,10 +45,10 @@ def run(args: argparse.Namespace):
 
     network = Network(**data["profile"][profile_name]["network"])
 
-    Config.update_project(project_path, profile_name, network.name, selected_contract)
+    Config.update_project(project_path, profile_name, network.name, project_contracts[deployment.contract])
 
     cfg.update_deployment(
-        selected_profile.name, args.contract, digest, code_id, args.address
+        selected_profile.name, deployment.name, digest, code_id, args.address
     )
     cfg.save(project_path)
     return 0
