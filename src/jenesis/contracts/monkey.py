@@ -174,7 +174,8 @@ class MonkeyContract(LedgerContract):
             return query
 
         for query_msg in self._contract.query_msgs():
-            setattr(self, query_msg, make_query(query_msg))
+            if getattr(self, query_msg, None) is None:
+                setattr(self, query_msg, make_query(query_msg))
 
     def _add_executions(self):
 
@@ -185,7 +186,8 @@ class MonkeyContract(LedgerContract):
             return execute
 
         for execute_msg in self._contract.execute_msgs():
-            setattr(self, execute_msg, make_execution(execute_msg))
+            if getattr(self, execute_msg, None) is None:
+                setattr(self, execute_msg, make_execution(execute_msg))
 
     def __repr__(self):
         return str(self._address)
