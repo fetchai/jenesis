@@ -166,16 +166,26 @@ class MonkeyContract(LedgerContract):
         return self._find_contract_id_by_digest(self._digest)
 
     def _add_queries(self):
+
+        def make_query(query_msg):
+            def query(*args, **kwargs):
+                query_args = {query_msg: kwargs}
+                return self.query(query_args, *args)
+            return query
+
         for query_msg in self._contract.query_msgs():
-            def query():
-                return 1
-            setattr(self, query_msg, query)
+            setattr(self, query_msg, make_query(query_msg))
 
     def _add_executions(self):
+
+        def make_execution(execute_msg):
+            def execute(*args, **kwargs):
+                execute_args = {execute_msg: kwargs}
+                return self.execute(execute_args, *args)
+            return execute
+
         for execute_msg in self._contract.execute_msgs():
-            def execute():
-                return 1
-            setattr(self, execute_msg, execute)
+            setattr(self, execute_msg, make_execution(execute_msg))
 
     def __repr__(self):
         return str(self._address)
