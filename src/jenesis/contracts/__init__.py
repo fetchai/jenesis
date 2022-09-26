@@ -28,9 +28,6 @@ class Contract:
     def init_args(self) -> dict:
         return self.schema.get('instantiate_msg', {}).get('properties',{}).keys()
 
-    def msg_args(self, msg_type) -> dict:
-        pass
-
     def _extract_msgs(self, msg_type: str) -> dict:
         msgs = {}
         if 'oneOf' in self.schema[msg_type]:
