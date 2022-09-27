@@ -79,6 +79,7 @@ class DeployContractTask(Task):
         # task status
         self._status = TaskStatus.IDLE
         self._status_text = ''
+        self._logs = ''
 
         # background worker
         self._executor = ThreadPoolExecutor(max_workers=1)
@@ -100,6 +101,10 @@ class DeployContractTask(Task):
     @property
     def status_text(self) -> str:
         return self._status_text
+
+    @property
+    def logs_text(self) -> str:
+        return self._logs
 
     def poll(self):
         if self._state == 'idle':

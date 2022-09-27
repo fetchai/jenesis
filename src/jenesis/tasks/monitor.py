@@ -28,6 +28,7 @@ class TaskStatusDisplay:
         self._name_length = 0
         self._task_progress = {}  # type: Dict[str, int]
         self._task_status_text = {}  # type: Dict[str, Optional[str]]
+        self._log = {}
 
     def update(self, task: Task):
         self._name_length = max(self._name_length, len(task.name))
@@ -46,6 +47,7 @@ class TaskStatusDisplay:
         # update the status dictionaries
         self._task_progress[task.name] = progress
         self._task_status_text[task.name] = status_text
+        self._log[task.name] = task.logs_text
 
     def render(self):
 
@@ -64,13 +66,34 @@ class TaskStatusDisplay:
             if progress == self.COMPLETE:
                 glyph = self._term.green(self.COMPLETE_GLYPH)
                 progress_text = self._term.green('complete')
+
+                if self._log[name]:
+                    sys.stdout.write(self._term.move_down)
+                    print("")
+                    print(f'{self._term.blue(name)} {self._term.yellow("Container logs")}')
+                    print("-----------------")
+                    print(self._log[name])
+                    print("-----------------")
+                    sys.stdout.write(self._term.move_down)
+                    self._log[name] = ""
+
             elif progress == self.FAILED:
                 glyph = self._term.red(self.FAILED_GLYPH)
                 progress_text = self._term.red('FAILED')
+                sys.stdout.write(self._term.move_down)
+                if self._log[name]:
+                    print("")
+                    print(f'{self._term.blue(name)} {self._term.yellow("Container logs")}')
+                    print("-----------------")
+                    print(self._log[name])
+                    print("-----------------")
+                    sys.stdout.write(self._term.move_down)
+                    self._log[name] = ""
+
             else:
                 glyph = self._term.magenta(self.IN_PROGRESS_GLYPHS[progress])
                 progress_text = self._task_status_text[name]
-                
+
             # render the status
             print(f'  {glyph} {self._term.blue(name)}: {progress_text}'.ljust(self._term.width))
 
@@ -79,7 +102,6 @@ class TaskStatusDisplay:
 
 def run_tasks(tasks: List[Task], poll_interval: Optional[float] = None) -> Tuple[List[Task], List[Task]]:
 
-    term = Terminal()
 
     if len(tasks) == 0:
         return [], []
@@ -126,18 +148,5 @@ def run_tasks(tasks: List[Task], poll_interval: Optional[float] = None) -> Tuple
 
         time.sleep(poll_interval)
         # count += 1
-
-    print()
-    for task in completed_tasks:
-        logs = task.logs_text
-        if logs:
-            print(f'{term.blue(task.name)} {term.yellow("container logs:")}')
-            print(logs)
-
-    for task in failed_tasks:
-        logs = task.logs_text
-        if logs:
-            print(f'{term.blue(task.name)} {term.yellow("container logs:")}')
-            print(logs)
 
     return completed_tasks, failed_tasks
