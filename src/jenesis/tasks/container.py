@@ -57,19 +57,18 @@ class ContainerTask(Task):
         # check on the progress of the container
         self._container.reload()
 
+        if self._show_logs():
+            log_text = self._container.logs().decode("utf-8")
+            self._logs = log_text
+
         if self._container.status == 'exited':
             exit_code = int(self._container.attrs['State']['ExitCode'])
             if exit_code == 0:
                 self._status = TaskStatus.COMPLETE
                 self._status_text = ''
 
-                if self._show_logs():
-                    log_text = self._container.logs().decode("utf-8")
-                    self._logs = log_text
-
                 # clean up the container if it was successful, otherwise keep if for the logs
                 self._container.remove()
-
             else:
                 self._status = TaskStatus.FAILED
                 self._status_text = ''

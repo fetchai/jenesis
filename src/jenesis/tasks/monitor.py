@@ -66,42 +66,28 @@ class TaskStatusDisplay:
             if progress == self.COMPLETE:
                 glyph = self._term.green(self.COMPLETE_GLYPH)
                 progress_text = self._term.green('complete')
-
-                if self._log[name]:
-                    sys.stdout.write(self._term.move_down)
-                    print("")
-                    print(f'{self._term.blue(name)} {self._term.yellow("Container logs")}')
-                    print("-----------------")
-                    print(self._log[name])
-                    print("-----------------")
-                    sys.stdout.write(self._term.move_down)
-                    self._log[name] = ""
-
             elif progress == self.FAILED:
                 glyph = self._term.red(self.FAILED_GLYPH)
                 progress_text = self._term.red('FAILED')
-                sys.stdout.write(self._term.move_down)
-                if self._log[name]:
-                    print("")
-                    print(f'{self._term.blue(name)} {self._term.yellow("Container logs")}')
-                    print("-----------------")
-                    print(self._log[name])
-                    print("-----------------")
-                    sys.stdout.write(self._term.move_down)
-                    self._log[name] = ""
-
             else:
                 glyph = self._term.magenta(self.IN_PROGRESS_GLYPHS[progress])
-                progress_text = self._task_status_text[name]
+                if self._log[name]:
+                    progress_text = self._log[name].splitlines()[-1]
+                else:
+                    progress_text = self._task_status_text[name]
 
             # render the status
             print(f'  {glyph} {self._term.blue(name)}: {progress_text}'.ljust(self._term.width))
 
         self._first_render = False
 
+    def show_logs(self, task: Task):
+        if self._log[task.name]:
+            print(f'\n{self._term.green("Logs for")} {self._term.blue(task.name)}:')
+            print(self._term.yellow(self._log[task.name]))
+
 
 def run_tasks(tasks: List[Task], poll_interval: Optional[float] = None) -> Tuple[List[Task], List[Task]]:
-
 
     if len(tasks) == 0:
         return [], []
@@ -115,9 +101,7 @@ def run_tasks(tasks: List[Task], poll_interval: Optional[float] = None) -> Tuple
     completed_tasks = []
     failed_tasks = []
 
-    # count = 0
     while True:
-        # print(f'Monitor Loop {count}')
 
         in_progress_tasks = []
         for task in tasks:
@@ -147,6 +131,8 @@ def run_tasks(tasks: List[Task], poll_interval: Optional[float] = None) -> Tuple
             break
 
         time.sleep(poll_interval)
-        # count += 1
+
+    for task in failed_tasks + completed_tasks:
+        display.show_logs(task)
 
     return completed_tasks, failed_tasks
