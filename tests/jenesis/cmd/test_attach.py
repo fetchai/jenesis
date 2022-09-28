@@ -7,7 +7,7 @@ import pytest
 from jenesis.config import Config
 
 
-#@pytest.mark.skip
+@pytest.mark.skip
 def test_attach_contract():
     """Test attach contract"""
 

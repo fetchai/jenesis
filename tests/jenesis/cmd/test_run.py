@@ -7,9 +7,9 @@ import pytest
 from jenesis.config import Config
 
 
-@pytest.mark.skip
-def test_compile_contract():
-    """Test compile contract"""
+#@pytest.mark.skip
+def test_attach_contract():
+    """Test attach contract"""
 
     network = "fetchai-testnet"
     profile = "profile_1"
@@ -26,15 +26,7 @@ def test_compile_contract():
 
     Config.add_contract(project_root, template, contract_name, None)
 
-    subprocess.run("jenesis compile", shell=True)
-    time.sleep(60)
-
-    compiled_contract = os.path.join(
-        contract_root, "artifacts", contract_name + ".wasm"
-    )
-
-    # check to see if the contract has been compiled
-    assert os.path.exists(compiled_contract)
+    subprocess.run("jenesis run tests/jenesis/cmd/scripts/script.py", shell=True)
 
     os.remove("jenesis.toml")
     shutil.rmtree("contracts")
