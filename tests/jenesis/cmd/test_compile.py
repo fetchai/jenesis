@@ -37,4 +37,4 @@ def test_compile_contract():
     assert os.path.exists(compiled_contract)
 
     os.remove("jenesis.toml")
-    shutil.rmtree("contracts")
+    #shutil.rmtree("contracts")

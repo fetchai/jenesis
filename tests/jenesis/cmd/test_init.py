@@ -30,4 +30,4 @@ def test_init_create_project():
     assert data["profile"]["testing"]["network"] == network
 
     os.remove("jenesis.toml")
-    shutil.rmtree("contracts")
+    #shutil.rmtree("contracts")
