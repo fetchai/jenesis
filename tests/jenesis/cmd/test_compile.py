@@ -7,7 +7,7 @@ import pytest
 from jenesis.config import Config
 
 
-@pytest.mark.skip
+#@pytest.mark.skip
 def test_compile_contract():
     """Test compile contract"""
 
@@ -26,7 +26,7 @@ def test_compile_contract():
 
     Config.add_contract(project_root, template, contract_name, None)
 
-    subprocess.run("jenesis compile", shell=True)
+    subprocess.run("jenesis compile -l", shell=True)
     time.sleep(60)
 
     compiled_contract = os.path.join(
