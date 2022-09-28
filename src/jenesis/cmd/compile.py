@@ -49,10 +49,10 @@ def run(args: argparse.Namespace):
 
     if is_workspace(project_path):
         print(term.green("\nBuilding cargo workspace..."))
-        build_workspace(project_path, contracts, optimize=args.optimize, rebuild=args.rebuild)
+        build_workspace(project_path, contracts, optimize=args.optimize, rebuild=args.rebuild, log=args.log)
     else:
         print(term.green("\nBuilding contracts..."))
-        build_contracts(contracts, batch_size=args.batch_size, optimize=args.optimize,rebuild=args.rebuild)
+        build_contracts(contracts, batch_size=args.batch_size, optimize=args.optimize,rebuild=args.rebuild, log=args.log)
 
     # generate the schemas
     print(term.green("\nGenerating contract schemas..."))
@@ -88,5 +88,11 @@ def add_compile_command(parser):
         "--rebuild",
         action = "store_true",
         help="Force rebuild",
+    )
+    compile_cmd.add_argument(
+        "-l",
+        "--log",
+        action = "store_true",
+        help="Show logs",
     )
     compile_cmd.set_defaults(handler=run)

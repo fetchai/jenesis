@@ -1,7 +1,10 @@
 # Contract Interaction
 
-You can interact with your project's contracts by using the ```shell``` command:
+You can interact with your project's contracts by using the ```shell``` or ```run``` commands.
 
+## Interactive Shell
+
+To open a shell where you can easily interact with your contracts, run:
 ```bash
 jenesis shell
 ```
@@ -51,49 +54,66 @@ For this example, we will first generate two wallets. We provide wealth to the s
 
 We now proceed to deploy the cw20 contract, we define the arguments for the cw20 token: name, symbol, decimal, and the addresses that will be funded with these cw20 tokens. In this case we will fund wallet's address with 5000 tokens.
 ```python
->>> cw20.deploy({"name": "Crab Coin","symbol": "CRAB","decimals": 6,"initial_balances": [{"address":wallet.address(),"amount":"5000"}]},wallet)
+>>> cw20.deploy({"name": "Crab Coin", "symbol": "CRAB", "decimals": 6, "initial_balances": [{"address": str(wallet.address()), "amount": "5000"}]}, wallet)
 ```
 
 We can query wallet balance to make sure it has been funded with cw20 tokens
 
 ```python
->>> cw20.query({"balance":{"address":wallet.address()}})
+>>> cw20.query({"balance": {"address": str(wallet.address())}})
 {'balance': '5000'}
 ```
 
 We now execute a cw20 token transfer of 1000 tokens from wallet to wallet2
 
 ```python
->>> cw20.execute({'transfer': {'amount':'1000','recipient':wallet2.address()}}, sender=wallet)
+>>> cw20.execute({'transfer': {'amount': '1000','recipient': str(wallet2.address())}}, sender=wallet)
 ```
 
 Finally, we query both wallet's balance
 
 ```python
->>> cw20.query({"balance":{"address":wallet.address()}})
+>>> cw20.query({"balance": {"address": str(wallet.address())}})
 {'balance': '4000'}
->>> cw20.query({"balance":{"address":wallet2.address()}})
+>>> cw20.query({"balance": {"address": str(wallet2.address())}})
 {'balance': '1000'}
 ```
 We can observe that wallet has sent 1000 tokens to wallet2.
 
-You can also assemble the above commands into a script that is executable by the  ```run``` command.
+## Queries and Executions as Dynamic Methods
+
+Jenesis also attaches the contract query and execution messages as dynamic methods.
+
+For example, the above queries can also be run with:
 ```python
-import time
+>>> cw20.balance(address=str(wallet.address()))
+{'balance': '4000'}
+```
+
+Similarly, the transfer can be executed with:
+```python
+>>> cw20.transfer(wallet, amount='1000', recipient=str(wallet2.address()))
+```
+
+## Executing Scripts
+
+You can also assemble the above commands into a script that is executable by the  ```run``` command:
+```python
+from cosmpy.aerial.wallet import LocalWallet
 
 wallet = LocalWallet.generate()
 faucet.get_wealth(wallet.address())
 wallet2 = LocalWallet.generate()
 
-cw20.deploy({"name": "Crab Coin","symbol": "CRAB", "decimals": 6, "initial_balances": [{"address": wallet.address(), "amount": "5000"}]}, wallet)
-print("wallet initial cw20 balance: ", cw20.query({"balance": {"address": wallet.address()}}))
+cw20.deploy({"name": "Crab Coin","symbol": "CRAB", "decimals": 6, "initial_balances": [{"address": str(wallet.address()), "amount": "5000"}]}, wallet)
+print("wallet initial cw20 balance: ", cw20.query({"balance": {"address": str(wallet.address())}}))
 
-cw20.execute({'transfer': {'amount': '1000', 'recipient': wallet2.address()}}, sender=wallet)
+tx = cw20.execute({'transfer': {'amount': '1000', 'recipient': str(wallet2.address())}}, sender=wallet)
 print("transfering 1000 cw20 tokens from wallet to wallet2")
-time.sleep(10)
+tx.wait_to_complete()
 
-print("wallet final cw20 balance: ", cw20.query({"balance": {"address": wallet.address()}}))
-print("wallet2 final cw20 balance: ", cw20.query({"balance": {"address": wallet2.address()}}))
+print("wallet final cw20 balance: ", cw20.query({"balance": {"address": str(wallet.address())}}))
+print("wallet2 final cw20 balance: ", cw20.query({"balance": {"address": str(wallet2.address())}}))
 ```
 
 If we paste the above code into the file script.py inside the project's directory, we can run it with:

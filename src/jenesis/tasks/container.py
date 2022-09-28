@@ -11,6 +11,11 @@ class ContainerTask(Task):
         self._status = TaskStatus.IDLE
         self._status_text = ''
         self._in_progress_text = 'Building...'
+        self._logs = ''
+
+    @property
+    def logs_text(self) -> str:
+        return self._logs
 
     @property
     def status_text(self) -> str:
@@ -52,6 +57,10 @@ class ContainerTask(Task):
         # check on the progress of the container
         self._container.reload()
 
+        if self._show_logs():
+            log_text = self._container.logs().decode("utf-8")
+            self._logs = log_text
+
         if self._container.status == 'exited':
             exit_code = int(self._container.attrs['State']['ExitCode'])
             if exit_code == 0:
@@ -60,10 +69,11 @@ class ContainerTask(Task):
 
                 # clean up the container if it was successful, otherwise keep if for the logs
                 self._container.remove()
-
             else:
                 self._status = TaskStatus.FAILED
                 self._status_text = ''
+                log_text = self._container.logs().decode("utf-8")
+                self._logs = log_text
 
     @abstractmethod
     def _is_out_of_date(self) -> bool:
@@ -71,4 +81,8 @@ class ContainerTask(Task):
 
     @abstractmethod
     def _schedule_container(self) -> Container:
+        pass
+
+    @abstractmethod
+    def _show_logs(self):
         pass

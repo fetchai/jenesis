@@ -28,6 +28,7 @@ class TaskStatusDisplay:
         self._name_length = 0
         self._task_progress = {}  # type: Dict[str, int]
         self._task_status_text = {}  # type: Dict[str, Optional[str]]
+        self._log = {}
 
     def update(self, task: Task):
         self._name_length = max(self._name_length, len(task.name))
@@ -46,6 +47,7 @@ class TaskStatusDisplay:
         # update the status dictionaries
         self._task_progress[task.name] = progress
         self._task_status_text[task.name] = status_text
+        self._log[task.name] = task.logs_text
 
     def render(self):
 
@@ -69,15 +71,24 @@ class TaskStatusDisplay:
                 progress_text = self._term.red('FAILED')
             else:
                 glyph = self._term.magenta(self.IN_PROGRESS_GLYPHS[progress])
-                progress_text = self._task_status_text[name]
+                if self._log[name]:
+                    progress_text = self._log[name].splitlines()[-1]
+                else:
+                    progress_text = self._task_status_text[name]
 
             # render the status
             print(f'  {glyph} {self._term.blue(name)}: {progress_text}'.ljust(self._term.width))
 
         self._first_render = False
 
+    def show_logs(self, task: Task):
+        if self._log[task.name]:
+            print(f'\n{self._term.green("Logs for")} {self._term.blue(task.name)}:')
+            print(self._term.yellow(self._log[task.name]))
+
 
 def run_tasks(tasks: List[Task], poll_interval: Optional[float] = None) -> Tuple[List[Task], List[Task]]:
+
     if len(tasks) == 0:
         return [], []
 
@@ -90,9 +101,7 @@ def run_tasks(tasks: List[Task], poll_interval: Optional[float] = None) -> Tuple
     completed_tasks = []
     failed_tasks = []
 
-    # count = 0
     while True:
-        # print(f'Monitor Loop {count}')
 
         in_progress_tasks = []
         for task in tasks:
@@ -122,6 +131,8 @@ def run_tasks(tasks: List[Task], poll_interval: Optional[float] = None) -> Tuple
             break
 
         time.sleep(poll_interval)
-        # count += 1
+
+    for task in failed_tasks + completed_tasks:
+        display.show_logs(task)
 
     return completed_tasks, failed_tasks
