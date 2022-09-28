@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import pytest
 
 import toml
 from jenesis.config import Config
@@ -8,6 +9,7 @@ from jenesis.contracts.detect import detect_contracts
 
 
 # Unfinished
+@pytest.mark.skip
 def test_deploy_contract():
     """Test deploy contract"""
 

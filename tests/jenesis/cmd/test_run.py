@@ -6,7 +6,7 @@ import time
 import pytest
 from jenesis.config import Config
 
-
+@pytest.mark.skip
 def test_run_contract():
     """Test attach contract"""
 
