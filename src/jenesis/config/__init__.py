@@ -446,5 +446,5 @@ class Config:
 
         # clean up the temporary folder
         shutil.rmtree(temp_clone_path)
-        
+
         return parse_contract(project_root, name)
