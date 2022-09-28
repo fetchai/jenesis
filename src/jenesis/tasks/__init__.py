@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-
+from typing import Any, List, Optional
 
 class TaskStatus(Enum):
     IDLE = 0
@@ -18,6 +18,11 @@ class Task(ABC):
     @property
     @abstractmethod
     def status(self) -> TaskStatus:
+        pass
+
+    @property
+    @abstractmethod
+    def logs_text(self) -> str:
         pass
 
     @property

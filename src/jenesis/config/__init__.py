@@ -13,9 +13,11 @@ from cosmpy.crypto.address import Address
 from jenesis.config.errors import ConfigurationError
 from jenesis.config.extract import (extract_opt_dict, extract_opt_int,
                                     extract_opt_str, extract_req_dict,
-                                    extract_req_str, extract_req_str_list)
+
+                                    extract_req_str, extract_req_str_list,
+                                    extract_opt_list)
 from jenesis.contracts import Contract
-from jenesis.contracts.detect import detect_contracts
+from jenesis.contracts.detect import detect_contracts, parse_contract
 from jenesis.network import (Network, fetchai_localnode_config,
                              fetchai_testnet_config)
 
@@ -24,11 +26,13 @@ TEMPLATE_GIT_URL = "https://github.com/fetchai/jenesis-templates.git"
 
 @dataclass
 class Deployment:
-    contract: Contract  # internal: the contract that is deployed
+    name: str # internal: the name for the deployment
+    contract: str  # internal: the name of the contract to deploy
     network: str  # internal: the name of the network to deploy to
     deployer_key: str  # config: the name of the key to use for deployment
     init: Any  # config: init parameters for the contract
     init_funds: Optional[str] # config: funds to be sent with instantiation msg
+    init_addresses: Optional[list] # config: contract addresses needed in instantiation msg
     checksum: Optional[str]  # lock: the checksum digest to detect configuration changes
     digest: Optional[str]  # lock: the contract of the deployed contract
     address: Optional[Address]  # lock: the address of the deployed contract
@@ -61,7 +65,7 @@ class Deployment:
         return hasher.hexdigest()
 
     def __repr__(self) -> str:
-        return f'{self.contract["contract"]}: {self.address}'
+        return f'{self.contract}: {self.address}'
 
     def is_configuration_out_of_date(self) -> bool:
         return self.checksum != self.compute_checksum()
@@ -85,7 +89,6 @@ class Deployment:
 class Profile:
     name: str
     network: Network
-    contracts: Dict[str, Contract]
     deployments: Dict[str, Deployment]
     default: bool = False
 
@@ -105,7 +108,7 @@ class Config:
     def update_deployment(
         self,
         profile_name: str,
-        contract_name: str,
+        deployment_name: str,
         digest: str,
         code_id: int,
         address: Address,
@@ -114,14 +117,8 @@ class Config:
         if profile is None:
             raise ConfigurationError(f"unable to lookup profile {profile_name}")
 
-        contract = profile.contracts.get(contract_name)
-        deployment = profile.deployments.get(contract_name)
-        if deployment is None:
-            deployment = Deployment(
-                contract,
-                profile.network.name,
-                "", "", None, None, None, None, None
-            )
+        deployment = profile.deployments.get(deployment_name)
+        assert deployment is not None, f"Deployment not found: {deployment_name}"
 
         # update the contract if necessary
         if digest is not None:
@@ -131,7 +128,7 @@ class Config:
         if address is not None:
             deployment.address = Address(address)
 
-        profile.deployments[contract_name] = deployment
+        profile.deployments[deployment_name] = deployment
         self.profiles[profile_name] = profile
 
     def get_default_profile(self) -> str:
@@ -201,13 +198,13 @@ class Config:
 
         deployments = {}
         if "contracts" in profile:
-            for contract_name, contract_settings in profile_contracts.items():
-                deployment_lock = lock_profile.get(contract_name, {})
+            for deployment_name, contract_cfg in profile_contracts.items():
+                deployment_lock = lock_profile.get(deployment_name, {})
 
                 deployment = cls._parse_contract_config(
-                    contract_settings, network.name, deployment_lock
+                    deployment_name, contract_cfg, network.name, deployment_lock
                 )
-                deployments[contract_name] = deployment
+                deployments[deployment_name] = deployment
 
         is_default = False
         if "default" in profile:
@@ -217,16 +214,15 @@ class Config:
         return Profile(
             name=str(name),
             network=network,
-            contracts=profile_contracts,
             deployments=deployments,
             default=is_default,
         )
 
     @classmethod
     def _parse_contract_config(
-        cls, contract: dict, network: str, lock: Any
+        cls, deployment_name: str, contract_cfg: dict, network: str, lock: Any
     ) -> Deployment:
-        if not isinstance(contract, dict):
+        if not isinstance(contract_cfg, dict):
             raise ConfigurationError(
                 "contract configuration invalid, expected dictionary"
             )
@@ -239,11 +235,13 @@ class Config:
             return None if value is None else Address(value)
 
         return Deployment(
-            contract=contract,
+            name=str(deployment_name),
+            contract=extract_req_str(contract_cfg, "contract"),
             network=str(network),
-            init=extract_opt_dict(contract, "init"),
-            deployer_key=extract_req_str(contract, "deployer_key"),
-            init_funds=extract_opt_str(contract, "init_funds"),
+            init=extract_opt_dict(contract_cfg, "init"),
+            deployer_key=extract_req_str(contract_cfg, "deployer_key"),
+            init_funds=extract_opt_str(contract_cfg, "init_funds"),
+            init_addresses=extract_opt_list(contract_cfg, "init_addresses"),
             digest=extract_opt_str(lock, "digest"),
             address=opt_address(extract_opt_str(lock, "address")),
             code_id=extract_opt_int(lock, "code_id"),
@@ -274,10 +272,10 @@ class Config:
         # detect contract source code and add placeholders for key contract data
         contracts = detect_contracts(project_root) or []
 
+        deployments = {contract.name: Deployment(contract.name, contract.name,
 
-        contract_cfgs = {contract.name: Deployment(contract,
             network_name, "", {arg: "" for arg in contract.init_args()},
-            "", None, None, None, None,
+            "",[], None, None, None, None,
         ) for contract in contracts}
 
 
@@ -294,7 +292,7 @@ class Config:
         profiles = {
             profile: {
                 "network": network,
-                "contracts": {name: vars(cfg) for (name, cfg) in contract_cfgs.items()},
+                "contracts": {name: vars(cfg) for (name, cfg) in deployments.items()},
                 "default": True,
             }
         }
@@ -327,22 +325,25 @@ class Config:
         # take the project name directly from the base name of the project
         project_root = os.path.abspath(path)
 
+        # set deployment name to contract name by default
+        deployment_name = contract.name
 
-        contract_cfg = Deployment(contract,
+        deployment = Deployment(deployment_name, contract.name,
             network_name, "", {arg: "" for arg in contract.init_args()},
-            "", None, None, None, None)
+            "",[], None, None, None, None)
 
 
         data = toml.load("jenesis.toml")
 
-        data["profile"][profile]["contracts"][contract.name] = vars(contract_cfg)
+        data["profile"][profile]["contracts"][contract.name] = vars(deployment)
+
         project_configuration_file = os.path.join(project_root, "jenesis.toml")
 
         with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
             toml.dump(data, toml_file)
 
     @staticmethod
-    def update_key(path: str, profile: str, contract: Contract, key: str):
+    def update_key(path: str, profile: str, deployment_name: str, key: str):
 
         # take the project name directly from the base name of the project
         project_root = os.path.abspath(path)
@@ -352,7 +353,9 @@ class Config:
         with open(path, encoding="utf-8") as toml_file:
             data = toml.load(toml_file)
 
-        data["profile"][profile]["contracts"][contract.name]["deployer_key"] = key
+
+        data["profile"][profile]["contracts"][deployment_name]["deployer_key"] = key
+
         project_configuration_file = os.path.join(project_root, "jenesis.toml")
 
         with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
@@ -378,11 +381,13 @@ class Config:
 
         contract_cfgs = {
             contract.name: Deployment(
-                contract,
+                contract.name,
+                contract.name,
                 network_name,
                 "",
                 {arg: "" for arg in contract.init_args()},
                 "",
+                [],
                 None,
                 None,
                 None,
@@ -402,7 +407,9 @@ class Config:
             toml.dump(data, toml_file)
 
     @staticmethod
-    def add_contract(contract_path: str, template: str, name: str, branch: str):
+    def add_contract(project_root: str, template: str, name: str, branch: str) -> Contract:
+
+        contract_path = os.path.join(project_root, 'contracts', name)
 
         # create the temporary clone folder
         temp_clone_path = mkdtemp(prefix="jenesis-", suffix="-tmpl")
@@ -446,3 +453,6 @@ class Config:
 
         # clean up the temporary folder
         shutil.rmtree(temp_clone_path)
+        
+        return parse_contract(project_root, name)
+
