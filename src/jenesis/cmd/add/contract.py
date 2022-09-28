@@ -3,6 +3,7 @@ import os
 
 from jenesis.config import Config
 
+
 def add_contract_command(parser):
 
     add_contract_cmd = parser.add_parser("contract")
@@ -33,8 +34,6 @@ def run_add_contract(args: argparse.Namespace):
         return False
 
     selected_contract = Config.add_contract(project_root, template, name, branch)
-
-
 
     cfg = Config.load(project_root)
 

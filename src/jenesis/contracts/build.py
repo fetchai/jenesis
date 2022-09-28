@@ -8,7 +8,6 @@ from docker.types import Mount
 from jenesis.contracts import Contract
 from jenesis.tasks.container import ContainerTask
 from jenesis.tasks.monitor import run_tasks
-
 from jenesis.tasks.utils import chunks, get_last_modified_timestamp
 
 DEFAULT_BUILD_STEPS = [

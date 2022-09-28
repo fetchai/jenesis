@@ -13,7 +13,6 @@ from cosmpy.crypto.address import Address
 from jenesis.config.errors import ConfigurationError
 from jenesis.config.extract import (extract_opt_dict, extract_opt_int,
                                     extract_opt_str, extract_req_dict,
-
                                     extract_req_str, extract_req_str_list,
                                     extract_opt_list)
 from jenesis.contracts import Contract
@@ -273,11 +272,9 @@ class Config:
         contracts = detect_contracts(project_root) or []
 
         deployments = {contract.name: Deployment(contract.name, contract.name,
-
             network_name, "", {arg: "" for arg in contract.init_args()},
             "",[], None, None, None, None,
         ) for contract in contracts}
-
 
         if network_name == "fetchai-testnet":
             net_config = fetchai_testnet_config()
@@ -332,11 +329,9 @@ class Config:
             network_name, "", {arg: "" for arg in contract.init_args()},
             "",[], None, None, None, None)
 
-
         data = toml.load("jenesis.toml")
 
         data["profile"][profile]["contracts"][contract.name] = vars(deployment)
-
         project_configuration_file = os.path.join(project_root, "jenesis.toml")
 
         with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
@@ -353,9 +348,7 @@ class Config:
         with open(path, encoding="utf-8") as toml_file:
             data = toml.load(toml_file)
 
-
         data["profile"][profile]["contracts"][deployment_name]["deployer_key"] = key
-
         project_configuration_file = os.path.join(project_root, "jenesis.toml")
 
         with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
@@ -455,4 +448,3 @@ class Config:
         shutil.rmtree(temp_clone_path)
         
         return parse_contract(project_root, name)
-
