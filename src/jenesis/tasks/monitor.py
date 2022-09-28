@@ -77,7 +77,7 @@ class TaskStatusDisplay:
                     progress_text = self._task_status_text[name]
 
             # render the status
-            print(f'  {glyph} {self._term.blue(name)}: {progress_text}'.ljust(self._term.width))
+            #print(f'  {glyph} {self._term.blue(name)}: {progress_text}'.ljust(self._term.width))
 
         self._first_render = False
 
