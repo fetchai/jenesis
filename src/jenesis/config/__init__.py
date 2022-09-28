@@ -448,3 +448,50 @@ class Config:
         shutil.rmtree(temp_clone_path)
 
         return parse_contract(project_root, name)
+
+    @staticmethod
+    def add_workspace(path: str, template: str, branch: str) -> Contract:
+
+        # create the temporary clone folder
+        temp_clone_path = mkdtemp(prefix="jenesis-", suffix="-tmpl")
+
+        # clone the templates folder out in the temporary file
+        print("Downloading template...")
+        cmd = ["git", "clone", "--single-branch"]
+        if branch is not None:
+            cmd += ["--branch", branch]
+        cmd += [TEMPLATE_GIT_URL, "."]
+        with open(os.devnull, "w", encoding="utf8") as null_file:
+            subprocess.check_call(
+                cmd, stdout=null_file, stderr=subprocess.STDOUT, cwd=temp_clone_path
+            )
+
+        # find the target workspace
+        contract_template_path = os.path.join(temp_clone_path, "workspaces", template)
+        if not os.path.isdir(contract_template_path):
+            print(f"Unknown template {template}")
+            return
+        print("Downloading template...complete")
+
+        # process all the files as part of the template
+        print("Rendering template...")
+        for root, _, files in os.walk(contract_template_path):
+            for filename in files:
+                file_path = os.path.join(root, filename)
+                rel_path = os.path.relpath(file_path, contract_template_path)
+
+                output_filepath = os.path.join(path, rel_path)
+                os.makedirs(os.path.dirname(output_filepath), exist_ok=True)
+                with open(file_path, "r", encoding="utf8") as input_file:
+                    with open(output_filepath, "w", encoding="utf8") as output_file:
+                        try:
+                            contents = input_file.read()
+
+                            output_file.write(contents)
+                        except:
+                            print("Couldnt read ", filename)
+
+        print("Rendering template...complete")
+
+        # clean up the temporary folder
+        shutil.rmtree(temp_clone_path)
