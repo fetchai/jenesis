@@ -43,7 +43,7 @@ def test_compile_contract():
 
 
     # clean up the temporary folder
-
+    os.remove(compiled_contract)
     # <<<<<<<<<<<<<<
-    #shutil.rmtree(path)
+    shutil.rmtree(path)
     # <<<<<<<<<<<<<<

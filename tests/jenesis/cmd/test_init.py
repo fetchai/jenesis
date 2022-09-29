@@ -13,9 +13,6 @@ def test_init_create_project():
     # create the temporary clone folder (checa parametros!!!!!!!!)
     temp_clone_path = mkdtemp(prefix="jenesis-", suffix="-tmpl")
 
-    #os.walk(temp_clone_path)
-
-
     network_name = "fetchai-testnet"
     Config.create_project(temp_clone_path, "testing", network_name)
 
