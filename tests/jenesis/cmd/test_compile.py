@@ -28,7 +28,7 @@ def test_compile_contract():
     Config.add_contract(project_root, template, contract_name, None)
 
     os.chdir(path)
-    subprocess.run("jenesis compile -l", shell=True) # chance puedes directamente deirle que lo corra ahi
+    subprocess.run("jenesis compile -l", shell=True)
     time.sleep(60)
 
     compiled_contract = os.path.join(
@@ -43,4 +43,7 @@ def test_compile_contract():
 
 
     # clean up the temporary folder
-    shutil.rmtree(path)
+
+    # <<<<<<<<<<<<<<
+    #shutil.rmtree(path)
+    # <<<<<<<<<<<<<<
