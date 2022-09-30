@@ -34,6 +34,10 @@ jobs:
         git clone https://github.com/fetchai/fetchd.git && cd fetchd
         make build
         make install
+        export PATH=$PATH:~/go/bin
+        source ~/.bashrc
+
+
 
     - name: Install Poetry
       uses: snok/install-poetry@v1
