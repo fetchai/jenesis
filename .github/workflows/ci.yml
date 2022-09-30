@@ -27,8 +27,6 @@ jobs:
     - name: Install Go
       run: |
         wget https://go.dev/dl/go1.19.1.darwin-amd64.pkg
-        tar -xzvf go1.19.1.darwin-amd64.pkg
-        sudo mv go /usr/local/
 
     - name: Install fetchd
       run: |
