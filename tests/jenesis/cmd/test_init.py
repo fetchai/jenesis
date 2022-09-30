@@ -33,7 +33,5 @@ def test_init_create_project():
     assert data["project"]["authors"] == authors
     assert data["profile"]["testing"]["network"] == network
 
-    #os.remove("jenesis.toml")
-    #shutil.rmtree("contracts")
     # clean up the temporary folder
     shutil.rmtree(temp_clone_path)

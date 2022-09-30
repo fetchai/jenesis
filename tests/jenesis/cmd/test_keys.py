@@ -1,9 +1,7 @@
 import subprocess
+import pytest
 
-from jenesis.contracts.detect import detect_contracts
-from jenesis.network import fetchai_testnet_config
-
-# Unfinished
+#@pytest.mark.skip
 def test_keys():
     """Test key command"""
 
@@ -12,5 +10,4 @@ def test_keys():
 
     key_address = subprocess.getoutput("fetchd keys show -a " + key)
 
-    # Requires password:
-    # assert type(key_address) == type(subprocess.getoutput('jenesis alpha keys show ' + key))
+    assert key_address == subprocess.getoutput('jenesis keys show ' + key)

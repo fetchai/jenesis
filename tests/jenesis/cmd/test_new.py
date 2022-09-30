@@ -36,6 +36,6 @@ def test_new_create_project():
 
     assert data["project"]["authors"] == authors
     assert data["profile"]["testing"]["network"] == network
-    #shutil.rmtree(project_name)
 
+    # clean up the temporary folder
     shutil.rmtree(temp_clone_path)

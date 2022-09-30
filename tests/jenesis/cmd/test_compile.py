@@ -38,12 +38,5 @@ def test_compile_contract():
     # check to see if the contract has been compiled
     assert os.path.exists(compiled_contract)
 
-    #os.remove("jenesis.toml")
-    #shutil.rmtree("contracts")
-
-
     # clean up the temporary folder
-    os.remove(compiled_contract)
-    # <<<<<<<<<<<<<<
-    shutil.rmtree(path)
-    # <<<<<<<<<<<<<<
+    #shutil.rmtree(path)
