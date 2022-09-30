@@ -26,9 +26,6 @@ jobs:
 
     - name: Install Go
       run: |
-        - echo $PATH
-        - rm -rf $HOME/golang
-        - rm -rf $HOME/gopath
         - mkdir -p $HOME/golang # for GOROOT (contains the Go binary & core packages)
         - mkdir -p $HOME/gopath # for GOPATH (contains code and external packages)
         - curl http://storage.googleapis.com/golang/go1.19.1.linux-amd64.tar.gz 2>/dev/null > go1.19.1.linux-amd64.tar.gz
