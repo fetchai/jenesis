@@ -10,4 +10,6 @@ def test_keys():
 
     key_address = subprocess.getoutput("fetchd keys show -a " + key)
 
-    assert key_address == subprocess.getoutput('jenesis keys show ' + key)
+    jenesis_key_address = subprocess.getoutput("jenesis keys show " + key)
+
+    assert key_address == jenesis_key_address 
