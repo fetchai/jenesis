@@ -5,6 +5,8 @@ import pytest
 def test_keys():
     """Test key command"""
 
+    subprocess.run("fetchd config keyring-backend test", shell=True)
+    
     key = "sample_key"
     subprocess.run("fetchd keys add " + key, shell=True)
 
