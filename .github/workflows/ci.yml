@@ -36,6 +36,7 @@ jobs:
         make install
         export PATH=$PATH:~/go/bin
         source ~/.bashrc
+        fetchd version
 
 
 
