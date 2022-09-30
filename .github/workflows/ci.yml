@@ -24,6 +24,12 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install fetchd
+      run: |
+        git clone https://github.com/fetchai/fetchd.git && cd fetchd
+        make build
+        make install
+
     - name: Install Poetry
       uses: snok/install-poetry@v1
 

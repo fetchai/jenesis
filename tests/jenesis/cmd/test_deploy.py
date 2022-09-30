@@ -13,7 +13,7 @@ from cosmpy.aerial.client import LedgerClient
 from cosmpy.aerial.contract import LedgerContract
 
 
-#@pytest.mark.skip
+@pytest.mark.skip
 def test_deploy_contract():
     """Test deploy contract"""
 
@@ -62,10 +62,10 @@ def test_deploy_contract():
 
     subprocess.run('jenesis deploy ' + deployment_key, shell = True)
 
-    time.sleep(60)
-
     ledger = LedgerClient( fetchai_localnode_config())
     lock_file_path = os.path.join(project_root, "jenesis.lock")
+
+    assert os.path.isfile(lock_file_path)
 
     lock_file_contents = toml.load(lock_file_path)
     contract_address = lock_file_contents["profile"][profile][contract_name]["address"]
