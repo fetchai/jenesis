@@ -26,8 +26,9 @@ jobs:
 
     - name: Install Go
       run: |
-        curl -LO https://go.dev/dl/go1.18beta1.linux-amd64.tar.gz
-        sudo tar -C /usr/local -xzf go1.18beta1.linux-amd64.tar.gz
+        wget https://go.dev/dl/go1.19.1.darwin-amd64.pkg
+        tar -xzvf go1.19.1.darwin-amd64.pkg
+        sudo mv go /usr/local/
 
     - name: Install fetchd
       run: |
