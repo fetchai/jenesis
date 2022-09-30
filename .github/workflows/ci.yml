@@ -24,6 +24,11 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install Go
+      run: |
+        curl -LO https://go.dev/dl/go1.18beta1.linux-amd64.tar.gz
+        sudo tar -C /usr/local -xzf go1.18beta1.linux-amd64.tar.gz
+
     - name: Install fetchd
       run: |
         git clone https://github.com/fetchai/fetchd.git && cd fetchd
