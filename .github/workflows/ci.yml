@@ -26,12 +26,16 @@ jobs:
 
     - name: Install Go
       run: |
-        curl -LO https://go.dev/dl/go1.18beta1.linux-amd64.tar.gz
-        sudo tar -C /usr/local -xzf go1.18beta1.linux-amd64.tar.gz
+        curl -LO https://go.dev/dl/go1.19.1.darwin-amd64.pkg
+        sudo tar -C /usr/local -xzf go1.19.1.darwin-amd64.pkg
         export GOROOT=/usr/local/go
         export GOPATH=$HOME/go
         export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
         source ~/.bashrc
+
+    - name: Install make & gcc
+      run: |
+        sudo apt-get install -y make gcc
 
     - name: Install fetchd
       run: |
