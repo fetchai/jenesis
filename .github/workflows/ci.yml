@@ -32,12 +32,6 @@ jobs:
         export GOPATH=$HOME/go
         export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
         source ~/.bashrc
-        export GOROOT=$HOME/golang/go
-        export GOPATH=$HOME/gopath
-        export PATH=$PATH:$GOROOT/bin
-        export PATH=$PATH:$GOPATH/bin
-        go version
-        echo $PATH
         go env
         which go
 
