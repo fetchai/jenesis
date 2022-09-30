@@ -62,6 +62,8 @@ def test_deploy_contract():
 
     subprocess.run('jenesis deploy ' + deployment_key, shell = True)
 
+    time.sleep(60)
+
     ledger = LedgerClient( fetchai_localnode_config())
     lock_file_path = os.path.join(project_root, "jenesis.lock")
 
