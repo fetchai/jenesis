@@ -49,7 +49,7 @@ jobs:
 
     - name: Run tests
       run: |
-        poetry run pytest
+        dbus-run-session -- poetry run pytest
 
     - name: Lints
       run: |
