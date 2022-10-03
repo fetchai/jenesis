@@ -8,7 +8,11 @@ def test_keys():
     #subprocess.run("fetchd config keyring-backend test", shell=True)
 
     key = "zz"
-    subprocess.run("fetchd keys add " + key, shell=True)
+    p = subprocess.run("fetchd keys add " + key, shell=True, capture_output=True)
+
+    print( 'exit status:', p.returncode )
+    print( 'stdout:', p.stdout.decode() )
+    print( 'stderr:', p.stderr.decode() )
 
     key_address = subprocess.getoutput("fetchd keys show -a " + key)
 
