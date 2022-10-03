@@ -12,7 +12,7 @@ from jenesis.network import fetchai_localnode_config
 from cosmpy.aerial.client import LedgerClient
 from cosmpy.aerial.contract import LedgerContract
 
-#@pytest.mark.skip
+@pytest.mark.skip
 def test_deploy_contract():
     """Test deploy contract"""
 
