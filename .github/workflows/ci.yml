@@ -45,6 +45,9 @@ jobs:
       run: |
         poetry install
 
+    - name: Install Gnome-keyring
+      uses: sudo apt-get install gnome-keyring
+
     - name: Run tests
       run: |
         dbus-run-session -- poetry run pytest
