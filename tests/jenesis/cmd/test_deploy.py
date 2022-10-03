@@ -4,24 +4,30 @@ import subprocess
 import pytest
 import time
 from tempfile import mkdtemp
+import random
 
 import toml
 from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts
 from jenesis.network import fetchai_localnode_config
-from cosmpy.aerial.client import LedgerClient
+from cosmpy.aerial.client import LedgerClient, NetworkConfig
 from cosmpy.aerial.contract import LedgerContract
+from cosmpy.aerial.faucet import FaucetApi
 
 
-@pytest.mark.skip
+#@pytest.mark.skip
 def test_deploy_contract():
     """Test deploy contract"""
 
-    network = "fetchai-localnode"
+    #network = "fetchai-localnode"
+    network = "fetchai-testnet"
     profile = "profile_1"
 
     path = mkdtemp(prefix="jenesis-", suffix="-tmpl")
     os.chdir(path)
+    #os.chdir("/Users/alejandromorales/Desktop/Fetchai/Jenesis_demo/jenesis/tests/jenesis/cmd")
+
+    path = os.path.abspath(os.getcwd())
 
     Config.create_project(path, profile, network)
 
@@ -40,18 +46,24 @@ def test_deploy_contract():
     subprocess.run("jenesis compile", shell=True)
     time.sleep(60)
 
-    deployment_key = "test_key"
+    letters = 'abcdefghijklmnopqrstuvwxyz'
+    deployment_key = ''.join(random.choice(letters) for i in range(10))
 
     subprocess.run("fetchd keys add " + deployment_key, shell=True)
 
     key_address = subprocess.getoutput("fetchd keys show -a " + deployment_key)
 
+    ledger = LedgerClient( NetworkConfig.fetchai_stable_testnet())
+    faucet = FaucetApi(NetworkConfig.fetchai_stable_testnet())
+    faucet.get_wealth(key_address)
+
+    # assert ledger.query_bank_balance(key_address) == "5" si tiene lana!!!
     input_file_name = "jenesis.toml"
     toml_path = os.path.join(os.getcwd(), input_file_name)
     with open(toml_path, encoding="utf-8") as toml_file:
         data = toml.load(toml_file)
 
-    data["profile"][profile]["network"]["genesis_accounts"].append(key_address)
+    #data["profile"][profile]["network"]["genesis_accounts"].append(key_address)
     data["profile"][profile]["contracts"][contract_name]["init"]["count"] = 5
 
     project_configuration_file = os.path.join(project_root, "jenesis.toml")
@@ -62,7 +74,8 @@ def test_deploy_contract():
 
     subprocess.run('jenesis deploy ' + deployment_key, shell = True)
 
-    ledger = LedgerClient( fetchai_localnode_config())
+    #ledger = LedgerClient( fetchai_localnode_config())
+
     lock_file_path = os.path.join(project_root, "jenesis.lock")
 
     assert os.path.isfile(lock_file_path)
