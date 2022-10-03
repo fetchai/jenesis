@@ -8,6 +8,10 @@ def test_keys():
     #subprocess.run("fetchd config keyring-backend test", shell=True)
 
     key = "zz"
+
+    ID = subprocess.getoutput("gpg --generate-key")
+    subprocess.run("pass init "+ ID, shell=True)  
+
     p = subprocess.run("fetchd keys add " + key, shell=True, capture_output=True)
 
     print( 'exit status:', p.returncode )
