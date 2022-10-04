@@ -1,9 +1,13 @@
 import subprocess
 import pytest
+from tempfile import mkdtemp
+import os
 
 #@pytest.mark.skip
 def test_keys():
     """Test key command"""
+    path = mkdtemp(prefix="jenesis-", suffix="-tmpl")
+    os.chdir(path)
 
     #subprocess.run("fetchd config keyring-backend test", shell=True)
 
