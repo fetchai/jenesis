@@ -14,10 +14,11 @@ def test_keys():
     key = "zz"
 
     #x = subprocess.run("echo 'password' | gnome-keyring-daemon --unlock", shell=True, capture_output=True)  
+    x = subprocess.run("pass init 'psw'", shell=True, capture_output=True)  
 
-    #print( 'exit statusx:', x.returncode )
-    #print( 'stdoutx:', x.stdout.decode() )
-    #print( 'stderrx:', x.stderr.decode() )
+    print( 'exit statusx:', x.returncode )
+    print( 'stdoutx:', x.stdout.decode() )
+    print( 'stderrx:', x.stderr.decode() )
 
     p = subprocess.run("fetchd keys add " + key, shell=True, capture_output=True)
 
