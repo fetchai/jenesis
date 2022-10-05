@@ -66,14 +66,19 @@ class ContainerTask(Task):
             if exit_code == 0:
                 self._status = TaskStatus.COMPLETE
                 self._status_text = ''
-
-                # clean up the container if it was successful, otherwise keep if for the logs
-                self._container.remove()
             else:
                 self._status = TaskStatus.FAILED
                 self._status_text = ''
                 log_text = self._container.logs().decode("utf-8")
                 self._logs = log_text
+            self._container.remove()
+
+    def teardown(self):
+        if self._container and self._status == TaskStatus.IN_PROGRESS:
+            print(f'Stopping build container for {self.name}...')
+            self._container.kill()
+            print(f'Removing build container for {self.name}...')
+            self._container.remove()
 
     @abstractmethod
     def _is_out_of_date(self) -> bool:
