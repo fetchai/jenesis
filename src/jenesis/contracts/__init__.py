@@ -33,8 +33,10 @@ class Contract:
         if msg_type in self.schema:
             if 'oneOf' in self.schema[msg_type]:
                 schemas = self.schema[msg_type]['oneOf']
-            else:
+            elif 'anyOf' in self.schema[msg_type]:
                 schemas = self.schema[msg_type]['anyOf']
+            else:
+                return msgs
             for schema in schemas:
                 msg = schema['required'][0]
                 if 'required' in schema['properties'][msg]:
