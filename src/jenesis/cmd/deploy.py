@@ -21,7 +21,7 @@ def run(args: argparse.Namespace):
         print(f'Invalid profile name. Expected one of {",".join(cfg.profiles.keys())}')
         return 1
 
-    profile = cfg.profiles[args.profile]
+    profile = cfg.profiles[args.profile] or cfg.get_default_profile()
 
     with network_context(profile.network, cfg.project_name, profile.name):
         deploy_contracts(cfg, project_path, args.key, profile_name=args.profile)
