@@ -30,17 +30,20 @@ class Contract:
 
     def _extract_msgs(self, msg_type: str) -> dict:
         msgs = {}
-        if 'oneOf' in self.schema[msg_type]:
-            schemas = self.schema[msg_type]['oneOf']
-        else:
-            schemas = self.schema[msg_type]['anyOf']
-        for schema in schemas:
-            msg = schema['required'][0]
-            if 'required' in schema['properties'][msg]:
-                args = schema['properties'][msg]['required']
+        if msg_type in self.schema:
+            if 'oneOf' in self.schema[msg_type]:
+                schemas = self.schema[msg_type]['oneOf']
+            elif 'anyOf' in self.schema[msg_type]:
+                schemas = self.schema[msg_type]['anyOf']
             else:
-                args = []
-            msgs[msg] = args
+                return msgs
+            for schema in schemas:
+                msg = schema['required'][0]
+                if 'required' in schema['properties'][msg]:
+                    args = schema['properties'][msg]['required']
+                else:
+                    args = []
+                msgs[msg] = args
         return msgs
 
     def __repr__(self):
