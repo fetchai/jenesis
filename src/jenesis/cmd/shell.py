@@ -6,7 +6,6 @@ from cosmpy.aerial.client import LedgerClient
 from cosmpy.aerial.faucet import FaucetApi
 from cosmpy.aerial.wallet import LocalWallet
 from cosmpy.crypto.keypairs import PrivateKey
-from docker.models.containers import Container
 from ptpython import embed
 from jenesis.config import Config, Profile
 from jenesis.contracts.detect import detect_contracts

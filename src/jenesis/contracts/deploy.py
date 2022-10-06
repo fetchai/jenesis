@@ -191,6 +191,9 @@ class DeployContractTask(Task):
             self._status = TaskStatus.FAILED
         self._status_text = ''
 
+    def teardown(self):
+        pass
+
 
 def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str], profile_name: Optional[str] = None):
     if profile_name is None:

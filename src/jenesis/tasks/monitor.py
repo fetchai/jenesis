@@ -1,6 +1,5 @@
 import sys
 import time
-from docker.client import from_env
 from typing import List, Optional, Tuple, Dict
 
 from blessings import Terminal

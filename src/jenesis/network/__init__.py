@@ -2,7 +2,7 @@ from contextlib import contextmanager
 import os
 import tempfile
 import time
-from typing import Container, Optional, List
+from typing import Optional, List
 
 from docker import from_env
 from docker.errors import DockerException
@@ -184,9 +184,7 @@ def run_local_node(network: Network) -> Optional[Container]:
                 raise RuntimeError('Failed to start local node.')
             print("Stating local node...complete")
             return container
-        else:
-            print("Detected local node already running.")
-            return None
+        print("Detected local node already running.")
     except DockerException as ex:
         print(f"Failed to start local node: looks like your docker setup isn't right, please visit https://jenesis.fetch.ai/ for more information:\n\n{ex}")
     return None

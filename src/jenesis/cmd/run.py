@@ -10,7 +10,7 @@ from .shell import get_profile, load_shell_globals
 PROJECT_PATH = os.getcwd()
 
 
-def run(args: argparse.Namespace):    
+def run(args: argparse.Namespace):
     cfg = Config.load(PROJECT_PATH)
     profile: Profile = get_profile(cfg, args)
 
