@@ -1,11 +1,12 @@
+from contextlib import contextmanager
 import os
 import tempfile
 import time
-from typing import Optional, List
+from typing import Container, Optional, List
 
 from docker import from_env
 from docker.errors import DockerException
-from docker.types import Mount
+from docker.models.containers import Container
 
 from cosmpy.aerial.config import NetworkConfig
 from cosmpy.aerial.client import LedgerClient
@@ -171,7 +172,7 @@ class LedgerNodeDockerContainer:
         return False
 
 
-def run_local_node(network: Network):
+def run_local_node(network: Network) -> Optional[Container]:
     try:
         local_node = LedgerNodeDockerContainer(network)
         if not local_node.is_ready():
@@ -182,10 +183,26 @@ def run_local_node(network: Network):
             if not local_node.wait_until_ready():
                 raise RuntimeError('Failed to start local node.')
             print("Stating local node...complete")
+            return container
         else:
             print("Detected local node already running.")
+            return None
     except DockerException as ex:
         print(f"Failed to start local node: looks like your docker setup isn't right, please visit https://jenesis.fetch.ai/ for more information:\n\n{ex}")
+    return None
+
+
+@contextmanager
+def network_context(network: Network):
+    local_node = run_local_node(network)
+    try:
+        yield local_node
+    finally:
+        if local_node:
+            print("Shutting down local_node...")
+            local_node.kill()
+            local_node.remove()
+            print("Shutting down local_node...complete")
 
 
 def fetchai_testnet_config() -> Network:
