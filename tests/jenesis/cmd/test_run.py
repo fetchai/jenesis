@@ -7,15 +7,12 @@ from tempfile import mkdtemp
 
 import pytest
 import toml
-from cosmpy.aerial.client import LedgerClient
-from cosmpy.aerial.contract import LedgerContract
 from jenesis.config import Config
-from jenesis.network import fetchai_localnode_config
 
 
 # @pytest.mark.skip
-def test_deploy_contract():
-    """Test deploy contract"""
+def test_run_contract():
+    """Test run contract"""
 
     network = "fetchai-localnode"
     profile = "profile_1"
@@ -60,17 +57,19 @@ def test_deploy_contract():
 
     subprocess.run("jenesis deploy " + deployment_key, shell=True)
 
-    ledger = LedgerClient(fetchai_localnode_config())
-    lock_file_path = os.path.join(project_root, "jenesis.lock")
+    file_path = os.path.dirname(os.path.realpath(__file__))
 
-    assert os.path.isfile(lock_file_path)
+    script_path = os.path.join(file_path, "scripts/script.py")
 
-    lock_file_contents = toml.load(lock_file_path)
-    contract_address = lock_file_contents["profile"][profile][contract_name]["address"]
+    output = subprocess.run(
+        "jenesis run " + script_path, shell=True, capture_output=True
+    )
 
-    contract = LedgerContract(path=None, client=ledger, address=contract_address)
+    output_string = output.stdout.decode()
 
-    assert contract.query({"get_count": {}}) == {"count": 5}
+    split_word = "jenesis run output:"
 
-    # clean up the temporary folder
+    result = output_string.split(split_word, 1)[1].replace("\n", "")
+    assert result == "{'count': 5}"
+
     #shutil.rmtree(path)
