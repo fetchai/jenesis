@@ -111,7 +111,7 @@ def run(args: argparse.Namespace):
     profile: Profile = get_profile(cfg, args)
     shell_globals = globals()
 
-    with network_context(profile.network):
+    with network_context(profile.network, cfg.project_name, profile.name):
         shell_globals.update(load_shell_globals(cfg, profile))
         embed(shell_globals, vi_mode=False, history_filename=".shell_history")
 

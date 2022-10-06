@@ -15,7 +15,6 @@ from jenesis.contracts.detect import detect_contracts
 from jenesis.contracts.monkey import MonkeyContract
 from jenesis.keyring import (LocalInfo, query_keychain_item,
                              query_keychain_items)
-from jenesis.network import run_local_node
 from jenesis.tasks import Task, TaskStatus
 from jenesis.tasks.monitor import run_tasks
 
@@ -200,9 +199,6 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
         profile_name = cfg.get_default_profile()
 
     profile = cfg.profiles[profile_name]
-
-    if profile.network.is_local:
-        run_local_node(profile.network)
 
     project_contracts = {contract.name: contract for contract in detect_contracts(project_path)}
     deployments = profile.deployments

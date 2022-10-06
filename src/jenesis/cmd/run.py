@@ -14,7 +14,7 @@ def run(args: argparse.Namespace):
     cfg = Config.load(PROJECT_PATH)
     profile: Profile = get_profile(cfg, args)
 
-    with network_context(profile.network):
+    with network_context(profile.network, cfg.project_name, profile.name):
         shell_globals = load_shell_globals(cfg, profile)
         with open(args.script_path, encoding="utf-8") as script:
             exec(script.read(), shell_globals)
