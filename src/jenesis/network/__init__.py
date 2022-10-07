@@ -115,10 +115,10 @@ class LedgerNodeDockerContainer:
         """Get the image tag."""
         return self._image_tag
 
-    def _make_entrypoint_file(self, tmpdirname) -> None:
+    def _make_entrypoint_script(self) -> List[str]:
         """Make a temporary entrypoint file to setup and run the test ledger node"""
         trace_flag = '--trace' if self.network.debug_trace else ''
-        run_node_lines = [
+        entrypoint_lines = [
             "#!/usr/bin/env bash",
             'if [ ! -f /root/.fetchd/config/genesis.json ]; then',
             # variables
@@ -134,10 +134,10 @@ class LedgerNodeDockerContainer:
             f"{self.network.cli_binary} init --chain-id=$CHAIN_ID $MONIKER",
         ]
         for acc in self.network.genesis_accounts:
-            run_node_lines.append(
+            entrypoint_lines.append(
                 f'echo "$PASSWORD" |{self.network.cli_binary} add-genesis-account {acc} 100000000000000000000000$DENOM',
             )
-        run_node_lines.extend([
+        entrypoint_lines.extend([
             f'echo "$PASSWORD" |{self.network.cli_binary} add-genesis-account $({self.network.cli_binary} keys show $VALIDATOR_KEY_NAME -a) 100000000000000000000000$DENOM',
             f'echo "$PASSWORD" |{self.network.cli_binary} gentx $VALIDATOR_KEY_NAME 10000000000000000000000$DENOM --chain-id $CHAIN_ID',
             f"{self.network.cli_binary} collect-gentxs",
@@ -148,15 +148,21 @@ class LedgerNodeDockerContainer:
             'fi',
             f"{self.network.cli_binary} start --rpc.laddr tcp://0.0.0.0:26657 {trace_flag}",
         ])
-        entrypoint_file = os.path.join(tmpdirname, "run-node.sh")
+        return entrypoint_lines
+
+    @staticmethod
+    def write_entrypoint_file(entrypoint_path, entrypoint_lines):
+        entrypoint_file = os.path.join(entrypoint_path, "run-node.sh")
         with open(entrypoint_file, "w", encoding="utf-8") as file:
-            file.writelines(line + "\n" for line in run_node_lines)
+            file.writelines(line + "\n" for line in entrypoint_lines)
         os.chmod(entrypoint_file, 333)
 
     def run(self):
         if not os.path.isdir(LOCALNODE_CONFIG_DIR):
             os.mkdir(LOCALNODE_CONFIG_DIR)
-            self._make_entrypoint_file(LOCALNODE_CONFIG_DIR)
+        entrypoint_lines = self._make_entrypoint_script()
+        self.write_entrypoint_file(LOCALNODE_CONFIG_DIR, entrypoint_lines)
+
         mount_path = "/mnt"
         volumes = {LOCALNODE_CONFIG_DIR: {"bind": mount_path, "mode": "rw"}}
         entrypoint = os.path.join(mount_path, "run-node.sh")
