@@ -269,7 +269,7 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
 
         deployment.address = None  # clear the old address
 
-        contract_address_names = init_addresses[deployment_name]
+        contract_address_names = list(init_addresses[deployment_name])
 
         deployment.init = insert_address(contract_address_names, deployment, profile)
 
