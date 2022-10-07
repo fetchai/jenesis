@@ -46,7 +46,7 @@ def insert_address(contract_address_names: List[str], deployment: Deployment, pr
 
     return init_data
 
-def retreive_init_addresses(data: Union[Dict, List], contract_names: list, init_addresses: list):
+def retreive_init_addresses(data: Union[Dict, List], contract_names: List[str], init_addresses: List[str]):
     for _, value in data.items() if isinstance(data, dict) else enumerate(data):
         if isinstance(value, str) and value[0] == "$" and value[1:] in contract_names:
             init_addresses.append(value[1:])
