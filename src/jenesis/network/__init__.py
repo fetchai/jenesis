@@ -1,7 +1,9 @@
 from contextlib import contextmanager
+from genericpath import isfile
 import os
 import tempfile
 import time
+import stat
 from typing import Optional, List
 
 from docker import from_env
@@ -101,14 +103,14 @@ class LedgerNodeDockerContainer:
         """
         self._client = from_env()
         self._image_tag = tag
-        self._name = f"{network.name}-{project_name}-{profile_name}"
+        self.name = f"{network.name}-{project_name}-{profile_name}"
         self.network: Network = network
 
+        self.container: Optional[Container] = None
         try:
-            self._client.containers.get(self._name)
-            self.container_exists = True
+            self.container: Container = self._client.containers.get(self.name)
         except Exception:
-            self.container_exists = False
+            pass
 
     @property
     def tag(self) -> str:
@@ -148,41 +150,58 @@ class LedgerNodeDockerContainer:
             'fi',
             f"{self.network.cli_binary} start --rpc.laddr tcp://0.0.0.0:26657 {trace_flag}",
         ])
-        return entrypoint_lines
+        return [line + "\n" for line in entrypoint_lines]
 
-    @staticmethod
-    def write_entrypoint_file(entrypoint_path, entrypoint_lines):
-        entrypoint_file = os.path.join(entrypoint_path, "run-node.sh")
-        with open(entrypoint_file, "w", encoding="utf-8") as file:
-            file.writelines(line + "\n" for line in entrypoint_lines)
-        os.chmod(entrypoint_file, 333)
-
-    def run(self):
+    def update_entrypoint_file(self) -> bool:
+        
         if not os.path.isdir(LOCALNODE_CONFIG_DIR):
             os.mkdir(LOCALNODE_CONFIG_DIR)
-        entrypoint_lines = self._make_entrypoint_script()
-        self.write_entrypoint_file(LOCALNODE_CONFIG_DIR, entrypoint_lines)
 
+        previous_entrypoint_script = []
+        entrypoint_file = os.path.join(LOCALNODE_CONFIG_DIR, "run-node.sh")
+        if os.path.isfile(entrypoint_file):
+            with open(entrypoint_file) as file:
+                previous_entrypoint_script = file.readlines()
+
+        entrypoint_script = self._make_entrypoint_script()
+        entrypoint_outdated = entrypoint_script != previous_entrypoint_script
+
+        if entrypoint_outdated:
+            with open(entrypoint_file, "w", encoding="utf-8") as file:
+                file.writelines(line for line in entrypoint_script)
+            os.chmod(entrypoint_file, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+
+        return entrypoint_outdated
+
+    def run(self):
+
+        entrypoint_outdated = self.update_entrypoint_file()
+
+        if self.container:
+            if entrypoint_outdated:
+                self.container.remove()
+                self.container = None
+            else:
+                self.container.start()
+                return
+
+        # if the container doesn't exist, create a new container and run it
         mount_path = "/mnt"
         volumes = {LOCALNODE_CONFIG_DIR: {"bind": mount_path, "mode": "rw"}}
         entrypoint = os.path.join(mount_path, "run-node.sh")
-        try:
-            container: Container = self._client.containers.get(self._name)
-            container.start()
-        except Exception:
-            container = self._client.containers.run(
-                self.tag,
-                detach=True,
-                volumes=volumes,
-                entrypoint=str(entrypoint),
-                ports=self.PORTS,
-                name=self._name,
-            )
-        return container
+        self.container = self._client.containers.run(
+            self.tag,
+            detach=True,
+            volumes=volumes,
+            entrypoint=str(entrypoint),
+            ports=self.PORTS,
+            name=self.name,
+        )
 
-    @classmethod
-    def is_ready(cls) -> bool:
+    def is_ready(self) -> bool:
         try:
+            self.container.reload()
+            assert self.container.status == "running"
             net_config = fetchai_localnode_config()
             client = LedgerClient(net_config)
             validators = client.query_validators()
@@ -191,30 +210,26 @@ class LedgerNodeDockerContainer:
         except Exception:
             return False
 
-    @classmethod
-    def wait_until_ready(cls, max_attempts: int = 15, sleep_rate: float = 1.0) -> bool:
+    def wait_until_ready(self, max_attempts: int = 15, sleep_rate: float = 1.0) -> bool:
         for _ in range(max_attempts):
-            if cls.is_ready():
+            if self.is_ready():
                 return True
             time.sleep(sleep_rate)
         return False
 
 
-def run_local_node(network: Network, project_name: str, profile_name: str) -> Optional[Container]:
+def run_local_node(network: Network, project_name: str, profile_name: str) -> Optional[LedgerNodeDockerContainer]:
     try:
         local_node = LedgerNodeDockerContainer(network, project_name, profile_name)
-        if local_node.container_exists and local_node.is_ready():
+        if local_node.container and local_node.is_ready():
             print("Detected local node already running.")
         else:
             print("Starting local node...")
-            container = local_node.run()
-            container.reload()
-            if not container.status in {"created", "running"}:
-                raise RuntimeError('Failed to create local node.')
+            local_node.run()
             if not local_node.wait_until_ready():
                 raise RuntimeError('Failed to start local node.')
             print("Stating local node...complete")
-            return container
+            return local_node
     except DockerException as ex:
         print(f"Failed to start local node: {ex}")
     return None
@@ -234,7 +249,7 @@ def network_context(network: Network, project_name: str, profile_name: str):
                 print(f"Local node still running in background: {local_node.name}")
             else:
                 print("Shutting down local_node...")
-                local_node.stop()
+                local_node.container.stop()
                 print("Shutting down local_node...complete")
 
 

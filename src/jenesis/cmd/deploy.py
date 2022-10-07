@@ -16,12 +16,9 @@ def run(args: argparse.Namespace):
         return 1
 
     cfg = Config.load(project_path)
-
-    if args.profile is not None and args.profile not in cfg.profiles:
-        print(f'Invalid profile name. Expected one of {",".join(cfg.profiles.keys())}')
+    profile = cfg.get_profile(args.profile)
+    if profile is None:
         return 1
-
-    profile = cfg.profiles[args.profile] or cfg.get_default_profile()
 
     with network_context(profile.network, cfg.project_name, profile.name):
         deploy_contracts(cfg, project_path, args.key, profile_name=args.profile)
