@@ -139,7 +139,7 @@ class Config:
         if profile_name is None:
             profile_name = self.get_default_profile()
         else:
-            if profile_name in self.profiles:
+            if profile_name not in self.profiles:
                 print(f'Invalid profile name. Expected one of {",".join(self.profiles.keys())}')
                 return None
         return self.profiles[profile_name]
