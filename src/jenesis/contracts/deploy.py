@@ -23,7 +23,7 @@ from jenesis.tasks.monitor import run_tasks
 # Recursive function to insert deployed contract address into instantiation msg
 def insert(data: Union[Dict, List], contract_name: str, address: str):
     for key, value in data.items() if isinstance(data, dict) else enumerate(data):
-        if value == contract_name:
+        if value == ("$" + contract_name):
             data[key] = address
         elif isinstance(value, (dict, list)):
             insert(value, contract_name, address)
@@ -32,11 +32,11 @@ def insert(data: Union[Dict, List], contract_name: str, address: str):
 def insert_address(contract_address_names: List[str], deployment: Deployment, profile: Profile) -> dict:
 
     deployment_names = list(profile.deployments.keys())
+    init_data = deployment.init
 
     # iterate over the addresses to insert
     for name in contract_address_names:
         if name in deployment_names:
-            init_data = deployment.init
             deployed_contract_address = profile.deployments[name].address
 
             assert deployed_contract_address is not None, f"Contract {name} address not found"
@@ -46,6 +46,14 @@ def insert_address(contract_address_names: List[str], deployment: Deployment, pr
 
     return init_data
 
+def retreive_init_addresses(data: Union[Dict, List], contract_names: List[str], init_addresses: List[str]):
+    for _, value in data.items() if isinstance(data, dict) else enumerate(data):
+        if isinstance(value, str) and value[0] == "$" and value[1:] in contract_names:
+            init_addresses.append(value[1:])
+            contract_names.remove(value[1:])
+        elif isinstance(value, (dict, list)):
+            retreive_init_addresses(value, contract_names,init_addresses)
+    return init_addresses
 
 def load_keys(key_names: Set[str]) -> Dict[str, PrivateKey]:
     keys = {}
@@ -204,17 +212,26 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
     project_contracts = {contract.name: contract for contract in detect_contracts(project_path)}
     deployments = profile.deployments
 
-    init_addresses = {
-        name: set(deployment.init_addresses)
-        for (name, deployment) in deployments.items()
-    }
+    init_addresses = {}
+
+    # iterate over the addresses to insert
+    for (name, deployment) in deployments.items():
+        init_data = deployment.init
+        deployment_names = list(deployments.keys())
+
+        # retreive init addresses for each contract
+        contract_init_addresses = retreive_init_addresses(init_data, deployment_names, [])
+
+        # add all contract init addresses in one dictionary
+        init_addresses[name] = set(contract_init_addresses)
+
+    # sort the contracts to be deployed in the right order
+    sorter = gl.TopologicalSorter(init_addresses)
+    deployment_order = list(sorter.static_order())
 
     # load all the keys required for this operation
     key_names = {deployment.deployer_key for deployment in deployments.values()} | {deployer_key}
     keys = load_keys(key_names)
-
-    sorter = gl.TopologicalSorter(init_addresses)
-    deployment_order = list(sorter.static_order())
 
     for deployment_name in deployment_order:
         deployment = deployments[deployment_name]
@@ -252,10 +269,9 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
 
         deployment.address = None  # clear the old address
 
-        contract_address_names = init_addresses[deployment_name]
+        contract_address_names = list(init_addresses[deployment_name])
 
-        if len(contract_address_names) > 0:
-            deployment.init = insert_address(contract_address_names, deployment, profile)
+        deployment.init = insert_address(contract_address_names, deployment, profile)
 
         # lookup the wallet key
         wallet = LocalWallet(keys[deployment.deployer_key])
