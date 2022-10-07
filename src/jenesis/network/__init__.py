@@ -1,7 +1,5 @@
 from contextlib import contextmanager
-from genericpath import isfile
 import os
-import tempfile
 import time
 import stat
 from typing import Optional, List
@@ -153,14 +151,14 @@ class LedgerNodeDockerContainer:
         return [line + "\n" for line in entrypoint_lines]
 
     def update_entrypoint_file(self) -> bool:
-        
+
         if not os.path.isdir(LOCALNODE_CONFIG_DIR):
             os.mkdir(LOCALNODE_CONFIG_DIR)
 
         previous_entrypoint_script = []
         entrypoint_file = os.path.join(LOCALNODE_CONFIG_DIR, "run-node.sh")
         if os.path.isfile(entrypoint_file):
-            with open(entrypoint_file) as file:
+            with open(entrypoint_file, encoding="utf-8") as file:
                 previous_entrypoint_script = file.readlines()
 
         entrypoint_script = self._make_entrypoint_script()
