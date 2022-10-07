@@ -32,7 +32,6 @@ def insert(data: Union[Dict, List], contract_name: str, address: str):
 def insert_address(contract_address_names: List[str], deployment: Deployment, profile: Profile) -> dict:
 
     deployment_names = list(profile.deployments.keys())
-
     init_data = deployment.init
 
     # iterate over the addresses to insert
@@ -214,7 +213,7 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
     deployments = profile.deployments
 
     init_addresses = {}
-    
+
     # iterate over the addresses to insert
     for (name, deployment) in deployments.items():
         init_data = deployment.init
@@ -233,10 +232,6 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
     # load all the keys required for this operation
     key_names = {deployment.deployer_key for deployment in deployments.values()} | {deployer_key}
     keys = load_keys(key_names)
-
-    print()
-    print("Deployment order: ", deployment_order)
-    print("----------------------------")
 
     for deployment_name in deployment_order:
         deployment = deployments[deployment_name]
@@ -277,12 +272,6 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
         contract_address_names = init_addresses[deployment_name]
 
         deployment.init = insert_address(contract_address_names, deployment, profile)
-
-        print()
-        print("--------------------------------")
-        print(deployment_name, " init msg:")
-        print(deployment.init)
-        print("--------------------------------")
 
         # lookup the wallet key
         wallet = LocalWallet(keys[deployment.deployer_key])
