@@ -31,7 +31,6 @@ class Deployment:
     deployer_key: str  # config: the name of the key to use for deployment
     init: Any  # config: init parameters for the contract
     init_funds: Optional[str] # config: funds to be sent with instantiation msg
-    init_addresses: Optional[list] # config: contract addresses needed in instantiation msg
     checksum: Optional[str]  # lock: the checksum digest to detect configuration changes
     digest: Optional[str]  # lock: the contract of the deployed contract
     address: Optional[Address]  # lock: the address of the deployed contract
@@ -135,6 +134,15 @@ class Config:
             if profile.default:
                 return name
         return self.profiles.keys()[0]
+
+    def get_profile(self, profile_name: Optional[str]) -> Optional[Profile]:
+        if profile_name is None:
+            profile_name = self.get_default_profile()
+        else:
+            if profile_name not in self.profiles:
+                print(f'Invalid profile name. Expected one of {",".join(self.profiles.keys())}')
+                return None
+        return self.profiles[profile_name]
 
     @classmethod
     def load(cls, path: str) -> "Config":
@@ -240,7 +248,6 @@ class Config:
             init=extract_opt_dict(contract_cfg, "init"),
             deployer_key=extract_req_str(contract_cfg, "deployer_key"),
             init_funds=extract_opt_str(contract_cfg, "init_funds"),
-            init_addresses=extract_opt_list(contract_cfg, "init_addresses"),
             digest=extract_opt_str(lock, "digest"),
             address=opt_address(extract_opt_str(lock, "address")),
             code_id=extract_opt_int(lock, "code_id"),
@@ -273,7 +280,7 @@ class Config:
 
         deployments = {contract.name: Deployment(contract.name, contract.name,
             network_name, "", {arg: "" for arg in contract.init_args()},
-            "",[], None, None, None, None,
+            "", None, None, None, None,
         ) for contract in contracts}
 
         if network_name == "fetchai-testnet":
@@ -327,7 +334,7 @@ class Config:
 
         deployment = Deployment(deployment_name, contract.name,
             network_name, "", {arg: "" for arg in contract.init_args()},
-            "",[], None, None, None, None)
+            "", None, None, None, None)
 
         data = toml.load("jenesis.toml")
 
@@ -380,7 +387,6 @@ class Config:
                 "",
                 {arg: "" for arg in contract.init_args()},
                 "",
-                [],
                 None,
                 None,
                 None,
