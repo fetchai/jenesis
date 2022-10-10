@@ -1,11 +1,12 @@
+from contextlib import contextmanager
 import os
-import tempfile
 import time
+import stat
 from typing import Optional, List
 
 from docker import from_env
 from docker.errors import DockerException
-from docker.types import Mount
+from docker.models.containers import Container
 
 from cosmpy.aerial.config import NetworkConfig
 from cosmpy.aerial.client import LedgerClient
@@ -20,7 +21,9 @@ DEFAULT_GENESIS_ACCOUNT = "fetch1gns5lphdk5ew5lnre7ulzv8s8k9dr9eyqvgj0w"
 DEFAULT_DENOMINATION = "atestfet"
 DEFAULT_CLI_BINARY = "fetchd"
 
-TMP_DIR = tempfile.TemporaryDirectory() # pylint: disable=consider-using-with
+
+LOCALNODE_CONFIG_DIR = os.path.join(os.getcwd(), ".localnode")
+
 
 class Network(NetworkConfig):
 
@@ -34,6 +37,7 @@ class Network(NetworkConfig):
         url: str = "",
         faucet_url: Optional[str] = None,
         is_local: Optional[bool] = False,
+        keep_running: Optional[bool] = False,
         cli_binary: Optional[str] = None,
         validator_key_name: Optional[str] = None,
         mnemonic: Optional[str] = None,
@@ -53,6 +57,7 @@ class Network(NetworkConfig):
         self.name = name
         self.is_local = is_local
         if is_local:
+            self.keep_running = keep_running
             self.cli_binary = cli_binary or DEFAULT_CLI_BINARY
             self.validator_key_name = validator_key_name or DEFAULT_VALIDATOR_KEY_NAME
             self.mnemonic = mnemonic or DEFAULT_MNEMONIC
@@ -82,6 +87,8 @@ class LedgerNodeDockerContainer:
     def __init__(
         self,
         network: Network,
+        project_name: str,
+        profile_name: str,
         tag: str = DEFAULT_DOCKER_IMAGE_TAG,
     ):
         """
@@ -94,18 +101,26 @@ class LedgerNodeDockerContainer:
         """
         self._client = from_env()
         self._image_tag = tag
+        self.name = f"{network.name}-{project_name}-{profile_name}"
         self.network: Network = network
+
+        self.container: Optional[Container] = None
+        try:
+            self.container: Container = self._client.containers.get(self.name)
+        except Exception:
+            pass
 
     @property
     def tag(self) -> str:
         """Get the image tag."""
         return self._image_tag
 
-    def _make_entrypoint_file(self, tmpdirname) -> None:
+    def _make_entrypoint_script(self) -> List[str]:
         """Make a temporary entrypoint file to setup and run the test ledger node"""
         trace_flag = '--trace' if self.network.debug_trace else ''
-        run_node_lines = [
+        entrypoint_lines = [
             "#!/usr/bin/env bash",
+            'if [ ! -f /root/.fetchd/config/genesis.json ]; then',
             # variables
             f'export VALIDATOR_KEY_NAME={self.network.validator_key_name}',
             f'export VALIDATOR_MNEMONIC="{self.network.mnemonic}"',
@@ -119,10 +134,10 @@ class LedgerNodeDockerContainer:
             f"{self.network.cli_binary} init --chain-id=$CHAIN_ID $MONIKER",
         ]
         for acc in self.network.genesis_accounts:
-            run_node_lines.append(
+            entrypoint_lines.append(
                 f'echo "$PASSWORD" |{self.network.cli_binary} add-genesis-account {acc} 100000000000000000000000$DENOM',
             )
-        run_node_lines.extend([
+        entrypoint_lines.extend([
             f'echo "$PASSWORD" |{self.network.cli_binary} add-genesis-account $({self.network.cli_binary} keys show $VALIDATOR_KEY_NAME -a) 100000000000000000000000$DENOM',
             f'echo "$PASSWORD" |{self.network.cli_binary} gentx $VALIDATOR_KEY_NAME 10000000000000000000000$DENOM --chain-id $CHAIN_ID',
             f"{self.network.cli_binary} collect-gentxs",
@@ -130,30 +145,61 @@ class LedgerNodeDockerContainer:
             f'sed -i "s/stake/atestfet/" ~/.{self.network.cli_binary}/config/genesis.json',
             f'sed -i "s/enable = false/enable = true/" ~/.{self.network.cli_binary}/config/app.toml',
             f'sed -i "s/swagger = false/swagger = true/" ~/.{self.network.cli_binary}/config/app.toml',
+            'fi',
             f"{self.network.cli_binary} start --rpc.laddr tcp://0.0.0.0:26657 {trace_flag}",
         ])
-        entrypoint_file = os.path.join(tmpdirname, "run-node.sh")
-        with open(entrypoint_file, "w", encoding="utf-8") as file:
-            file.writelines(line + "\n" for line in run_node_lines)
-        os.chmod(entrypoint_file, 300)
+        return [line + "\n" for line in entrypoint_lines]
+
+    def update_entrypoint_file(self) -> bool:
+
+        if not os.path.isdir(LOCALNODE_CONFIG_DIR):
+            os.mkdir(LOCALNODE_CONFIG_DIR)
+
+        previous_entrypoint_script = []
+        entrypoint_file = os.path.join(LOCALNODE_CONFIG_DIR, "run-node.sh")
+        if os.path.isfile(entrypoint_file):
+            with open(entrypoint_file, encoding="utf-8") as file:
+                previous_entrypoint_script = file.readlines()
+
+        entrypoint_script = self._make_entrypoint_script()
+        entrypoint_outdated = entrypoint_script != previous_entrypoint_script
+
+        if entrypoint_outdated:
+            with open(entrypoint_file, "w", encoding="utf-8") as file:
+                file.writelines(line for line in entrypoint_script)
+            os.chmod(entrypoint_file, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+
+        return entrypoint_outdated
 
     def run(self):
-        self._make_entrypoint_file(TMP_DIR.name)
+
+        entrypoint_outdated = self.update_entrypoint_file()
+
+        if self.container:
+            if entrypoint_outdated:
+                self.container.remove()
+                self.container = None
+            else:
+                self.container.start()
+                return
+
+        # if the container doesn't exist, create a new container and run it
         mount_path = "/mnt"
-        volumes = {TMP_DIR.name: {"bind": mount_path, "mode": "rw"}}
+        volumes = {LOCALNODE_CONFIG_DIR: {"bind": mount_path, "mode": "rw"}}
         entrypoint = os.path.join(mount_path, "run-node.sh")
-        container = self._client.containers.run(
+        self.container = self._client.containers.run(
             self.tag,
             detach=True,
             volumes=volumes,
             entrypoint=str(entrypoint),
             ports=self.PORTS,
+            name=self.name,
         )
-        return container
 
-    @classmethod
-    def is_ready(cls) -> bool:
+    def is_ready(self) -> bool:
         try:
+            self.container.reload()
+            assert self.container.status == "running"
             net_config = fetchai_localnode_config()
             client = LedgerClient(net_config)
             validators = client.query_validators()
@@ -162,30 +208,47 @@ class LedgerNodeDockerContainer:
         except Exception:
             return False
 
-    @classmethod
-    def wait_until_ready(cls, max_attempts: int = 15, sleep_rate: float = 1.0) -> bool:
+    def wait_until_ready(self, max_attempts: int = 15, sleep_rate: float = 1.0) -> bool:
         for _ in range(max_attempts):
-            if cls.is_ready():
+            if self.is_ready():
                 return True
             time.sleep(sleep_rate)
         return False
 
 
-def run_local_node(network: Network):
+def run_local_node(network: Network, project_name: str, profile_name: str) -> Optional[LedgerNodeDockerContainer]:
     try:
-        local_node = LedgerNodeDockerContainer(network)
-        if not local_node.is_ready():
+        local_node = LedgerNodeDockerContainer(network, project_name, profile_name)
+        if local_node.container and local_node.is_ready():
+            print("Detected local node already running.")
+        else:
             print("Starting local node...")
-            container = local_node.run()
-            if not container.status == "created":
-                raise RuntimeError('Failed to create local node.')
+            local_node.run()
             if not local_node.wait_until_ready():
                 raise RuntimeError('Failed to start local node.')
             print("Stating local node...complete")
-        else:
-            print("Detected local node already running.")
+            return local_node
     except DockerException as ex:
-        print(f"Failed to start local node: looks like your docker setup isn't right, please visit https://jenesis.fetch.ai/ for more information:\n\n{ex}")
+        print(f"Failed to start local node: {ex}")
+    return None
+
+
+@contextmanager
+def network_context(network: Network, project_name: str, profile_name: str):
+    if network.is_local:
+        local_node = run_local_node(network, project_name, profile_name)
+    else:
+        local_node = None
+    try:
+        yield local_node
+    finally:
+        if local_node:
+            if network.keep_running:
+                print(f"Local node still running in background: {local_node.name}")
+            else:
+                print("Shutting down local_node...")
+                local_node.container.stop()
+                print("Shutting down local_node...complete")
 
 
 def fetchai_testnet_config() -> Network:

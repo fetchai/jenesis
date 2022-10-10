@@ -53,3 +53,7 @@ class Task(ABC):
     @abstractmethod
     def poll(self):
         pass
+
+    @abstractmethod
+    def teardown(self):
+        pass

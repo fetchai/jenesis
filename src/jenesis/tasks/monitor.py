@@ -101,38 +101,46 @@ def run_tasks(tasks: List[Task], poll_interval: Optional[float] = None) -> Tuple
     completed_tasks = []
     failed_tasks = []
 
-    while True:
+    try:
+        while True:
 
-        in_progress_tasks = []
+            in_progress_tasks = []
+            for task in tasks:
+
+                # query / process the task
+                task.poll()
+
+                # update the task
+                display.update(task)
+
+                # check the status of the task
+                if task.is_complete:
+                    completed_tasks.append(task)
+                elif task.is_failed:
+                    failed_tasks.append(task)
+                else:
+                    in_progress_tasks.append(task)
+
+            # update the display
+            display.render()
+
+            # update the task list
+            tasks = in_progress_tasks
+
+            # exit if all the tasks are now complete
+            if len(tasks) == 0:
+                break
+
+            time.sleep(poll_interval)
+
+        for task in failed_tasks + completed_tasks:
+            display.show_logs(task)
+
+    except KeyboardInterrupt:
+        print('\nKeyboardInterrupt: shutting down all tasks...')
         for task in tasks:
-
-            # query / process the task
-            task.poll()
-
-            # update the task
-            display.update(task)
-
-            # check the status of the task
-            if task.is_complete:
-                completed_tasks.append(task)
-            elif task.is_failed:
-                failed_tasks.append(task)
-            else:
-                in_progress_tasks.append(task)
-
-        # update the display
-        display.render()
-
-        # update the task list
-        tasks = in_progress_tasks
-
-        # exit if all the tasks are now complete
-        if len(tasks) == 0:
-            break
-
-        time.sleep(poll_interval)
-
-    for task in failed_tasks + completed_tasks:
-        display.show_logs(task)
+            task.teardown()
+        print('KeyboardInterrupt: shutting down all tasks...complete')
+        sys.exit(1)
 
     return completed_tasks, failed_tasks
