@@ -1,21 +1,23 @@
 import argparse
 import os
 
-from .shell import load_config
+from jenesis.config import Config, Profile
+from jenesis.network import network_context
+
+from .shell import get_profile, load_shell_globals
+
+
+PROJECT_PATH = os.getcwd()
 
 
 def run(args: argparse.Namespace):
-    project_path = os.getcwd()
+    cfg = Config.load(PROJECT_PATH)
+    profile: Profile = get_profile(cfg, args)
 
-    # check that we are actually running the command from the project root
-    if not os.path.exists(os.path.join(project_path, "jenesis.toml")):
-        # pylint: disable=all
-        print("Please run command from project root")
-        return
-
-    shell_globals = load_config(args)
-    with open(args.script_path, encoding="utf-8") as script:
-        exec(script.read(), shell_globals)
+    with network_context(profile.network, cfg.project_name, profile.name):
+        shell_globals = load_shell_globals(cfg, profile)
+        with open(args.script_path, encoding="utf-8") as script:
+            exec(script.read(), shell_globals)
 
 
 def add_run_command(parser):

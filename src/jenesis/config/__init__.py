@@ -135,6 +135,15 @@ class Config:
                 return name
         return self.profiles.keys()[0]
 
+    def get_profile(self, profile_name: Optional[str]) -> Optional[Profile]:
+        if profile_name is None:
+            profile_name = self.get_default_profile()
+        else:
+            if profile_name not in self.profiles:
+                print(f'Invalid profile name. Expected one of {",".join(self.profiles.keys())}')
+                return None
+        return self.profiles[profile_name]
+
     @classmethod
     def load(cls, path: str) -> "Config":
         project_file_path = os.path.join(path, "jenesis.toml")
