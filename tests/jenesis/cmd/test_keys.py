@@ -1,15 +1,19 @@
 import subprocess
 import pytest
 import random
+import os
+from tempfile import mkdtemp
 
 #@pytest.mark.skip
 def test_keys():
     """Test key command"""
 
+    path = mkdtemp(prefix="jenesis-", suffix="-tmpl")
+    os.chdir(path)
+
     #subprocess.run("fetchd config keyring-backend test", shell=True)
 
-    letters = 'abcdefghijklmnopqrstuvwxyz'
-    key = ''.join(random.choice(letters) for i in range(10))
+    key = "test_key"
 
     #x = subprocess.run("echo 'password' | gnome-keyring-daemon --unlock", shell=True, capture_output=True)  
     #x = subprocess.run("pass init 'psw'", shell=True, capture_output=True)  
@@ -29,6 +33,8 @@ def test_keys():
     jenesis_key_address = subprocess.getoutput("jenesis keys show " + key)
 
     assert key_address == jenesis_key_address 
+
+    #shutil.rmtree(path)
 
 
 

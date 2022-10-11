@@ -1,5 +1,4 @@
 import os
-import random
 import shutil
 import subprocess
 import time
@@ -7,15 +6,12 @@ from tempfile import mkdtemp
 
 import pytest
 import toml
-from cosmpy.aerial.client import LedgerClient
-from cosmpy.aerial.contract import LedgerContract
 from jenesis.config import Config
-from jenesis.network import fetchai_localnode_config
 
 
-# @pytest.mark.skip
-def test_deploy_contract():
-    """Test deploy contract"""
+#@pytest.mark.skip
+def test_deploy_run_contract():
+    """Test deploy contract and run cmd"""
 
     network = "fetchai-localnode"
     profile = "profile_1"
@@ -38,8 +34,6 @@ def test_deploy_contract():
     time.sleep(60)
 
     deployment_key = "test_key"
-    # letters = 'abcdefghijklmnopqrstuvwxyz'
-    # deployment_key = ''.join(random.choice(letters) for i in range(10))
 
     subprocess.run("fetchd keys add " + deployment_key, shell=True)
 
@@ -60,17 +54,20 @@ def test_deploy_contract():
 
     subprocess.run("jenesis deploy " + deployment_key, shell=True)
 
-    ledger = LedgerClient(fetchai_localnode_config())
-    lock_file_path = os.path.join(project_root, "jenesis.lock")
+    file_path = os.path.dirname(os.path.realpath(__file__))
 
-    assert os.path.isfile(lock_file_path)
+    script_path = os.path.join(file_path, "scripts/script.py")
 
-    lock_file_contents = toml.load(lock_file_path)
-    contract_address = lock_file_contents["profile"][profile][contract_name]["address"]
+    output = subprocess.run(
+        "jenesis run " + script_path, shell=True,stdout=subprocess.PIPE)
 
-    contract = LedgerContract(path=None, client=ledger, address=contract_address)
+    output_string = output.stdout.decode()
 
-    assert contract.query({"get_count": {}}) == {"count": 5}
+    start = 'jenesis run output:'
+    end = '\nShutting'
 
-    # clean up the temporary folder
-    #shutil.rmtree(path)
+    result = output_string[output_string.find(start)+len(start):output_string.find(end)]
+
+    assert result == "{'count': 8}"
+
+    # shutil.rmtree(path)

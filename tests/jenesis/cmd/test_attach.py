@@ -4,6 +4,8 @@ import shutil
 import subprocess
 import time
 from tempfile import mkdtemp
+from cosmpy.aerial.config import NetworkConfig
+from cosmpy.aerial.faucet import FaucetApi
 
 import pytest
 import toml
@@ -11,11 +13,11 @@ from jenesis.config import Config
 
 
 #@pytest.mark.skip
-def test_run_contract():
-    """Test run contract"""
+def test_deploy_run_contract():
+    """Test deploy contract and run command"""
 
     # create first project and deploy a contract
-    network = "fetchai-localnode"
+    network = "fetchai-testnet"
     profile = "profile_1"
 
     path = mkdtemp(prefix="jenesis-", suffix="-tmpl")
@@ -38,20 +40,19 @@ def test_run_contract():
     time.sleep(60)
 
     deployment_key = "test_key"
-    # letters = 'abcdefghijklmnopqrstuvwxyz'
-    # deployment_key = ''.join(random.choice(letters) for i in range(10))
 
     subprocess.run("fetchd keys add " + deployment_key, shell=True)
 
     key_address = subprocess.getoutput("fetchd keys show -a " + deployment_key)
 
+    faucet_api = FaucetApi(NetworkConfig.fetchai_stable_testnet())
+
+    faucet_api.get_wealth(key_address)
+
     input_file_name = "jenesis.toml"
     toml_path = os.path.join(os.getcwd(), input_file_name)
     with open(toml_path, encoding="utf-8") as toml_file:
         data = toml.load(toml_file)
-
-    # add key address to genesis accounts
-    data["profile"][profile]["network"]["genesis_accounts"].append(key_address)
 
     # add init argument for deployment
     data["profile"][profile]["contracts"][contract_name]["init"]["count"] = 5
@@ -97,15 +98,15 @@ def test_run_contract():
     script_path = os.path.join(file_path, "scripts/script.py")
 
     output = subprocess.run(
-        "jenesis run " + script_path, shell=True, capture_output=True
-    )
+        "jenesis run " + script_path, shell=True,stdout=subprocess.PIPE)
 
     output_string = output.stdout.decode()
 
-    split_word = "jenesis run output:"
+    start = 'jenesis run output:'
+    end = '\nNetwork'
 
-    # Get String after substring occurrence
-    result = output_string.split(split_word, 1)[1].replace("\n", "")
-    assert result == "{'count': 5}"
+    result = output_string[output_string.find(start)+len(start):output_string.find(end)]
+
+    assert result == "{'count': 8}"
 
     #shutil.rmtree(path)
