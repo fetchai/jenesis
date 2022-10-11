@@ -34,4 +34,4 @@ def test_init_create_project():
     assert data["profile"]["testing"]["network"] == network
 
     # clean up the temporary folder
-    shutil.rmtree(temp_clone_path)
+    #shutil.rmtree(temp_clone_path)
