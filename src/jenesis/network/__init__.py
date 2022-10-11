@@ -200,10 +200,7 @@ class LedgerNodeDockerContainer:
         try:
             self.container.reload()
             assert self.container.status == "running"
-            net_config = fetchai_localnode_config()
-            client = LedgerClient(net_config)
-            validators = client.query_validators()
-            assert len(validators) > 0
+            assert self.is_local_node_running()
             return True
         except Exception:
             return False
@@ -215,12 +212,26 @@ class LedgerNodeDockerContainer:
             time.sleep(sleep_rate)
         return False
 
+    @staticmethod
+    def is_local_node_running():
+        try:
+            net_config = fetchai_localnode_config()
+            client = LedgerClient(net_config)
+            validators = client.query_validators()
+            assert len(validators) > 0
+            return True
+        except Exception:
+            return False
+
 
 def run_local_node(network: Network, project_name: str, profile_name: str) -> Optional[LedgerNodeDockerContainer]:
     try:
         local_node = LedgerNodeDockerContainer(network, project_name, profile_name)
-        if local_node.container and local_node.is_ready():
-            print("Detected local node already running.")
+        if local_node.is_local_node_running():
+            if local_node.is_ready():
+                print(f"Detected local node running: {local_node.name}")
+            else:
+                print("Warning: Detected local node running that may not have been configured for this project and profile. If this is not desired, please stop the currently running node and rerun the command.")
         else:
             print("Starting local node...")
             local_node.run()
