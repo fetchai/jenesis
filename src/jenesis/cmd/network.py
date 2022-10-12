@@ -1,20 +1,26 @@
 import argparse
 import os
+from typing import Optional
 
 from jenesis.config import Config
 from jenesis.network import is_local_node_running, run_local_node, LedgerNodeDockerContainer
 
 
-def run_start(args: argparse.Namespace):
+def get_profile(profile_name: Optional[str]):
     project_path = os.getcwd()
 
     # check that we are actually running the command from the project root
     if not os.path.exists(os.path.join(project_path, "jenesis.toml")):
         print("Please run command from project root")
-        return 1
+        return None
 
     cfg = Config.load(project_path)
-    profile = cfg.get_profile(args.profile)
+    return cfg, cfg.get_profile(profile_name)
+
+
+def run_start(args: argparse.Namespace):
+    cfg, profile = get_profile(args.profile)
+
     if profile is None:
         return 1
 
@@ -27,15 +33,8 @@ def run_start(args: argparse.Namespace):
 
 
 def run_stop(args: argparse.Namespace):
-    project_path = os.getcwd()
+    cfg, profile = get_profile(args.profile)
 
-    # check that we are actually running the command from the project root
-    if not os.path.exists(os.path.join(project_path, "jenesis.toml")):
-        print("Please run command from project root")
-        return 1
-
-    cfg = Config.load(project_path)
-    profile = cfg.get_profile(args.profile)
     if profile is None:
         return 1
 
