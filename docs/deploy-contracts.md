@@ -35,33 +35,17 @@ code_id = 2594
 ## Deploy contracts that depend on other deployments
 
 You can point to other contract addresses in any contract's instantiation message if required. 
-For example: if you have contracts `A`, `B`, and `C` within your project, but contract `A` requires contract's `B` deployment address in its instantiation message and contract `B` requires contract's `C` deployment address, they will have to be deployed in the following order: `C`, `B`, `A`. In order to provide this information to `Jenesis` you will need to specify the addresses needed in the `jenesis.toml` configuration file under the `init_addresses` field:
-
-```toml
-[profile.testing.contracts.A]
-...
-init_addresses = ["B"]
-
-[profile.testing.contracts.B]
-...
-init_addresses = ["C"]
-
-[profile.testing.contracts.C]
-...
-init_addresses = []
-```
-
-Then you need to specify where exactly these addresses need to be inserted inside the instantiation messages. You can do this by writing the contract name of the desired contract address in the corresponding field in the init parameters.
+For example: if you have contracts `A`, `B`, and `C` within your project, but contract `A` requires contract's `B` deployment address in its instantiation message and contract `B` requires contract's `C` deployment address, they will need to be deployed in the following order: `C`, `B`, `A`. In order to provide this information to `Jenesis` you will need to specify where exactly these contract addresses need to be inserted inside the instantiation messages. You can do this by writing the `$` symbol followed by the contract name in the corresponding field in the init parameters:
 
 
 ```toml
 [profile.testing.contracts.A.init]
 name = "A"
-token_contract_address = "B"
+token_contract_address = "$B"
 
 [profile.testing.contracts.B.init]
 token_name = "my_token"
-liquidity_contract_address = "C"
+liquidity_contract_address = "$C"
 
 [profile.testing.contracts.C.init]
 count = 5
