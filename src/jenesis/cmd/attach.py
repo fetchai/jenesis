@@ -38,7 +38,7 @@ def run(args: argparse.Namespace):
 
     project_contracts = {contract.name: contract for contract in detect_contracts(project_path)}
 
-    data = toml.load("jenesis.toml") 
+    data = toml.load("jenesis.toml")
 
     network = Network(**data["profile"][profile_name]["network"])
 
@@ -46,7 +46,6 @@ def run(args: argparse.Namespace):
         contract = MonkeyContract(project_contracts[deployment.contract], client, args.address)
         code_id = contract.code_id
         digest = contract.digest.hex()
-
 
     Config.update_project(project_path, profile_name, network.name, project_contracts[deployment.contract])
 

@@ -200,7 +200,7 @@ class LedgerNodeDockerContainer:
         try:
             self.container.reload()
             assert self.container.status == "running"
-            assert self.is_local_node_running()
+            assert is_local_node_running()
             return True
         except Exception:
             return False
@@ -212,22 +212,11 @@ class LedgerNodeDockerContainer:
             time.sleep(sleep_rate)
         return False
 
-    @staticmethod
-    def is_local_node_running():
-        try:
-            net_config = fetchai_localnode_config()
-            client = LedgerClient(net_config)
-            validators = client.query_validators()
-            assert len(validators) > 0
-            return True
-        except Exception:
-            return False
-
 
 def run_local_node(network: Network, project_name: str, profile_name: str) -> Optional[LedgerNodeDockerContainer]:
     try:
         local_node = LedgerNodeDockerContainer(network, project_name, profile_name)
-        if local_node.is_local_node_running():
+        if is_local_node_running():
             if local_node.is_ready():
                 print(f"Detected local node running: {local_node.name}")
             else:
@@ -260,6 +249,17 @@ def network_context(network: Network, project_name: str, profile_name: str):
                 print("Shutting down local_node...")
                 local_node.container.stop()
                 print("Shutting down local_node...complete")
+
+
+def is_local_node_running():
+    try:
+        net_config = fetchai_localnode_config()
+        client = LedgerClient(net_config)
+        validators = client.query_validators()
+        assert len(validators) > 0
+        return True
+    except Exception:
+        return False
 
 
 def fetchai_testnet_config() -> Network:

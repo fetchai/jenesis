@@ -12,6 +12,7 @@ from jenesis.cmd.deploy import add_deploy_command
 from jenesis.cmd.run import add_run_command
 from jenesis.cmd.shell import add_shell_command
 from jenesis.cmd.keys import add_keys_command
+from jenesis.cmd.network import add_network_command
 
 
 def _parse_commandline() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
@@ -28,6 +29,7 @@ def _parse_commandline() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
     add_add_command(subparsers)
     add_attach_command(subparsers)
     add_update_command(subparsers)
+    add_network_command(subparsers)
 
     return parser, parser.parse_args()
 
