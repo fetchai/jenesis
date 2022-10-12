@@ -7,8 +7,16 @@ from jenesis.network import is_local_node_running, run_local_node, LedgerNodeDoc
 
 def run_start(args: argparse.Namespace):
     project_path = os.getcwd()
+
+    # check that we are actually running the command from the project root
+    if not os.path.exists(os.path.join(project_path, "jenesis.toml")):
+        print("Please run command from project root")
+        return 1
+
     cfg = Config.load(project_path)
     profile = cfg.get_profile(args.profile)
+    if profile is None:
+        return 1
 
     if not profile.network.is_local:
         print("This profile is configured for a remote network.")
@@ -20,8 +28,16 @@ def run_start(args: argparse.Namespace):
 
 def run_stop(args: argparse.Namespace):
     project_path = os.getcwd()
+
+    # check that we are actually running the command from the project root
+    if not os.path.exists(os.path.join(project_path, "jenesis.toml")):
+        print("Please run command from project root")
+        return 1
+
     cfg = Config.load(project_path)
     profile = cfg.get_profile(args.profile)
+    if profile is None:
+        return 1
 
     if not profile.network.is_local:
         print("This profile is configured for a remote network.")
