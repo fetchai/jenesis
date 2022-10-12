@@ -6,6 +6,7 @@ from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts
 from jenesis.contracts.monkey import MonkeyContract
 from jenesis.network import Network
+from jenesis.network import network_context
 import toml
 
 def run(args: argparse.Namespace):
@@ -37,13 +38,14 @@ def run(args: argparse.Namespace):
 
     project_contracts = {contract.name: contract for contract in detect_contracts(project_path)}
 
-    contract = MonkeyContract(project_contracts[deployment.contract], client, args.address)
-    code_id = contract.code_id
-    digest = contract.digest.hex()
-
-    data = toml.load("jenesis.toml") 
+    data = toml.load("jenesis.toml")
 
     network = Network(**data["profile"][profile_name]["network"])
+
+    with network_context(network, cfg.project_name, profile_name):
+        contract = MonkeyContract(project_contracts[deployment.contract], client, args.address)
+        code_id = contract.code_id
+        digest = contract.digest.hex()
 
     Config.update_project(project_path, profile_name, network.name, project_contracts[deployment.contract])
 
