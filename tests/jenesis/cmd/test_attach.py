@@ -1,5 +1,4 @@
 import os
-import random
 import shutil
 import subprocess
 import time
@@ -39,30 +38,11 @@ def test_deploy_run_contract():
     subprocess.run("jenesis compile", shell=True)
     time.sleep(60)
 
-    deployment_key = "test_key"
+    file_path = os.path.dirname(os.path.realpath(__file__))
 
-    subprocess.run("fetchd keys add " + deployment_key, shell=True)
+    script_path = os.path.join(file_path, "scripts/deploy_contract.py")
 
-    key_address = subprocess.getoutput("fetchd keys show -a " + deployment_key)
-
-    faucet_api = FaucetApi(NetworkConfig.fetchai_stable_testnet())
-
-    faucet_api.get_wealth(key_address)
-
-    input_file_name = "jenesis.toml"
-    toml_path = os.path.join(os.getcwd(), input_file_name)
-    with open(toml_path, encoding="utf-8") as toml_file:
-        data = toml.load(toml_file)
-
-    # add init argument for deployment
-    data["profile"][profile]["contracts"][contract_name]["init"]["count"] = 5
-
-    project_configuration_file = os.path.join(project_root, "jenesis.toml")
-
-    with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
-        toml.dump(data, toml_file)
-
-    subprocess.run("jenesis deploy " + deployment_key, shell=True)
+    subprocess.run("jenesis run " + script_path, shell=True)
 
     # get deployed contract address
     lock_file_path = os.path.join(project_root, "jenesis.lock")
@@ -95,7 +75,7 @@ def test_deploy_run_contract():
 
     file_path = os.path.dirname(os.path.realpath(__file__))
 
-    script_path = os.path.join(file_path, "scripts/script.py")
+    script_path = os.path.join(file_path, "scripts/query_contract.py")
 
     output = subprocess.run(
         "jenesis run " + script_path, shell=True,stdout=subprocess.PIPE)
@@ -103,9 +83,8 @@ def test_deploy_run_contract():
     output_string = output.stdout.decode()
 
     start = 'jenesis run output:'
-    end = '\nNetwork'
 
-    result = output_string[output_string.find(start)+len(start):output_string.find(end)]
+    result = output_string[output_string.find(start)+len(start):].replace("\n", "")
 
     assert result == "{'count': 8}"
 

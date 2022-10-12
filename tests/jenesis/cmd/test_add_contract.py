@@ -52,4 +52,4 @@ def test_add_contract():
         assert contract_data["deployer_key"] == ""
         assert contract_data["init"]["count"] == ""
 
-    shutil.rmtree(temp_clone_path)
+    #shutil.rmtree(temp_clone_path)

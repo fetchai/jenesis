@@ -37,4 +37,4 @@ def test_add_profile():
         assert data["profile"][profile]["network"]["chain_id"] == chain_ids[(i + 1) % 2]
 
     # clean up the temporary folder
-    shutil.rmtree(temp_clone_path)
+    #shutil.rmtree(temp_clone_path)
