@@ -12,8 +12,8 @@ from jenesis.config import Config
 
 
 #@pytest.mark.skip
-def test_deploy_run_contract():
-    """Test deploy contract and run command"""
+def test_attach():
+    """Test attach contract"""
 
     # create first project and deploy a contract
     network = "fetchai-testnet"
