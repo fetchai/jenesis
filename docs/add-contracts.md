@@ -49,6 +49,35 @@ jenesis update
 ```
 The `update` command will automatically detect which contract is missing in the `jenesis.toml` configuration file by revising the contracts directory.
 
+# Add contract deployments
+You can add multiple deployments for any given contract in your project by running:
+
+```
+jenesis add deployment my_first_contract deployment_name
+```
+This will automatically create another my_first_contract entry called deployment_name without the need of adding a duplicated contract template to your project. This command will update your jenesis.toml file to:
+
+```
+[profile.testing.contracts.my_first_contract]
+name = "my_first_contract"
+contract = "my_first_contract"
+network = "fetchai-testnet"
+deployer_key = "alice"
+init_funds = ""
+
+[profile.testing.contracts.my_first_contract.init]
+count = 1
+
+[profile.testing.contracts.deployment_name]
+name = "deployment_name"
+contract = "my_first_contract"
+network = "fetchai-testnet"
+deployer_key = "alice"
+init_funds = ""
+
+[profile.testing.contracts.deployment_name.init]
+count = 1
+```
 
 # Attach deployed contracts
 
