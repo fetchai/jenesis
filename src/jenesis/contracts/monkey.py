@@ -62,7 +62,7 @@ class MonkeyContract(LedgerContract):
             raise RuntimeError('Unable to determine contract digest')
 
         # look up the code id if this is the first time
-        if code_id <= 0:
+        if isinstance(code_id, int) and code_id <= 0:
             self._code_id = 0
         elif code_id is not None:
             self._code_id = self._find_contract_id_by_digest_with_hint(code_id)
