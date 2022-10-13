@@ -61,11 +61,21 @@ class MonkeyContract(LedgerContract):
         else:
             raise RuntimeError('Unable to determine contract digest')
 
-        # determine the code id
-        if code_id is not None:
+        # look up the code id if this is the first time
+        if code_id <= 0:
+            self._code_id = 0
+        elif code_id is not None:
             self._code_id = self._find_contract_id_by_digest_with_hint(code_id)
         else:
             self._code_id = self._find_contract_id_by_digest(self._digest)
+
+        # if code id is not found, store this as code_id = 0 so we don't keep looking for it
+        if self._code_id is None:
+            self._code_id = 0
+
+        # trigger the observer if necessary
+        if self._observer is not None and self._code_id is not None:
+            self._observer.on_code_id_update(self._code_id)
 
         # add methods based on schema
         if contract.schema is not None:
@@ -126,6 +136,18 @@ class MonkeyContract(LedgerContract):
         funds: Optional[str] = None,
         do_validate: Optional[bool] = True,
     ) -> Address:
+
+        # in the case where the contract is already deployed
+        if self._address is not None and self._code_id is not None:
+            return self._address
+
+        assert self._address is None
+
+        if self._code_id is None or self._code_id <= 0:
+            self.store(sender, gas_limit=store_gas_limit)
+
+        assert self._code_id
+
         code_id = self.store(sender, gas_limit=store_gas_limit)
         address = self.instantiate(
             code_id,
