@@ -99,4 +99,4 @@ When running any of the commands `deploy`, `run`, `shell`, and `attach`,
 jenesis will check for a currently running local node, and if there is none, a new one will be created in a docker container.
 If you wish to keep a local node running, you need to set the `keep_running` parameter to `true`. Otherwise, nodes will be stopped after any of the command mentioned above finish running.
 
-> *Note: If you use `keep_running = true`, and then you wish to run a new local node configuration, you will need to stop the previous running node using `docker container stop`.
+At any time, you can start or stop a local node by running `jenesis network start/stop --profile <PROFILE>`

@@ -75,24 +75,30 @@ def add_compile_command(parser):
         "-p",
         dest="batch_size",
         type=int,
-        help="The limit of the number of tasks to do in parallel",
+        default=5,
+        help="The limit of the number of tasks to do in parallel (default = 5)",
     )
     compile_cmd.add_argument(
         "-o",
         "--optimize",
-        action = "store_true",
+        action="store_true",
         help="Optimize build",
     )
     compile_cmd.add_argument(
         "-r",
         "--rebuild",
-        action = "store_true",
+        action="store_true",
         help="Force rebuild",
     )
     compile_cmd.add_argument(
-        "-l",
         "--log",
-        action = "store_true",
-        help="Show logs",
+        action="store_true",
+        help="Show build logs (default)",
     )
-    compile_cmd.set_defaults(handler=run)
+    compile_cmd.add_argument(
+        "--no-log",
+        dest="log",
+        action="store_false",
+        help="Do not show build logs",
+    )
+    compile_cmd.set_defaults(handler=run, log=True)
