@@ -8,12 +8,9 @@ from cosmpy.aerial.tx_helpers import SubmittedTx
 from cosmpy.aerial.wallet import Wallet
 from cosmpy.crypto.address import Address
 from cosmpy.protos.cosmwasm.wasm.v1.query_pb2 import QueryCodeRequest
-from jsonschema import validate
+from jsonschema import ValidationError, validate as validate_schema
 from jenesis.contracts import Contract
 
-INSTANTIATE_MSG = "instantiate_msg"
-EXECUTE_MSG = "execute_msg"
-QUERY_MSG = "query_msg"
 
 class InstantiateArgsError(RuntimeError):
     pass
@@ -27,6 +24,14 @@ class ContractObserver(ABC):
     @abstractmethod
     def on_contract_address_update(self, address: Address):
         pass
+
+
+def validate(args: Any, schema: dict):
+    try:
+        validate_schema(args, schema)
+    except ValidationError as ex:
+        print("Contract message failed validation. To send to ledger anyway, retry with 'do_validate=False'")
+        raise ex
 
 
 class MonkeyContract(LedgerContract):
@@ -56,11 +61,21 @@ class MonkeyContract(LedgerContract):
         else:
             raise RuntimeError('Unable to determine contract digest')
 
-        # determine the code id
-        if code_id is not None:
+        # look up the code id if this is the first time
+        if code_id <= 0:
+            self._code_id = 0
+        elif code_id is not None:
             self._code_id = self._find_contract_id_by_digest_with_hint(code_id)
         else:
             self._code_id = self._find_contract_id_by_digest(self._digest)
+
+        # if code id is not found, store this as code_id = 0 so we don't keep looking for it
+        if self._code_id is None:
+            self._code_id = 0
+
+        # trigger the observer if necessary
+        if self._observer is not None and self._code_id is not None:
+            self._observer.on_code_id_update(self._code_id)
 
         # add methods based on schema
         if contract.schema is not None:
@@ -90,6 +105,7 @@ class MonkeyContract(LedgerContract):
             gas_limit: Optional[int] = None,
             admin_address: Optional[Address] = None,
             funds: Optional[str] = None,
+            do_validate: Optional[bool] = True,
     ) -> Address:
         # if no args provided, insert init args from configuration
         if args is None:
@@ -99,7 +115,8 @@ class MonkeyContract(LedgerContract):
                 raise InstantiateArgsError(
                     'Please provide instantiation arguments either in "args" or in the jenesis.toml configuration for this contract and profile'
                 )
-        validate(args, self._contract.schema[INSTANTIATE_MSG])
+        if do_validate and self._contract.instantiate_schema:
+            validate(args, self._contract.instantiate_schema)
         address = super().instantiate(code_id, args, sender, label=label, gas_limit=gas_limit,
                                       admin_address=admin_address, funds=funds)
 
@@ -117,7 +134,20 @@ class MonkeyContract(LedgerContract):
         instantiate_gas_limit: Optional[int] = None,
         admin_address: Optional[Address] = None,
         funds: Optional[str] = None,
+        do_validate: Optional[bool] = True,
     ) -> Address:
+
+        # in the case where the contract is already deployed
+        if self._address is not None and self._code_id is not None:
+            return self._address
+
+        assert self._address is None
+
+        if self._code_id is None or self._code_id <= 0:
+            self.store(sender, gas_limit=store_gas_limit)
+
+        assert self._code_id
+
         code_id = self.store(sender, gas_limit=store_gas_limit)
         address = self.instantiate(
             code_id,
@@ -126,7 +156,8 @@ class MonkeyContract(LedgerContract):
             label=label,
             gas_limit=instantiate_gas_limit,
             admin_address=admin_address,
-            funds=funds
+            funds=funds,
+            do_validate=do_validate,
         )
         return address
 
@@ -136,12 +167,15 @@ class MonkeyContract(LedgerContract):
         sender: Wallet,
         gas_limit: Optional[int] = None,
         funds: Optional[str] = None,
+        do_validate: Optional[bool] = True,
     ) -> SubmittedTx:
-        validate(args, self._contract.schema[EXECUTE_MSG])
+        if do_validate and self._contract.execute_schema:
+            validate(args, self._contract.execute_schema)
         return super().execute(args, sender, gas_limit, funds)
 
-    def query(self, args: Any) -> Any:
-        validate(args, self._contract.schema[QUERY_MSG])
+    def query(self, args: Any, do_validate: Optional[bool] = True) -> Any:
+        if do_validate and self._contract.query_schema:
+            validate(args, self._contract.query_schema)
         return super().query(args)
 
     def _find_contract_id_by_digest_with_hint(self, code_id_hint: int) -> Optional[int]:
