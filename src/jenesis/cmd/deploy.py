@@ -3,6 +3,7 @@ import os
 
 from jenesis.config import Config
 from jenesis.contracts.deploy import deploy_contracts
+from jenesis.network import network_context
 
 
 def run(args: argparse.Namespace):
@@ -15,12 +16,13 @@ def run(args: argparse.Namespace):
         return 1
 
     cfg = Config.load(project_path)
-
-    if args.profile is not None and args.profile not in cfg.profiles:
-        print(f'Invalid profile name. Expected one of {",".join(cfg.profiles.keys())}')
+    profile = cfg.get_profile(args.profile)
+    if profile is None:
         return 1
 
-    deploy_contracts(cfg, project_path, args.key, profile_name=args.profile)
+    with network_context(profile.network, cfg.project_name, profile.name):
+        deploy_contracts(cfg, project_path, args.key, profile_name=args.profile)
+
     return 0
 
 

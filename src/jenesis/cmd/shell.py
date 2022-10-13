@@ -7,26 +7,22 @@ from cosmpy.aerial.faucet import FaucetApi
 from cosmpy.aerial.wallet import LocalWallet
 from cosmpy.crypto.keypairs import PrivateKey
 from ptpython import embed
-from jenesis.config import Config
+from jenesis.config import Config, Profile
 from jenesis.contracts.detect import detect_contracts
 from jenesis.contracts.monkey import MonkeyContract
 from jenesis.contracts.observer import DeploymentUpdater
 from jenesis.keyring import query_keychain_items, query_keychain_item
-from jenesis.network import run_local_node
+from jenesis.network import network_context
 
 
-def load_config(args: argparse.Namespace) -> dict:
-    project_path = os.getcwd()
+PROJECT_PATH = os.getcwd()
+
+
+def get_profile(cfg: Config, args: argparse.Namespace) -> Profile:
 
     # check that we are actually running the command from the project root
-    if not os.path.exists(os.path.join(project_path, "jenesis.toml")):
+    if not os.path.exists(os.path.join(PROJECT_PATH, "jenesis.toml")):
         raise RuntimeError("Please run command from project root or create project first")
-
-    cfg = Config.load(project_path)
-    contracts = {contract.name: contract for contract in detect_contracts(project_path)}
-
-    shell_globals = {}
-    contract_instances = {}
 
     if args.profile is not None and args.profile not in cfg.profiles:
         print(f'Invalid profile name. Expected one of {",".join(cfg.profiles.keys())}')
@@ -34,13 +30,19 @@ def load_config(args: argparse.Namespace) -> dict:
 
     profile_name = args.profile or cfg.get_default_profile()
 
-    selected_profile = cfg.profiles.get(profile_name)
+    return cfg.profiles.get(profile_name)
+
+
+def load_shell_globals(cfg: Config, selected_profile: Profile) -> dict:
+
+    shell_globals = {}
+    contract_instances = {}
+
+    contracts = {contract.name: contract for contract in detect_contracts(PROJECT_PATH)}
 
     deployments = selected_profile.deployments
 
     if selected_profile is not None:
-        if selected_profile.network.is_local:
-            run_local_node(selected_profile.network)
 
         # build the ledger client
         client = LedgerClient(selected_profile.network)
@@ -64,8 +66,8 @@ def load_config(args: argparse.Namespace) -> dict:
                 code_id=deployment.code_id,
                 observer=DeploymentUpdater(
                     cfg,
-                    project_path,
-                    profile_name,
+                    PROJECT_PATH,
+                    selected_profile.name,
                     deployment_name,
                 ),
                 init_args=deployment.init,
@@ -94,8 +96,8 @@ def load_config(args: argparse.Namespace) -> dict:
         print("No local keychain found")
 
     shell_globals["cfg"] = cfg
-    shell_globals["project_path"] = project_path
-    shell_globals["profile"] = profile_name
+    shell_globals["project_path"] = PROJECT_PATH
+    shell_globals["profile"] = selected_profile.name
     shell_globals["contracts"] = contracts
     shell_globals["wallets"] = wallets
     for (name, instance) in contract_instances.items():
@@ -105,9 +107,13 @@ def load_config(args: argparse.Namespace) -> dict:
 
 
 def run(args: argparse.Namespace):
-    shell_globals = load_config(args)
-    shell_globals.update(globals())
-    embed(shell_globals, vi_mode=False, history_filename=".shell_history")
+    cfg = Config.load(PROJECT_PATH)
+    profile: Profile = get_profile(cfg, args)
+    shell_globals = globals()
+
+    with network_context(profile.network, cfg.project_name, profile.name):
+        shell_globals.update(load_shell_globals(cfg, profile))
+        embed(shell_globals, vi_mode=False, history_filename=".shell_history")
 
 
 def add_shell_command(parser):
