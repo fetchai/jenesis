@@ -62,7 +62,7 @@ class MonkeyContract(LedgerContract):
             raise RuntimeError('Unable to determine contract digest')
 
         # look up the code id if this is the first time
-        if code_id == 0:
+        if code_id <= 0:
             self._code_id = 0
         elif code_id is not None:
             self._code_id = self._find_contract_id_by_digest_with_hint(code_id)
@@ -143,7 +143,7 @@ class MonkeyContract(LedgerContract):
 
         assert self._address is None
 
-        if self._code_id is None or self._code_id == 0:
+        if self._code_id is None or self._code_id <= 0:
             self.store(sender, gas_limit=store_gas_limit)
 
         assert self._code_id
