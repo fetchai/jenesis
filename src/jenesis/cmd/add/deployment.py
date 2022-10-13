@@ -27,7 +27,8 @@ def run(args: argparse.Namespace):
     profiles = list(cfg.profiles.keys())
 
     for profile in profiles:
-        data["profile"][profile]["contracts"][args.deployment] = data["profile"][profile]["contracts"][args.contract]
+        contract_data = data["profile"][profile]["contracts"][args.contract].copy()
+        data["profile"][profile]["contracts"][args.deployment] = contract_data
         data["profile"][profile]["contracts"][args.deployment]["name"] = args.deployment
     
     project_configuration_file = os.path.join(project_root, "jenesis.toml")
