@@ -12,13 +12,12 @@ def run(args: argparse.Namespace):
 
     # check that we are actually running the command from the project root
     if not os.path.exists(os.path.join(project_root, "jenesis.toml")):
-        # pylint: disable=all
         print("Please run command from project root")
         return
 
     # check if the contract exists
     if not os.path.exists(contract_root):
-        print(f'Contract "{args.contract}" doesnt exist')
+        print(f'Contract "{args.contract}" does not exist')
         return
 
     data = toml.load("jenesis.toml")
@@ -26,11 +25,15 @@ def run(args: argparse.Namespace):
     cfg = Config.load(project_root)
     profiles = list(cfg.profiles.keys())
 
-    for profile in profiles:
-        contract_data = data["profile"][profile]["contracts"][args.contract].copy()
-        data["profile"][profile]["contracts"][args.deployment] = contract_data
-        data["profile"][profile]["contracts"][args.deployment]["name"] = args.deployment
-    
+    for profile_name in profiles:
+        profile = cfg.profiles[profile_name]
+        profile_contracts = list(profile.deployments.keys())
+
+        if args.contract in profile_contracts:
+            contract_data = data["profile"][profile_name]["contracts"][args.contract].copy()
+            data["profile"][profile_name]["contracts"][args.deployment] = contract_data
+            data["profile"][profile_name]["contracts"][args.deployment]["name"] = args.deployment
+
     project_configuration_file = os.path.join(project_root, "jenesis.toml")
 
     with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
