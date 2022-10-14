@@ -21,8 +21,8 @@ class LinuxKeychainError(KeychainError):
     pass
 
 
-def query_keychain_item(name: str) -> Union[LocalInfo, OfflineInfo]:
-    keyring = Keyring()
+def query_keychain_item(name: str, keyring_class=Keyring) -> Union[LocalInfo, OfflineInfo]:
+    keyring = keyring_class()
     collection = keyring.get_preferred_collection()
     items = list(collection.search_items({"profile": f"{name}.info"}))
     if not items:
@@ -41,8 +41,8 @@ def query_keychain_item(name: str) -> Union[LocalInfo, OfflineInfo]:
     return info
 
 
-def query_keychain_items() -> List[str]:
-    keyring = Keyring()
+def query_keychain_items(keyring_class=Keyring) -> List[str]:
+    keyring = keyring_class()
     collection = keyring.get_preferred_collection()
     items = list(collection.get_all_items())
     key_names = []
