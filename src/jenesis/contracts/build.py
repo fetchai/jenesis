@@ -11,7 +11,7 @@ from jenesis.tasks.monitor import run_tasks
 from jenesis.tasks.utils import chunks, get_last_modified_timestamp
 
 DEFAULT_BUILD_STEPS = [
-    "RUSTFLAGS='-C link-arg=-s' cargo build --release --target wasm32-unknown-unknown",
+    "RUSTFLAGS='-C link-arg=-s' cargo build --release --lib --target wasm32-unknown-unknown",
     "mkdir -p artifacts",
     "mv target/wasm32-unknown-unknown/release/*.wasm artifacts/",
 ]
@@ -19,7 +19,7 @@ DEFAULT_BUILD_STEPS = [
 
 class ContractBuildTask(ContainerTask):
 
-    BUILD_CONTAINER = 'cosmwasm/rust-optimizer:0.12.5'
+    BUILD_CONTAINER = 'cosmwasm/rust-optimizer:0.12.9'
 
     def __init__(self, contract: Contract, optimize: bool, rebuild: bool, log: bool):
         super().__init__()
@@ -113,7 +113,7 @@ def build_contracts(
 
 class WorkspaceBuildTask(ContainerTask):
 
-    BUILD_CONTAINER = 'cosmwasm/workspace-optimizer:0.12.5'
+    BUILD_CONTAINER = 'cosmwasm/workspace-optimizer:0.12.9'
 
     def __init__(self, path: str, contracts: List[Contract], optimize: bool, rebuild: bool, log: bool):
         super().__init__()
