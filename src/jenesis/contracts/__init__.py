@@ -17,12 +17,19 @@ class Contract:
         self.instantiate_schema = {}
         self.query_schema = {}
         self.execute_schema = {}
-        for (msg_type, schema) in self.schema.items():
-            if 'instantiate_msg' in msg_type:
+
+        # check for workspace-style schemas
+        if self.name in self.schema:
+            contract_schema = self.schema[self.name]
+        else:
+            contract_schema = self.schema
+
+        for (msg_type, schema) in contract_schema.items():
+            if 'instantiate' in msg_type:
                 self.instantiate_schema = schema
-            elif 'query_msg' in msg_type:
+            elif 'query' in msg_type:
                 self.query_schema = schema
-            elif 'execute_msg' in msg_type:
+            elif 'execute' in msg_type:
                 self.execute_schema = schema
 
     def digest(self) -> Optional[str]:
