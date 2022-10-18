@@ -21,6 +21,7 @@ from jenesis.network import (Network, fetchai_localnode_config,
                              fetchai_testnet_config)
 
 TEMPLATE_GIT_URL = "https://github.com/fetchai/jenesis-templates.git"
+DEFAULT_KEYRING_BACKEND = "os"
 
 
 @dataclass
@@ -102,6 +103,7 @@ class Config:
     project_name: str
     project_authors: List[str]
     profiles: Dict[str, Profile]
+    keyring_backend: str = "os"
 
     def update_deployment(
         self,
@@ -157,7 +159,6 @@ class Config:
             lock_file_contents = toml.load(lock_file_path)
         else:
             lock_file_contents = {}
-            print("No lock file found. Proceeding without any contract deployments.")
 
         return cls._loads(project_contents, lock_file_contents)
 
@@ -180,10 +181,15 @@ class Config:
             profile = cls._parse_profile(name, config_item, lock_item)
             profiles[profile.name] = profile
 
+        keyring_backend = extract_opt_str(
+            project_contents, "project.keyring_backend"
+        ) or DEFAULT_KEYRING_BACKEND
+
         return Config(
             project_name=extract_req_str(project_contents, "project.name"),
             project_authors=extract_req_str_list(project_contents, "project.authors"),
             profiles=profiles,
+            keyring_backend=keyring_backend,
         )
 
     @classmethod
@@ -302,7 +308,7 @@ class Config:
         }
 
         data = {
-            "project": {"name": project_name, "authors": authors},
+            "project": {"name": project_name, "authors": authors, "keyring_backend": "os"},
             "profile": profiles,
         }
 
