@@ -80,7 +80,7 @@ def generate_schemas(
 def load_contract_schema(source_path: str) -> dict:
     schema_folder = os.path.join(source_path, 'schema')
     if not os.path.isdir(schema_folder):
-        return None
+        return {}
 
     schema = {}
     for filename in os.listdir(schema_folder):

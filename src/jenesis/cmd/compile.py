@@ -15,7 +15,7 @@ def compute_init_checksum(path, contract_name):
     file_name = "instantiate_msg.json"
     file_path = os.path.join(path, "contracts", contract_name,"schema", file_name)
 
-    if os.path.exists(path):
+    if os.path.exists(file_path):
         with open(file_path , 'r', encoding="utf-8") as file:
             data = json.load(file)
 
