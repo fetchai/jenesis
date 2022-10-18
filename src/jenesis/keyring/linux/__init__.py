@@ -26,7 +26,7 @@ def query_keychain_item(name: str, keyring_class=Keyring) -> Union[LocalInfo, Of
     collection = keyring.get_preferred_collection()
     items = list(collection.search_items({"profile": f"{name}.info"}))
     if not items:
-        raise LinuxKeychainError("Unable to query keyring items")
+        raise LinuxKeychainError("Key not found")
 
     item = items[0]
     try:
