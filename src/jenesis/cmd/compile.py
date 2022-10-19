@@ -1,32 +1,29 @@
 import hashlib
 import argparse
 import os
-import json
 import struct
 
 from blessings import Terminal
 from jenesis.contracts.build import build_contracts, build_workspace
 from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts, is_workspace
-from jenesis.contracts.schema import generate_schemas
+from jenesis.contracts.schema import generate_schemas, load_contract_schema
 
-def compute_init_checksum(path, contract_name):
 
-    file_name = "instantiate_msg.json"
-    file_path = os.path.join(path, "contracts", contract_name,"schema", file_name)
+def _compute_init_checksum(path, contract_name):
+    schema_path = os.path.join(path, "contracts", contract_name)
+    schema = load_contract_schema(schema_path)
 
-    if os.path.exists(file_path):
-        with open(file_path , 'r', encoding="utf-8") as file:
-            data = json.load(file)
+    # check for workspace-style schema
+    if contract_name in schema:
+        schema = schema[contract_name]
 
-        hasher = hashlib.sha256()
-        encoded_value = "" if data is None else str(data)
+    hasher = hashlib.sha256()
+    encoded_value = "" if schema is None else str(schema)
 
-        hasher.update(struct.pack(">Q", len(encoded_value)))
-        hasher.update(encoded_value.encode())
-        return hasher.hexdigest()
-
-    return ""
+    hasher.update(struct.pack(">Q", len(encoded_value)))
+    hasher.update(encoded_value.encode())
+    return hasher.hexdigest()
 
 
 def run(args: argparse.Namespace):
@@ -45,7 +42,7 @@ def run(args: argparse.Namespace):
         print(term.red("Unable to detect any contracts"))
         return 1
 
-    init_checksums = {contract.name: compute_init_checksum(project_path, contract.name) for contract in contracts}
+    init_checksums = {contract.name: _compute_init_checksum(project_path, contract.name) for contract in contracts}
 
     if is_workspace(project_path):
         print(term.green("\nBuilding cargo workspace..."))
@@ -58,9 +55,11 @@ def run(args: argparse.Namespace):
     print(term.green("\nGenerating contract schemas..."))
     generate_schemas(contracts, batch_size=args.batch_size, rebuild=args.rebuild)
 
+    contracts = detect_contracts(project_path)
+
     cfg = Config.load(os.getcwd())
     for contract in contracts:
-        if compute_init_checksum(project_path, contract.name) != init_checksums[contract.name]:
+        if _compute_init_checksum(project_path, contract.name) != init_checksums[contract.name]:
             # update project file
             for (profile_name, profile) in cfg.profiles.items():
                 network_name = profile.network.name
