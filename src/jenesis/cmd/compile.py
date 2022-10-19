@@ -11,7 +11,7 @@ from jenesis.contracts.schema import generate_schemas, load_contract_schema
 
 
 def _compute_init_checksum(path, contract_name):
-    schema_path = os.path.join(path, "contracts", contract_name, "schema")
+    schema_path = os.path.join(path, "contracts", contract_name)
     schema = load_contract_schema(schema_path)
 
     # check for workspace-style schema
@@ -54,6 +54,8 @@ def run(args: argparse.Namespace):
     # generate the schemas
     print(term.green("\nGenerating contract schemas..."))
     generate_schemas(contracts, batch_size=args.batch_size, rebuild=args.rebuild)
+
+    contracts = detect_contracts(project_path)
 
     cfg = Config.load(os.getcwd())
     for contract in contracts:
