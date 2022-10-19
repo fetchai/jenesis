@@ -82,7 +82,7 @@ We now execute a cw20 token transfer of 1000 tokens from wallet to wallet2
 Finally, we query both wallet's balance
 
 ```python
->>> my_tokenquery({"balance": {"address": str(wallet.address())}})
+>>> my_token.query({"balance": {"address": str(wallet.address())}})
 {'balance': '4000'}
 >>> my_token.query({"balance": {"address": str(wallet2.address())}})
 {'balance': '1000'}
