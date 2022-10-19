@@ -8,7 +8,7 @@ To reproduce the examples in this document, add and compile a basic starter cont
 
 ```bash
 jenesis add contract starter my_first_contract
-jenesis add contract token my_token --branch cw20
+jenesis add contract token my_token
 jenesis compile
 ```
 ## Interactive Shell
