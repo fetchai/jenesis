@@ -431,9 +431,10 @@ class Config:
             )
 
         # find the target contract
+        available_templates = os.listdir(os.path.join(temp_clone_path, "contracts"))
         contract_template_path = os.path.join(temp_clone_path, "contracts", template)
         if not os.path.isdir(contract_template_path):
-            print(f"Unknown template {template}")
+            print(f"Unknown template {template}: expecting one of {set(available_templates)}")
             return
         print("Downloading template...complete")
 
