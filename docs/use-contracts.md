@@ -11,6 +11,9 @@ jenesis add contract starter my_first_contract
 jenesis add contract token my_token
 jenesis compile
 ```
+
+For more contract template examples visit [Jenesis Templates](https://github.com/fetchai/jenesis-templates)
+
 ## Interactive Shell
 
 To open a shell where you can easily interact with your contracts, run:
