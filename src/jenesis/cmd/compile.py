@@ -1,7 +1,6 @@
 import hashlib
 import argparse
 import os
-import json
 import struct
 
 from blessings import Terminal
