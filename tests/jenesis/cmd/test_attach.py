@@ -11,7 +11,7 @@ import toml
 from jenesis.config import Config
 
 
-#@pytest.mark.skip
+@pytest.mark.skip
 def test_attach():
     """Test attach contract"""
 

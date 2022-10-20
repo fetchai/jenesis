@@ -41,16 +41,13 @@ jobs:
     - name: Install Poetry
       uses: snok/install-poetry@v1
 
-    - name: Unlock Keyring
-      uses: t1m0thyj/unlock-keyring@v1
-
     - name: Install dependencies
       run: |
         poetry install
 
     - name: Run tests
       run: |
-        dbus-run-session -- poetry run pytest
+        poetry run pytest
 
     - name: Lints
       run: |
