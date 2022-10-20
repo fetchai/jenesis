@@ -53,6 +53,9 @@ def test_deploy_run_contract():
     with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
         toml.dump(data, toml_file)
 
+    # set fetchd to test keyring backend
+    subprocess.run("fetchd config keyring-backend test", shell=True)
+
     # add key
     deployment_key = "test_key"
     subprocess.run("fetchd keys add " + deployment_key, shell=True)
@@ -60,7 +63,7 @@ def test_deploy_run_contract():
     # add atestfet funds to key
     key_address = subprocess.getoutput("fetchd keys show -a " + deployment_key)
     faucet = FaucetApi(NetworkConfig.fetchai_stable_testnet())
-    faucet.get_wealth(key_address)
+    faucet.get_wealth(str(key_address))
 
     # deploy using key
     subprocess.run('jenesis deploy ' + deployment_key, shell = True)
