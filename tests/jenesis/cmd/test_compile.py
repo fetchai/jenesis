@@ -8,7 +8,7 @@ import pytest
 from jenesis.config import Config
 
 
-@pytest.mark.skip
+#@pytest.mark.skip
 def test_compile_contract():
     """Test compile contract"""
 
@@ -17,6 +17,7 @@ def test_compile_contract():
 
     path = mkdtemp(prefix="jenesis-", suffix="-tmpl")
 
+    # create project
     Config.create_project(path, profile, network)
 
     template = "starter"
@@ -25,9 +26,12 @@ def test_compile_contract():
     project_root = os.path.abspath(path)
     contract_root = os.path.join(project_root, "contracts", contract_name)
 
+    # add contract
     Config.add_contract(project_root, template, contract_name, None)
 
     os.chdir(path)
+
+    # compile contract and wait for it to finish
     subprocess.run("jenesis compile", shell=True)
     time.sleep(60)
 
@@ -35,7 +39,7 @@ def test_compile_contract():
         contract_root, "artifacts", contract_name + ".wasm"
     )
 
-    # check to see if the contract has been compiled
+    # check if the contract has been compiled
     assert os.path.exists(compiled_contract)
 
     # clean up the temporary folder
