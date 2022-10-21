@@ -8,6 +8,7 @@ from jenesis.config import Config
 from jenesis.network import fetchai_testnet_config
 
 
+
 def test_new_create_project():
     """Test project creation when (new) command is selected"""
 

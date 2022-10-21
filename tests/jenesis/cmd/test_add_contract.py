@@ -6,6 +6,7 @@ import toml
 from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts
 
+
 def test_add_contract():
     """Test adding new contracts"""
 

@@ -1,12 +1,11 @@
 import subprocess
-import pytest
-import random
 import os
 from tempfile import mkdtemp
 import toml
 from jenesis.config import Config
 
-#@pytest.mark.skip
+
+
 def test_keys():
     """Test key command"""
 

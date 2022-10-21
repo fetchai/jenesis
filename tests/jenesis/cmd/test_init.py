@@ -7,10 +7,12 @@ import toml
 from jenesis.config import Config
 from jenesis.network import fetchai_testnet_config
 
+
+
 def test_init_create_project():
     """Test project creation when (init) command is selected"""
 
-    # create the temporary clone folder (checa parametros!!!!!!!!)
+    # create the temporary clone folder
     temp_clone_path = mkdtemp(prefix="jenesis-", suffix="-tmpl")
 
     network_name = "fetchai-testnet"

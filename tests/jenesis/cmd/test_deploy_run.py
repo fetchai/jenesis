@@ -1,17 +1,22 @@
 import os
 import shutil
 import subprocess
-import time
 from tempfile import mkdtemp
 
-import pytest
 import toml
 from jenesis.config import Config
 from cosmpy.aerial.client import NetworkConfig
 from cosmpy.aerial.faucet import FaucetApi
+from jenesis.cmd import compile
 
 
-#@pytest.mark.skip
+class Arguments:
+    batch_size = 1
+    optimize = ""
+    rebuild = ""
+    log = ""
+
+
 def test_deploy_run_contract():
     """Test deploy contract and run cmd"""
 
@@ -28,14 +33,22 @@ def test_deploy_run_contract():
     contract_name = "contract"
 
     project_root = os.path.abspath(os.getcwd())
+    contract_root = os.path.join(project_root, "contracts", contract_name)
 
     # add starter contract and update
     contract = Config.add_contract(project_root, template, contract_name, None)
     Config.update_project(os.getcwd(), profile, network, contract)
 
-    # compile contract and wait for it to finish
-    subprocess.run("jenesis compile", shell=True)
-    time.sleep(60)
+    # compile contract
+    args = Arguments()
+    compile.run(args)
+
+    compiled_contract = os.path.join(
+        contract_root, "artifacts", contract_name + ".wasm"
+    )
+
+    # check if the contract has been compiled
+    assert os.path.exists(compiled_contract)
 
     input_file_name = "jenesis.toml"
     toml_path = os.path.join(os.getcwd(), input_file_name)
