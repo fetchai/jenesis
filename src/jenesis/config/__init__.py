@@ -18,7 +18,7 @@ from jenesis.config.extract import (extract_opt_dict, extract_opt_int,
 from jenesis.contracts import Contract
 from jenesis.contracts.detect import detect_contracts, parse_contract
 from jenesis.network import (Network, fetchai_localnode_config,
-                             fetchai_testnet_config)
+                             fetchai_testnet_config, fetchai_mainnet_config)
 
 TEMPLATE_GIT_URL = "https://github.com/fetchai/jenesis-templates.git"
 DEFAULT_KEYRING_BACKEND = "os"
@@ -293,6 +293,8 @@ class Config:
             net_config = fetchai_testnet_config()
         elif network_name == "fetchai-localnode":
             net_config = fetchai_localnode_config()
+        elif network_name == "fetchai-mainnet":
+            net_config = fetchai_mainnet_config()
         else:
             raise ConfigurationError("Network name not recognized")
 
@@ -376,6 +378,8 @@ class Config:
             net_config = fetchai_testnet_config()
         elif network_name == "fetchai-localnode":
             net_config = fetchai_localnode_config()
+        elif network_name == "fetchai-mainnet":
+            net_config = fetchai_mainnet_config()
         else:
             raise ConfigurationError("Network name not recognized")
 
