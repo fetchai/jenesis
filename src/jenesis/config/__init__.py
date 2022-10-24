@@ -20,6 +20,7 @@ from jenesis.contracts.detect import detect_contracts, parse_contract
 from jenesis.network import (Network, fetchai_localnode_config,
                              fetchai_testnet_config, fetchai_mainnet_config)
 
+
 TEMPLATE_GIT_URL = "https://github.com/fetchai/jenesis-templates.git"
 DEFAULT_KEYRING_BACKEND = "os"
 

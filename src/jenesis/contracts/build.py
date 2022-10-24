@@ -10,6 +10,9 @@ from jenesis.tasks.container import ContainerTask
 from jenesis.tasks.monitor import run_tasks
 from jenesis.tasks.utils import chunks, get_last_modified_timestamp
 
+
+CONTRACT_BUILD_IMAGE = "cosmwasm/rust-optimizer:0.12.9"
+WORKSPACE_BUILD_IMAGE = "cosmwasm/workspace-optimizer:0.12.9"
 DEFAULT_BUILD_STEPS = [
     "RUSTFLAGS='-C link-arg=-s' cargo build --release --lib --target wasm32-unknown-unknown",
     "mkdir -p artifacts",
@@ -19,14 +22,13 @@ DEFAULT_BUILD_STEPS = [
 
 class ContractBuildTask(ContainerTask):
 
-    BUILD_CONTAINER = 'cosmwasm/rust-optimizer:0.12.9'
-
     def __init__(self, contract: Contract, optimize: bool, rebuild: bool, log: bool):
         super().__init__()
         self.contract = contract
         self._optimize = optimize
         self._rebuild = rebuild
         self._log = log
+        self._build_image = CONTRACT_BUILD_IMAGE
         self._build_steps = DEFAULT_BUILD_STEPS
         self._working_dir = '/code'
         self._in_progress_text = 'Building...'
@@ -66,7 +68,7 @@ class ContractBuildTask(ContainerTask):
         entrypoint = None if self._optimize else "/bin/sh"
         args = None if self._optimize else ["-c", " && ".join(self._build_steps)]
         return client.containers.run(
-            self.BUILD_CONTAINER,
+            self._build_image,
             args,
             mounts=mounts,
             working_dir=self._working_dir,
@@ -113,8 +115,6 @@ def build_contracts(
 
 class WorkspaceBuildTask(ContainerTask):
 
-    BUILD_CONTAINER = 'cosmwasm/workspace-optimizer:0.12.9'
-
     def __init__(self, path: str, contracts: List[Contract], optimize: bool, rebuild: bool, log: bool):
         super().__init__()
         self._path = path
@@ -122,6 +122,8 @@ class WorkspaceBuildTask(ContainerTask):
         self._optimize = optimize
         self._rebuild = rebuild
         self._log = log
+        self._build_image = WORKSPACE_BUILD_IMAGE
+        self._build_steps = DEFAULT_BUILD_STEPS
 
     @property
     def name(self) -> str:
@@ -157,9 +159,9 @@ class WorkspaceBuildTask(ContainerTask):
 
         # start the container
         entrypoint = None if self._optimize else "/bin/sh"
-        args = None if self._optimize else ["-c", " && ".join(DEFAULT_BUILD_STEPS)]
+        args = None if self._optimize else ["-c", " && ".join(self._build_steps)]
         return client.containers.run(
-            self.BUILD_CONTAINER,
+            self._build_image,
             args,
             mounts=mounts,
             entrypoint=entrypoint,
