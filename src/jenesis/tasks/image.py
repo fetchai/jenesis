@@ -18,7 +18,6 @@ class ImagePullTask(Task):
         self._process: Optional[Process] = None
         self._status = TaskStatus.IDLE
         self._status_text = ''
-        self._in_progress_text = 'Getting docker image...'
 
     @property
     def name(self) -> str:
@@ -68,8 +67,9 @@ class ImagePullTask(Task):
                 self._status_text = ''
 
     def teardown(self):
-        if self._process is not None and self._status == TaskStatus.IN_PROGRESS:
-            self._process.terminate()
+        if self._process is not None:
+            if self._process.is_alive():
+                self._process.terminate()
 
 
 def image_exists(image):
