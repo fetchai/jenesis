@@ -1,4 +1,4 @@
-from typing import Optional, Any
+from typing import Dict, Optional, Any, Callable, List
 from abc import ABC, abstractmethod
 
 import grpc
@@ -174,6 +174,42 @@ class MonkeyContract(LedgerContract):
             validate(args, self._contract.query_schema)
         return super().query(args)
 
+    def make_queries(self) -> Dict[str, Callable]:
+
+        def make_query(msg: str, qargs: List[str]):
+            def query(self, *args, **kwargs):
+                query_args = {msg: kwargs}
+                return self.query(query_args, *args)
+
+            sig_args = ['self'] + qargs
+            sig = f'{msg}({",".join(sig_args)})'
+            func = create_function(sig, query)
+            return func
+
+        queries = {}
+        for (msg, qargs) in self._contract.query_msgs().items():
+            queries[msg] = make_query(msg, qargs)
+
+        return queries
+
+    def make_executions(self) -> Dict[str, Callable]:
+
+        def make_execution(msg: str, eargs: List[str]):
+            def execute(self, sender, gas_limit=None, funds=None, **kwargs):
+                execute_args = {msg: kwargs}
+                return self.execute(execute_args, sender, gas_limit, funds)
+
+            sig_args = ['self'] + eargs + ["sender, gas_limit=None, funds=None"]
+            sig = f'{msg}({",".join(sig_args)})'
+            func = create_function(sig, execute)
+            return func
+
+        executions = {}
+        for (msg, eargs) in self._contract.execute_msgs().items():
+            executions[msg] = make_execution(msg, eargs)
+
+        return executions
+
     def _find_contract_id_by_digest_with_hint(self, code_id_hint: int) -> Optional[int]:
 
         # try and lookup the specified code id
@@ -199,40 +235,6 @@ class MonkeyContract(LedgerContract):
         return str(self._address)
 
 
-def _make_queries(contract: MonkeyContract):
-
-    def make_query(msg, qargs):
-        def query(self, *args, **kwargs):
-            query_args = {msg: kwargs}
-            return contract.query(query_args, *args)
-        
-        sig = f'{msg}(self,{",".join(qargs)})'
-        func = create_function(sig, query)
-        return func
-
-    queries = {}
-    for (msg, qargs) in contract._contract.query_msgs().items():
-        queries[msg] = make_query(msg, qargs)
-
-    return queries
-
-def _make_executions(contract: MonkeyContract):
-
-    def make_execution(msg, eargs):
-        def execute(self, *args, **kwargs):
-            execute_args = {msg: kwargs}
-            return contract.execute(execute_args, *args)
-
-        sig = f'{msg}(self,{",".join(eargs)})'
-        func = create_function(sig, execute)
-        return func
-
-    executions = {}
-    for (msg, eargs) in contract._contract.execute_msgs().items():
-        executions[msg] = make_execution(msg, eargs)
-
-    return executions
-
 def make_contract(
     contract: Contract,
     client: LedgerClient,
@@ -244,30 +246,17 @@ def make_contract(
 ):
 
     monkey_contract = MonkeyContract(
-        contract,
-        client,
-        address,
-        digest,
-        code_id,
-        observer,
-        init_args,
+        contract, client, address, digest, code_id, observer, init_args
     )
 
     # add methods based on schema
+    contract_functions = {}
     if contract.schema is not None:
-        queries = _make_queries(monkey_contract)
-        executions = _make_executions(monkey_contract)
+        contract_functions.update(monkey_contract.make_queries())
+        contract_functions.update(monkey_contract.make_executions())
 
-    queries.update(executions)
+    JenesisContract = type('JenesisContract', (MonkeyContract,), contract_functions)
 
-    ContractType = type('JenesisContract', (MonkeyContract,), queries)
-
-    return ContractType(
-        contract,
-        client,
-        address,
-        digest,
-        code_id,
-        observer,
-        init_args,
+    return JenesisContract(
+        contract, client, address, digest, code_id, observer, init_args
     )

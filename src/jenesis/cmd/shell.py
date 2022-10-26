@@ -9,7 +9,7 @@ from cosmpy.crypto.keypairs import PrivateKey
 from ptpython import embed
 from jenesis.config import Config, Profile
 from jenesis.contracts.detect import detect_contracts
-from jenesis.contracts.monkey import MonkeyContract, make_contract
+from jenesis.contracts.monkey import make_contract
 from jenesis.contracts.observer import DeploymentUpdater
 from jenesis.keyring import query_keychain_items, query_keychain_item
 from jenesis.network import network_context
