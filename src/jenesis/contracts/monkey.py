@@ -176,37 +176,37 @@ class MonkeyContract(LedgerContract):
 
     def make_queries(self) -> Dict[str, Callable]:
 
-        def make_query(msg: str, qargs: List[str]):
+        def make_query(msg: str, msg_args: List[str]):
             def query(self, *args, **kwargs):
-                query_args = {msg: kwargs}
-                return self.query(query_args, *args)
+                query_arg = {msg: kwargs}
+                return self.query(query_arg, *args)
 
-            sig_args = ['self'] + qargs
+            sig_args = ['self'] + msg_args
             sig = f'{msg}({",".join(sig_args)})'
             func = create_function(sig, query)
             return func
 
         queries = {}
-        for (msg, qargs) in self._contract.query_msgs().items():
-            queries[msg] = make_query(msg, qargs)
+        for (msg, msg_args) in self._contract.query_msgs().items():
+            queries[msg] = make_query(msg, msg_args)
 
         return queries
 
     def make_executions(self) -> Dict[str, Callable]:
 
-        def make_execution(msg: str, eargs: List[str]):
+        def make_execution(msg: str, msg_args: List[str]):
             def execute(self, sender, gas_limit=None, funds=None, **kwargs):
-                execute_args = {msg: kwargs}
-                return self.execute(execute_args, sender, gas_limit, funds)
+                execute_arg = {msg: kwargs}
+                return self.execute(execute_arg, sender, gas_limit, funds)
 
-            sig_args = ['self'] + eargs + ["sender, gas_limit=None, funds=None"]
+            sig_args = ['self'] + msg_args + ['sender', 'gas_limit=None', 'funds=None']
             sig = f'{msg}({",".join(sig_args)})'
             func = create_function(sig, execute)
             return func
 
         executions = {}
-        for (msg, eargs) in self._contract.execute_msgs().items():
-            executions[msg] = make_execution(msg, eargs)
+        for (msg, msg_args) in self._contract.execute_msgs().items():
+            executions[msg] = make_execution(msg, msg_args)
 
         return executions
 
