@@ -243,7 +243,21 @@ def make_contract(
     code_id: Optional[int] = None,
     observer: Optional[ContractObserver] = None,
     init_args: Optional[dict] = None,
-):
+) -> Any:
+    """
+    Makes the contract objects for interaction from the shell and scripts.
+    The purpose of this factory function is to attach the contract executions
+    and queries so that the shell's autocomplete function will work.
+
+    :param contract: The static contract data
+    :param client: The client for interacting with the ledger
+    :param address: The contract address
+    :param digest: The contract digest
+    :param code_id: The contract code_id
+    :param observer: The contract observer
+    :param init_args: The instantiation arguments
+    :return: The contract object with queries and executions attached
+    """
 
     monkey_contract = MonkeyContract(
         contract, client, address, digest, code_id, observer, init_args
