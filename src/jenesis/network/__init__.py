@@ -266,6 +266,10 @@ def fetchai_testnet_config() -> Network:
     return Network.from_cosmpy_config("fetchai-testnet", NetworkConfig.fetchai_stable_testnet())
 
 
+def fetchai_mainnet_config() -> Network:
+    return Network.from_cosmpy_config("fetchai-mainnet", NetworkConfig.fetchai_mainnet())
+
+
 def fetchai_localnode_config() -> Network:
     return Network.from_cosmpy_config(
         "fetchai-localnode",
