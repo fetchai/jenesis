@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jenesis"
-version = "0.5.1"
+version = "0.5.2"
 description = "Command line tool for rapid CosmWasm-based smart contract development"
 authors = ["Ed FitzGerald <edward.fitzgerald@fetch.ai>", "James Riehl <james.riehl@fetch.ai>", "Alejandro Madrigal <alejandro.madrigal@fetch.ai>"]
 license = "Apache"
@@ -22,6 +22,7 @@ mkdocs-material = "^8.3.9"
 keyring = "^23.9.0"
 jsonschema = "^4.15.0"
 graphlib-backport = "^1.0.3"
+jwskate = "^0.4.1"
 
 [tool.poetry.dev-dependencies]
 coverage = "^6.4.4"

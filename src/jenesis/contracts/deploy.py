@@ -55,16 +55,16 @@ def retreive_init_addresses(data: Union[Dict, List], contract_names: List[str], 
             retreive_init_addresses(value, contract_names,init_addresses)
     return init_addresses
 
-def load_keys(key_names: Set[str]) -> Dict[str, PrivateKey]:
+def load_keys(key_names: Set[str], cfg: Config) -> Dict[str, PrivateKey]:
     keys = {}
-    available_key_names = set(query_keychain_items())
+    available_key_names = set(query_keychain_items(cfg.keyring_backend))
     for key_name in key_names:
 
         if key_name not in available_key_names:
             print(f"Key not found: {key_name}")
             continue
 
-        info = query_keychain_item(key_name)
+        info = query_keychain_item(key_name, cfg.keyring_backend)
         if not isinstance(info, LocalInfo):
             print(f"Failed to retrieve local key: {key_name}")
             continue
@@ -231,7 +231,7 @@ def deploy_contracts(cfg: Config, project_path: str, deployer_key: Optional[str]
 
     # load all the keys required for this operation
     key_names = {deployment.deployer_key for deployment in deployments.values()} | {deployer_key}
-    keys = load_keys(key_names)
+    keys = load_keys(key_names, cfg)
 
     for deployment_name in deployment_order:
         deployment = deployments[deployment_name]

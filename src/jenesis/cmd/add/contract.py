@@ -35,6 +35,9 @@ def run_add_contract(args: argparse.Namespace):
 
     selected_contract = Config.add_contract(project_root, template, name, branch)
 
+    if selected_contract is None:
+        return False
+
     cfg = Config.load(project_root)
 
     for (profile_name, profile) in cfg.profiles.items():
