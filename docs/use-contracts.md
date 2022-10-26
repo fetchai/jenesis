@@ -2,6 +2,18 @@
 
 You can interact with your project's contracts by using the ```shell``` or ```run``` commands.
 
+## Previous steps
+
+To reproduce the examples in this document, add and compile a basic starter contract and a cw20 token contract to your project with the following commands:
+
+```bash
+jenesis add contract starter my_first_contract
+jenesis add contract token my_token
+jenesis compile
+```
+
+For more contract template examples visit [Jenesis Templates](https://github.com/fetchai/jenesis-templates)
+
 ## Interactive Shell
 
 To open a shell where you can easily interact with your contracts, run:
@@ -20,12 +32,12 @@ You will observe the following text indicating the available contracts in your p
 Network: fetchai-testnet
 Detecting contracts...
 C my_first_contract
-C cw20
+C my_token
 Detecting contracts...complete
 ```
 > *NOTE: `jenesis shell` currently requires that contract names use accepted python variable names. For example, using `my-first-contract` instead of `my_first_contract` will generate an error when trying to interact with it.*
 
-In this case, we can see that `my_first_contract` and `cw20` contracts are available for this project. If these contracts have been already deployed you can directly interact with them by performing contract executions such as:
+In this case, we can see that `my_first_contract` and `my_token` contracts are available for this project. If these contracts have been already deployed you can directly interact with them by performing contract executions such as:
 
 ```python
 >>> my_first_contract.execute(args = {'msg_name': {...}}
@@ -42,7 +54,7 @@ If the ledger is a testnet with a faucet url, you can get funds using the `fauce
 >>> faucet.get_wealth(wallets['alice'])
 ```
 
-We will show an example assuming that the cw20 contract has only been compiled and not yet deployed, going through deployment, execution, and querying.
+We will show an example assuming that the my_token contract has only been compiled and not yet deployed, going through deployment, execution, and querying.
 
 For this example, we will first generate two wallets. We provide wealth to the sender wallet in atestfet so it can pay for transaction fees.
 
@@ -52,30 +64,30 @@ For this example, we will first generate two wallets. We provide wealth to the s
 >>> faucet.get_wealth(wallet)
 ```
 
-We now proceed to deploy the cw20 contract, we define the arguments for the cw20 token: name, symbol, decimal, and the addresses that will be funded with these cw20 tokens. In this case we will fund wallet's address with 5000 tokens.
+We now proceed to deploy `my_token` contract, we define the arguments for the cw20 token: name, symbol, decimal, and the addresses that will be funded with these my_token tokens. In this case we will fund wallet's address with 5000 tokens.
 ```python
->>> cw20.deploy({"name": "Crab Coin", "symbol": "CRAB", "decimals": 6, "initial_balances": [{"address": str(wallet.address()), "amount": "5000"}]}, wallet)
+>>> my_token.deploy({"name": "Crab Coin", "symbol": "CRAB", "decimals": 6, "initial_balances": [{"address": str(wallet.address()), "amount": "5000"}]}, wallet)
 ```
 
 We can query wallet balance to make sure it has been funded with cw20 tokens
 
 ```python
->>> cw20.query({"balance": {"address": str(wallet.address())}})
+>>> my_token.query({"balance": {"address": str(wallet.address())}})
 {'balance': '5000'}
 ```
 
 We now execute a cw20 token transfer of 1000 tokens from wallet to wallet2
 
 ```python
->>> cw20.execute({'transfer': {'amount': '1000','recipient': str(wallet2.address())}}, sender=wallet)
+>>> my_token.execute({'transfer': {'amount': '1000','recipient': str(wallet2.address())}}, sender=wallet)
 ```
 
 Finally, we query both wallet's balance
 
 ```python
->>> cw20.query({"balance": {"address": str(wallet.address())}})
+>>> my_token.query({"balance": {"address": str(wallet.address())}})
 {'balance': '4000'}
->>> cw20.query({"balance": {"address": str(wallet2.address())}})
+>>> my_token.query({"balance": {"address": str(wallet2.address())}})
 {'balance': '1000'}
 ```
 We can observe that wallet has sent 1000 tokens to wallet2.
@@ -86,13 +98,13 @@ Jenesis also attaches the contract query and execution messages as dynamic metho
 
 For example, the above queries can also be run with:
 ```python
->>> cw20.balance(address=str(wallet.address()))
+>>> my_token.balance(address=str(wallet.address()))
 {'balance': '4000'}
 ```
 
 Similarly, the transfer can be executed with:
 ```python
->>> cw20.transfer(wallet, amount='1000', recipient=str(wallet2.address()))
+>>> my_tokentransfer(wallet, amount='1000', recipient=str(wallet2.address()))
 ```
 
 ## Executing Scripts
@@ -105,15 +117,15 @@ wallet = LocalWallet.generate()
 faucet.get_wealth(wallet.address())
 wallet2 = LocalWallet.generate()
 
-cw20.deploy({"name": "Crab Coin","symbol": "CRAB", "decimals": 6, "initial_balances": [{"address": str(wallet.address()), "amount": "5000"}]}, wallet)
-print("wallet initial cw20 balance: ", cw20.query({"balance": {"address": str(wallet.address())}}))
+my_token.deploy({"name": "My Token","symbol": "MT", "decimals": 6, "initial_balances": [{"address": str(wallet.address()), "amount": "5000"}]}, wallet)
+print("wallet initial cw20 MT balance: ", my_token.query({"balance": {"address": str(wallet.address())}}))
 
-tx = cw20.execute({'transfer': {'amount': '1000', 'recipient': str(wallet2.address())}}, sender=wallet)
-print("transfering 1000 cw20 tokens from wallet to wallet2")
+tx = my_token.execute({'transfer': {'amount': '1000', 'recipient': str(wallet2.address())}}, sender=wallet)
+print("transfering 1000 cw20 MT tokens from wallet to wallet2")
 tx.wait_to_complete()
 
-print("wallet final cw20 balance: ", cw20.query({"balance": {"address": str(wallet.address())}}))
-print("wallet2 final cw20 balance: ", cw20.query({"balance": {"address": str(wallet2.address())}}))
+print("wallet final cw20 MT balance: ", my_token.query({"balance": {"address": str(wallet.address())}}))
+print("wallet2 final cw20 MT balance: ", my_token.query({"balance": {"address": str(wallet2.address())}}))
 ```
 
 If we paste the above code into the file script.py inside the project's directory, we can run it with:

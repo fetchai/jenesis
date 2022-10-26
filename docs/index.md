@@ -64,7 +64,9 @@ If using a cargo workspace, you just need to navigate to the top level of your p
 
 ## Configure a network
 
-By default, jenesis will configure the project to run on the latest stable Fetch.ai testnet. To test on a local node instead, pass the argument `--network fetchai-localnode` when creating a project:
+By default, jenesis will configure the project to run on the latest stable Fetch.ai testnet. Use `fetchai-mainnet` to configure for the Fetch.ai mainnet or directly edit the `jenesis.toml` file to configure for other networks.
+
+To test on a local node, pass the argument `--network fetchai-localnode` when creating a project:
 ```
 jenesis new my_project --network fetchai-localnode
 ```

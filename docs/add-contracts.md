@@ -4,7 +4,7 @@ Once you have successfully created your project, you can add contract templates.
 ```
 jenesis add contract <TEMPLATE> <NAME>
 ```
-
+You can find all the contract templates available in [Jenesis Templates](https://github.com/fetchai/jenesis-templates).
 An example of how to add the template **starter** with the name `my_first_contract` is given below:
 
 ```

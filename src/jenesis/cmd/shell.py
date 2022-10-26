@@ -84,16 +84,16 @@ def load_shell_globals(cfg: Config, selected_profile: Profile) -> dict:
     wallets = {}
     print("Detecting local wallet keys...")
     try:
-        for key in query_keychain_items():
+        for key in query_keychain_items(cfg.keyring_backend):
             try:
-                info = query_keychain_item(key)
+                info = query_keychain_item(key, cfg.keyring_backend)
                 wallets[key] = LocalWallet(PrivateKey(info.private_key))
                 print(f"Importing wallets['{key}']")
             except Exception:
                 print(f"Failed to import local key '{key}'")
         print("Detecting local wallet keys...complete")
-    except Exception:
-        print("No local keychain found")
+    except Exception as ex:
+        print(f"No local keychain found: {ex}")
 
     shell_globals["cfg"] = cfg
     shell_globals["project_path"] = PROJECT_PATH
