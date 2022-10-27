@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ docker-cache ]
   pull_request:
-    branches: [ main ]
+    branches: [ docker-cache ]
 
 jobs:
   build:
@@ -18,6 +18,28 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Restore Docker Image Cache if it exists
+      id: cache-docker-images
+      uses: actions/cache@v3
+      with:
+        path: ci/cache/docker
+        key: cache-docker-images
+
+    - name: Pull and Save Docker Images if cache miss
+      if: steps.cache-docker-images.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p ci/cache/docker
+        docker pull fetchai/fetchd:0.10.5
+        docker pull cosmwasm/rust-optimizer:0.12.9
+        docker image save fetchai/fetchd:0.10.5 --output ./ci/cache/docker/fetchd-0-10-5.tar
+        docker image save cosmwasm/rust-optimizer:0.12.9 --output ./ci/cache/docker/rust-optimizer-0-12-9.tar
+
+    - name: Load Docker Images if cache hit
+      if: steps.cache-docker-images.outputs.cache-hit == 'true'
+      run: |
+        docker image load --input ./ci/cache/docker/fetchd-0-10-5.tar
+        docker image load --input ./ci/cache/docker/rust-optimizer-0-12-9.tar
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
