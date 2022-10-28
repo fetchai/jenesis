@@ -1,4 +1,5 @@
 import os
+import pytest
 import shutil
 import subprocess
 from tempfile import mkdtemp
@@ -13,11 +14,12 @@ class Arguments:
     log = ""
 
 
+@pytest.mark.dependency(depends=['test_deploy_run_contract'])
 def test_attach():
     """Test attach contract"""
 
     # create project
-    network = "fetchai-testnet"
+    network = "fetchai-localnode"
     profile = "profile_1"
 
     path = mkdtemp(prefix="jenesis-", suffix="-tmpl")
