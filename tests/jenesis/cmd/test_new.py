@@ -1,10 +1,12 @@
 import os
 import shutil
 import subprocess
+from tempfile import mkdtemp
 
 import toml
 from jenesis.config import Config
 from jenesis.network import fetchai_testnet_config
+
 
 
 def test_new_create_project():
@@ -12,6 +14,11 @@ def test_new_create_project():
 
     project_name = "ProjectX"
     network_name = "fetchai-testnet"
+    
+    temp_clone_path = mkdtemp(prefix="jenesis-", suffix="-tmpl")
+
+    os.chdir(temp_clone_path)
+    
     Config.create_project(project_name, "testing", network_name)
 
     input_file_name = "jenesis.toml"
@@ -30,4 +37,6 @@ def test_new_create_project():
 
     assert data["project"]["authors"] == authors
     assert data["profile"]["testing"]["network"] == network
-    shutil.rmtree(project_name)
+
+    # clean up the temporary folder
+    #shutil.rmtree(temp_clone_path)

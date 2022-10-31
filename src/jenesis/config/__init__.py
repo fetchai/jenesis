@@ -152,7 +152,7 @@ class Config:
         lock_file_path = os.path.join(path, "jenesis.lock")
 
         if not os.path.isfile(project_file_path):
-            raise ConfigurationError('Missing project file: "jenesis.lock"')
+            raise ConfigurationError('Missing project file: "jenesis.toml"')
         project_contents = toml.load(project_file_path)
 
         if os.path.isfile(lock_file_path):
