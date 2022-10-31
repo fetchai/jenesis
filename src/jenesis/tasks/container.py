@@ -7,6 +7,7 @@ from jenesis.tasks import Task, TaskStatus
 class ContainerTask(Task):
 
     def __init__(self):
+        self._build_image = None
         self._container = None
         self._status = TaskStatus.IDLE
         self._status_text = ''

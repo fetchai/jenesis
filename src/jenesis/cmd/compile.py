@@ -4,11 +4,13 @@ import os
 import struct
 
 from blessings import Terminal
-from jenesis.contracts.build import build_contracts, build_workspace
+from jenesis.contracts.build import (
+    build_contracts, build_workspace, CONTRACT_BUILD_IMAGE, WORKSPACE_BUILD_IMAGE
+)
 from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts, is_workspace
 from jenesis.contracts.schema import generate_schemas, load_contract_schema
-
+from jenesis.tasks.image import image_exists, pull_image
 
 def _compute_init_checksum(path, contract_name):
     schema_path = os.path.join(path, "contracts", contract_name)
@@ -45,9 +47,15 @@ def run(args: argparse.Namespace):
     init_checksums = {contract.name: _compute_init_checksum(project_path, contract.name) for contract in contracts}
 
     if is_workspace(project_path):
+        if not image_exists(WORKSPACE_BUILD_IMAGE):
+            print(term.green("\nPulling docker image..."))
+            pull_image(WORKSPACE_BUILD_IMAGE)
         print(term.green("\nBuilding cargo workspace..."))
         build_workspace(project_path, contracts, optimize=args.optimize, rebuild=args.rebuild, log=args.log)
     else:
+        if not image_exists(CONTRACT_BUILD_IMAGE):
+            print(term.green("\nPulling docker image..."))
+            pull_image(CONTRACT_BUILD_IMAGE)
         print(term.green("\nBuilding contracts..."))
         build_contracts(contracts, batch_size=args.batch_size, optimize=args.optimize,rebuild=args.rebuild, log=args.log)
 
