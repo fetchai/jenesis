@@ -1,15 +1,21 @@
 import os
 import shutil
+from tempfile import mkdtemp
 
 import toml
 from jenesis.config import Config
 from jenesis.contracts.detect import detect_contracts
+
 
 def test_add_contract():
     """Test adding new contracts"""
 
     network = "fetchai-testnet"
     profiles = ["profile_1", "profile_2", "profile_3"]
+
+    temp_clone_path = mkdtemp(prefix="jenesis-", suffix="-tmpl")
+
+    os.chdir(temp_clone_path)
 
     path = os.getcwd()
 
@@ -20,7 +26,6 @@ def test_add_contract():
     contract_name = "test_contract"
 
     project_root = os.path.abspath(os.getcwd())
-    contract_root = os.path.join(project_root, "contracts", contract_name)
 
     Config.add_contract(project_root, template, contract_name, None)
 
@@ -48,5 +53,4 @@ def test_add_contract():
         assert contract_data["deployer_key"] == ""
         assert contract_data["init"]["count"] == ""
 
-    os.remove("jenesis.toml")
-    shutil.rmtree("contracts")
+    #shutil.rmtree(temp_clone_path)

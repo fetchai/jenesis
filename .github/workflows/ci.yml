@@ -24,6 +24,20 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: '1.18.1'
+
+    - name: Install fetchd
+      run: |
+        git clone https://github.com/fetchai/fetchd.git && cd fetchd
+        make build
+        make install
+        export PATH=$PATH:~/go/bin
+        source ~/.bashrc
+        fetchd version
+ 
     - name: Install Poetry
       uses: snok/install-poetry@v1
 

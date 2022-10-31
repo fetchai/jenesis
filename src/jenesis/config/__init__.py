@@ -20,6 +20,7 @@ from jenesis.contracts.detect import detect_contracts, parse_contract
 from jenesis.network import (Network, fetchai_localnode_config,
                              fetchai_testnet_config, fetchai_mainnet_config)
 
+
 TEMPLATE_GIT_URL = "https://github.com/fetchai/jenesis-templates.git"
 DEFAULT_KEYRING_BACKEND = "os"
 
@@ -152,7 +153,7 @@ class Config:
         lock_file_path = os.path.join(path, "jenesis.lock")
 
         if not os.path.isfile(project_file_path):
-            raise ConfigurationError('Missing project file: "jenesis.lock"')
+            raise ConfigurationError('Missing project file: "jenesis.toml"')
         project_contents = toml.load(project_file_path)
 
         if os.path.isfile(lock_file_path):
