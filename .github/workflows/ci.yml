@@ -17,6 +17,9 @@ jobs:
         python-version: ["3.8", "3.9", "3.10"]
 
     steps:
+    - name: Set permissions
+      run: sudo chown -R $USER:$USER /home/github/actions-runner/_work/jenesis
+
     - uses: actions/checkout@v3
 
     - name: Restore Docker Image Cache if it exists
