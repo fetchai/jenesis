@@ -18,7 +18,7 @@ jobs:
 
     steps:
     - name: Set permissions
-      run: sudo chown -R $USER:$USER /home/github/actions-runner/_work/fetchai/jenesis
+      run: sudo chown -R $USER:$USER ${{ github.workspace }}
 
     - uses: actions/checkout@v3
 
