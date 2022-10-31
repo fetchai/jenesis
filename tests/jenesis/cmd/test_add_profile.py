@@ -1,5 +1,6 @@
 import os
 import shutil
+from tempfile import mkdtemp
 
 import toml
 from jenesis.config import Config
@@ -11,6 +12,10 @@ def test_add_profile():
     networks = ["fetchai-testnet", "fetchai-localnode"]
     chain_ids = ["dorado-1", "localnode"]
     profiles = ["profile_1", "profile_2", "profile_3", "profile_4"]
+
+    temp_clone_path = mkdtemp(prefix="jenesis-", suffix="-tmpl")
+
+    os.chdir(temp_clone_path)
 
     path = os.getcwd()
 
@@ -31,5 +36,5 @@ def test_add_profile():
         assert data["profile"][profile]["network"]["name"] == networks[(i + 1) % 2]
         assert data["profile"][profile]["network"]["chain_id"] == chain_ids[(i + 1) % 2]
 
-    os.remove("jenesis.toml")
-    shutil.rmtree("contracts")
+    # clean up the temporary folder
+    #shutil.rmtree(temp_clone_path)
