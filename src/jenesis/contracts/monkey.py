@@ -1,4 +1,4 @@
-from typing import Optional, Any
+from typing import Dict, Optional, Any, Callable, List
 from abc import ABC, abstractmethod
 
 import grpc
@@ -9,6 +9,7 @@ from cosmpy.aerial.wallet import Wallet
 from cosmpy.crypto.address import Address
 from cosmpy.protos.cosmwasm.wasm.v1.query_pb2 import QueryCodeRequest
 from jsonschema import ValidationError, validate as validate_schema
+from makefun import create_function
 from jenesis.contracts import Contract
 
 
@@ -76,11 +77,6 @@ class MonkeyContract(LedgerContract):
         # trigger the observer if necessary
         if self._observer is not None and self._code_id is not None:
             self._observer.on_code_id_update(self._code_id)
-
-        # add methods based on schema
-        if contract.schema is not None:
-            self._add_queries()
-            self._add_executions()
 
     def store(
             self,
@@ -178,6 +174,42 @@ class MonkeyContract(LedgerContract):
             validate(args, self._contract.query_schema)
         return super().query(args)
 
+    def make_queries(self) -> Dict[str, Callable]:
+
+        def make_query(msg: str, msg_args: List[str]):
+            def query(self, *args, **kwargs):
+                query_arg = {msg: kwargs}
+                return self.query(query_arg, *args)
+
+            sig_args = ['self'] + msg_args
+            sig = f'{msg}({",".join(sig_args)})'
+            func = create_function(sig, query)
+            return func
+
+        queries = {}
+        for (msg, msg_args) in self._contract.query_msgs().items():
+            queries[msg] = make_query(msg, msg_args)
+
+        return queries
+
+    def make_executions(self) -> Dict[str, Callable]:
+
+        def make_execution(msg: str, msg_args: List[str]):
+            def execute(self, sender, gas_limit=None, funds=None, **kwargs):
+                execute_arg = {msg: kwargs}
+                return self.execute(execute_arg, sender, gas_limit, funds)
+
+            sig_args = ['self'] + msg_args + ['sender', 'gas_limit=None', 'funds=None']
+            sig = f'{msg}({",".join(sig_args)})'
+            func = create_function(sig, execute)
+            return func
+
+        executions = {}
+        for (msg, msg_args) in self._contract.execute_msgs().items():
+            executions[msg] = make_execution(msg, msg_args)
+
+        return executions
+
     def _find_contract_id_by_digest_with_hint(self, code_id_hint: int) -> Optional[int]:
 
         # try and lookup the specified code id
@@ -199,29 +231,46 @@ class MonkeyContract(LedgerContract):
 
         return self._find_contract_id_by_digest(self._digest)
 
-    def _add_queries(self):
-
-        def make_query(query_msg):
-            def query(*args, **kwargs):
-                query_args = {query_msg: kwargs}
-                return self.query(query_args, *args)
-            return query
-
-        for query_msg in self._contract.query_msgs():
-            if getattr(self, query_msg, None) is None:
-                setattr(self, query_msg, make_query(query_msg))
-
-    def _add_executions(self):
-
-        def make_execution(execute_msg):
-            def execute(*args, **kwargs):
-                execute_args = {execute_msg: kwargs}
-                return self.execute(execute_args, *args)
-            return execute
-
-        for execute_msg in self._contract.execute_msgs():
-            if getattr(self, execute_msg, None) is None:
-                setattr(self, execute_msg, make_execution(execute_msg))
-
     def __repr__(self):
         return str(self._address)
+
+
+def make_contract(
+    contract: Contract,
+    client: LedgerClient,
+    address: Optional[Address] = None,
+    digest: Optional[bytes] = None,
+    code_id: Optional[int] = None,
+    observer: Optional[ContractObserver] = None,
+    init_args: Optional[dict] = None,
+) -> Any:
+    """
+    Makes the contract objects for interaction from the shell and scripts.
+    The purpose of this factory function is to attach the contract executions
+    and queries so that the shell's autocomplete function will work.
+
+    :param contract: The static contract data
+    :param client: The client for interacting with the ledger
+    :param address: The contract address
+    :param digest: The contract digest
+    :param code_id: The contract code_id
+    :param observer: The contract observer
+    :param init_args: The instantiation arguments
+    :return: The contract object with queries and executions attached
+    """
+
+    monkey_contract = MonkeyContract(
+        contract, client, address, digest, code_id, observer, init_args
+    )
+
+    # add methods based on schema
+    contract_functions = {}
+    if contract.schema is not None:
+        contract_functions.update(monkey_contract.make_queries())
+        contract_functions.update(monkey_contract.make_executions())
+
+    JenesisContract = type('JenesisContract', (MonkeyContract,), contract_functions)
+
+    return JenesisContract(
+        contract, client, address, digest, code_id, observer, init_args
+    )
