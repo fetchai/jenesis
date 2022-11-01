@@ -231,7 +231,7 @@ class MonkeyContract(LedgerContract):
             func = create_function(sig, deploy)
             return func
 
-        deploy = {'deploy': make_deploy('instantiate', self._contract.init_args())}
+        deploy = {'deploy': make_deploy('deploy', self._contract.init_args())}
 
         return deploy
 
