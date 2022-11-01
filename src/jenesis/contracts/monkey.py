@@ -121,7 +121,7 @@ class MonkeyContract(LedgerContract):
 
         return address
 
-    def deploy(
+    def _deploy(
         self,
         args: Any,
         sender: Wallet,
@@ -144,9 +144,8 @@ class MonkeyContract(LedgerContract):
 
         assert self._code_id
 
-        code_id = self.store(sender, gas_limit=store_gas_limit)
         address = self.instantiate(
-            code_id,
+            self._code_id,
             args,
             sender,
             label=label,
@@ -210,6 +209,32 @@ class MonkeyContract(LedgerContract):
 
         return executions
 
+    def make_deploy(self) -> Dict[str, Callable]:
+
+        def make_deploy(msg: str, msg_args: List[str]):
+            def deploy(
+                self,
+                sender,
+                label=None,
+                store_gas_limit=None,
+                instantiate_gas_limit=None,
+                admin_address=None,
+                funds=None,
+                **kwargs
+            ):
+                init_arg = kwargs
+                return self._deploy(init_arg, sender, label, store_gas_limit, instantiate_gas_limit, admin_address, funds)
+
+            sig_args = ['self'] + msg_args + ['sender', 'label=None', 'store_gas_limit=None',
+                'instantiate_gas_limit=None', 'admin_address=None', 'funds=None']
+            sig = f'{msg}({",".join(sig_args)})'
+            func = create_function(sig, deploy)
+            return func
+
+        deploy = {'deploy': make_deploy('instantiate', self._contract.init_args())}
+
+        return deploy
+
     def _find_contract_id_by_digest_with_hint(self, code_id_hint: int) -> Optional[int]:
 
         # try and lookup the specified code id
@@ -268,6 +293,7 @@ def make_contract(
     if contract.schema is not None:
         contract_functions.update(monkey_contract.make_queries())
         contract_functions.update(monkey_contract.make_executions())
+        contract_functions.update(monkey_contract.make_deploy())
 
     JenesisContract = type('JenesisContract', (MonkeyContract,), contract_functions)
 
