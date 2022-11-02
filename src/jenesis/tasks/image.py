@@ -1,4 +1,4 @@
-from multiprocessing import Process
+import multiprocessing
 from typing import Optional
 
 from docker.client import from_env
@@ -8,6 +8,8 @@ from jenesis.tasks import Task, TaskStatus
 from jenesis.tasks.monitor import run_tasks
 
 
+multiprocessing.set_start_method('fork')
+
 image_collection = ImageCollection(from_env())
 
 
@@ -15,7 +17,7 @@ class ImagePullTask(Task):
 
     def __init__(self, image: str):
         self._image = image
-        self._process: Optional[Process] = None
+        self._process: Optional[multiprocessing.Process] = None
         self._status = TaskStatus.IDLE
         self._status_text = ''
 
@@ -49,7 +51,7 @@ class ImagePullTask(Task):
         # if we get this far we either need to start the image pull or monitor progress
         if self._process is None:
             try:
-                self._process = Process(
+                self._process = multiprocessing.Process(
                     target=image_collection.pull,
                     name=f'ImagePull-{self._image}',
                     args=[self._image],
