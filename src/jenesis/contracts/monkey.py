@@ -1,5 +1,6 @@
 from typing import Dict, Optional, Any, Callable, List
 from abc import ABC, abstractmethod
+from keyword import iskeyword
 
 import grpc
 from cosmpy.aerial.client import LedgerClient
@@ -11,6 +12,9 @@ from cosmpy.protos.cosmwasm.wasm.v1.query_pb2 import QueryCodeRequest
 from jsonschema import ValidationError, validate as validate_schema
 from makefun import create_function
 from jenesis.contracts import Contract
+
+
+PYTHON_KEYWORD_PREFIX = '_'
 
 
 class InstantiateArgsError(RuntimeError):
@@ -177,7 +181,7 @@ class MonkeyContract(LedgerContract):
 
         def make_query(msg: str, msg_args: List[str]):
             def query(self, *args, **kwargs):
-                query_arg = {msg: kwargs}
+                query_arg = {msg: {python_keyword_unwrapper(key): value for (key, value) in kwargs.items()}}
                 return self.query(query_arg, *args)
 
             sig = self._make_function_signature(msg, msg_args, [])
@@ -194,7 +198,7 @@ class MonkeyContract(LedgerContract):
 
         def make_execution(msg: str, msg_args: List[str]):
             def execute(self, sender, gas_limit=None, funds=None, **kwargs):
-                execute_arg = {msg: kwargs}
+                execute_arg = {msg: {python_keyword_unwrapper(key): value for (key, value) in kwargs.items()}}
                 return self.execute(execute_arg, sender, gas_limit, funds)
 
             ledger_args = ['sender', 'label', 'store_gas_limit', 'gas_limit', 'funds']
@@ -223,7 +227,7 @@ class MonkeyContract(LedgerContract):
                 funds=None,
                 **kwargs
             ):
-                init_arg = kwargs
+                init_arg = {python_keyword_unwrapper(key): value for (key, value) in kwargs.items()}
                 return self._deploy(
                     init_arg,
                     sender,
@@ -254,10 +258,10 @@ class MonkeyContract(LedgerContract):
         sig_args = ['self']
         for (arg, description) in msg_args.items():
             if description.get('required'):
-                sig_args.append(arg)
+                sig_args.append(python_keyword_wrapper(arg))
         for (arg, description) in msg_args.items():
             if not description.get('required'):
-                sig_args.append(f"{arg}=None")
+                sig_args.append(f"{python_keyword_wrapper(arg)}=None")
         sig_args += [f'{arg}=None' for arg in ledger_args]
         return f'{name}({",".join(sig_args)})'
 
@@ -326,3 +330,14 @@ def make_contract(
     return JenesisContract(
         contract, client, address, digest, code_id, observer, init_args
     )
+
+
+def python_keyword_wrapper(arg: str) -> str:
+    return f'{PYTHON_KEYWORD_PREFIX}{arg}' if iskeyword(arg) else arg
+
+
+def python_keyword_unwrapper(arg: str) -> str:
+    if PYTHON_KEYWORD_PREFIX in arg:
+        if iskeyword(arg[len(PYTHON_KEYWORD_PREFIX):]):
+            return arg[len(PYTHON_KEYWORD_PREFIX):]
+    return arg
