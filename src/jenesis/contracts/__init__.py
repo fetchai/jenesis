@@ -39,30 +39,40 @@ class Contract:
         return _compute_digest(self.binary_path).hex()
 
     def execute_msgs(self) -> dict:
-        return self._extract_msgs(self.execute_schema)
+        return _extract_msgs(self.execute_schema)
 
     def query_msgs(self) -> dict:
-        return self._extract_msgs(self.query_schema)
+        return _extract_msgs(self.query_schema)
 
     def init_args(self) -> dict:
-        return list(self.instantiate_schema.get('properties',{}).keys())
-
-    def _extract_msgs(self, msg_schema: dict) -> dict:
-        msgs = {}
-        if 'oneOf' in msg_schema:
-            schemas = msg_schema['oneOf']
-        elif 'anyOf' in msg_schema:
-            schemas = msg_schema['anyOf']
-        else:
-            return msgs
-        for schema in schemas:
-            msg = schema['required'][0]
-            if 'required' in schema['properties'][msg]:
-                args = schema['properties'][msg]['required']
-            else:
-                args = []
-            msgs[msg] = args
-        return msgs
+        return _get_msg_args(self.instantiate_schema)
 
     def __repr__(self):
         return self.name
+
+
+def _extract_msgs(schema: dict) -> dict:
+    msgs = {}
+    if 'oneOf' in schema:
+        schemas = schema['oneOf']
+    elif 'anyOf' in schema:
+        schemas = schema['anyOf']
+    else:
+        return msgs
+    for msg_schema in schemas:
+        msg = msg_schema['required'][0]
+        args = _get_msg_args(msg_schema['properties'][msg])
+        msgs[msg] = args
+    return msgs
+
+def _get_msg_args(msg_schema):
+    msg_args = {}
+    args = msg_schema.get('properties', {}).keys()
+    required = msg_schema.get('required', [])
+    for arg in args:
+        description = msg_schema['properties'][arg]
+        msg_args[arg] = {
+            'required': arg in required,
+            'type': description.get('type') or description.get('$ref')
+        }
+    return msg_args
