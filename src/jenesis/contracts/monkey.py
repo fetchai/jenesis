@@ -180,8 +180,7 @@ class MonkeyContract(LedgerContract):
                 query_arg = {msg: kwargs}
                 return self.query(query_arg, *args)
 
-            sig_args = ['self'] + msg_args
-            sig = f'{msg}({",".join(sig_args)})'
+            sig = self._make_function_signature(msg, msg_args, [])
             func = create_function(sig, query)
             return func
 
@@ -198,8 +197,10 @@ class MonkeyContract(LedgerContract):
                 execute_arg = {msg: kwargs}
                 return self.execute(execute_arg, sender, gas_limit, funds)
 
-            sig_args = ['self'] + msg_args + ['sender', 'gas_limit=None', 'funds=None']
-            sig = f'{msg}({",".join(sig_args)})'
+            ledger_args = ['sender', 'label', 'store_gas_limit', 'gas_limit', 'funds']
+            sig = self._make_function_signature(
+                msg, msg_args, ledger_args
+            )
             func = create_function(sig, execute)
             return func
 
@@ -223,17 +224,42 @@ class MonkeyContract(LedgerContract):
                 **kwargs
             ):
                 init_arg = kwargs
-                return self._deploy(init_arg, sender, label, store_gas_limit, instantiate_gas_limit, admin_address, funds)
+                return self._deploy(
+                    init_arg,
+                    sender,
+                    label,
+                    store_gas_limit,
+                    instantiate_gas_limit,
+                    admin_address,
+                    funds,
+                )
 
-            sig_args = ['self'] + msg_args + ['sender', 'label=None', 'store_gas_limit=None',
-                'instantiate_gas_limit=None', 'admin_address=None', 'funds=None']
-            sig = f'{msg}({",".join(sig_args)})'
+            ledger_args = [
+                'sender', 'label', 'store_gas_limit', 'instantiate_gas_limit', 'admin_address', 'funds'
+            ]
+            sig = self._make_function_signature(msg, msg_args, ledger_args)
             func = create_function(sig, deploy)
             return func
 
         deploy = {'deploy': make_deploy('deploy', self._contract.init_args())}
 
         return deploy
+
+    @staticmethod
+    def _make_function_signature(
+        name: str,
+        msg_args: Dict[str, Any],
+        ledger_args: List[str],
+    ):
+        sig_args = ['self']
+        for (arg, description) in msg_args.items():
+            if description.get('required'):
+                sig_args.append(arg)
+        for (arg, description) in msg_args.items():
+            if not description.get('required'):
+                sig_args.append(f"{arg}=None")
+        sig_args += [f'{arg}=None' for arg in ledger_args]
+        return f'{name}({",".join(sig_args)})'
 
     def _find_contract_id_by_digest_with_hint(self, code_id_hint: int) -> Optional[int]:
 
