@@ -75,6 +75,19 @@ def generate_schemas(
 
     for contract in contracts:
         contract.schema = load_contract_schema(contract.source_path)
+        # check for workspace-style schemas
+        if contract.name in contract.schema:
+            contract_schema = contract.schema[contract.name]
+        else:
+            contract_schema = contract.schema
+
+        for (msg_type, schema) in contract_schema.items():
+            if 'instantiate' in msg_type:
+                contract.instantiate_schema = schema
+            elif 'query' in msg_type:
+                contract.query_schema = schema
+            elif 'execute' in msg_type:
+                contract.execute_schema = schema
 
 
 def load_contract_schema(source_path: str) -> dict:
