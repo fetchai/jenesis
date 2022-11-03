@@ -197,14 +197,21 @@ class MonkeyContract(LedgerContract):
     def make_executions(self) -> Dict[str, Callable]:
 
         def make_execution(msg: str, msg_args: List[str]):
-            def execute(self, sender, gas_limit=None, funds=None, **kwargs):
-                execute_arg = {msg: {python_keyword_unwrapper(key): value for (key, value) in kwargs.items()}}
-                return self.execute(execute_arg, sender, gas_limit, funds)
 
-            ledger_args = ['sender', 'label', 'store_gas_limit', 'gas_limit', 'funds']
-            sig = self._make_function_signature(
-                msg, msg_args, ledger_args
-            )
+            ledger_args = ['sender', 'gas_limit', 'funds']
+
+            def execute(self, **kwargs):
+                ledger_exec_args = {}
+                contract_func_args = {}
+                for (key, value) in kwargs.items():
+                    if key in ledger_args:
+                        ledger_exec_args[key] = value
+                    else:
+                        contract_func_args[python_keyword_unwrapper(key)] = value
+                execute_arg = {msg: contract_func_args}
+                return self.execute(execute_arg, **ledger_exec_args)
+
+            sig = self._make_function_signature(msg, msg_args, ledger_args)
             func = create_function(sig, execute)
             return func
 
@@ -217,30 +224,21 @@ class MonkeyContract(LedgerContract):
     def make_deploy(self) -> Dict[str, Callable]:
 
         def make_deploy(msg: str, msg_args: List[str]):
-            def deploy(
-                self,
-                sender,
-                label=None,
-                store_gas_limit=None,
-                instantiate_gas_limit=None,
-                admin_address=None,
-                funds=None,
-                **kwargs
-            ):
-                init_arg = {python_keyword_unwrapper(key): value for (key, value) in kwargs.items()}
-                return self._deploy(
-                    init_arg,
-                    sender,
-                    label,
-                    store_gas_limit,
-                    instantiate_gas_limit,
-                    admin_address,
-                    funds,
-                )
 
             ledger_args = [
                 'sender', 'label', 'store_gas_limit', 'instantiate_gas_limit', 'admin_address', 'funds'
             ]
+
+            def deploy(self, **kwargs):
+                ledger_deploy_args = {}
+                contract_init_args = {}
+                for (key, value) in kwargs.items():
+                    if key in ledger_args:
+                        ledger_deploy_args[key] = value
+                    else:
+                        contract_init_args[python_keyword_unwrapper(key)] = value
+                return self._deploy(contract_init_args, **ledger_deploy_args)
+
             sig = self._make_function_signature(msg, msg_args, ledger_args)
             func = create_function(sig, deploy)
             return func
