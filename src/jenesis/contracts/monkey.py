@@ -1,6 +1,6 @@
 from typing import Dict, Optional, Any, Callable, List
 from abc import ABC, abstractmethod
-from keyword import iskeyword
+from keyword import iskeyword as is_python_keyword
 
 import grpc
 from cosmpy.aerial.client import LedgerClient
@@ -14,7 +14,16 @@ from makefun import create_function
 from jenesis.contracts import Contract
 
 
-PYTHON_KEYWORD_PREFIX = '_'
+KEYWORD_PREFIX = '_'
+COSMPY_LEDGER_ARGS = [
+    'sender',
+    'label',
+    'gas_limit',
+    'store_gas_limit',
+    'instantiate_gas_limit',
+    'admin_address',
+    'funds'
+]
 
 
 class InstantiateArgsError(RuntimeError):
@@ -330,12 +339,16 @@ def make_contract(
     )
 
 
+def _iskeyword(arg: str):
+    return is_python_keyword(arg) or arg in COSMPY_LEDGER_ARGS
+
+
 def python_keyword_wrapper(arg: str) -> str:
-    return f'{PYTHON_KEYWORD_PREFIX}{arg}' if iskeyword(arg) else arg
+    return f'{KEYWORD_PREFIX}{arg}' if _iskeyword(arg) else arg
 
 
 def python_keyword_unwrapper(arg: str) -> str:
-    if PYTHON_KEYWORD_PREFIX in arg:
-        if iskeyword(arg[len(PYTHON_KEYWORD_PREFIX):]):
-            return arg[len(PYTHON_KEYWORD_PREFIX):]
+    if KEYWORD_PREFIX in arg:
+        if _iskeyword(arg[len(KEYWORD_PREFIX):]):
+            return arg[len(KEYWORD_PREFIX):]
     return arg
