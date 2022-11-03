@@ -1,5 +1,6 @@
 from typing import Dict, Optional, Any, Callable, List
 from abc import ABC, abstractmethod
+from keyword import iskeyword
 
 import grpc
 from cosmpy.aerial.client import LedgerClient
@@ -11,6 +12,9 @@ from cosmpy.protos.cosmwasm.wasm.v1.query_pb2 import QueryCodeRequest
 from jsonschema import ValidationError, validate as validate_schema
 from makefun import create_function
 from jenesis.contracts import Contract
+
+
+PYTHON_KEYWORD_PREFIX = '_'
 
 
 class InstantiateArgsError(RuntimeError):
@@ -121,7 +125,7 @@ class MonkeyContract(LedgerContract):
 
         return address
 
-    def deploy(
+    def _deploy(
         self,
         args: Any,
         sender: Wallet,
@@ -144,9 +148,8 @@ class MonkeyContract(LedgerContract):
 
         assert self._code_id
 
-        code_id = self.store(sender, gas_limit=store_gas_limit)
         address = self.instantiate(
-            code_id,
+            self._code_id,
             args,
             sender,
             label=label,
@@ -178,11 +181,10 @@ class MonkeyContract(LedgerContract):
 
         def make_query(msg: str, msg_args: List[str]):
             def query(self, *args, **kwargs):
-                query_arg = {msg: kwargs}
+                query_arg = {msg: {python_keyword_unwrapper(key): value for (key, value) in kwargs.items()}}
                 return self.query(query_arg, *args)
 
-            sig_args = ['self'] + msg_args
-            sig = f'{msg}({",".join(sig_args)})'
+            sig = self._make_function_signature(msg, msg_args, [])
             func = create_function(sig, query)
             return func
 
@@ -196,11 +198,13 @@ class MonkeyContract(LedgerContract):
 
         def make_execution(msg: str, msg_args: List[str]):
             def execute(self, sender, gas_limit=None, funds=None, **kwargs):
-                execute_arg = {msg: kwargs}
+                execute_arg = {msg: {python_keyword_unwrapper(key): value for (key, value) in kwargs.items()}}
                 return self.execute(execute_arg, sender, gas_limit, funds)
 
-            sig_args = ['self'] + msg_args + ['sender', 'gas_limit=None', 'funds=None']
-            sig = f'{msg}({",".join(sig_args)})'
+            ledger_args = ['sender', 'label', 'store_gas_limit', 'gas_limit', 'funds']
+            sig = self._make_function_signature(
+                msg, msg_args, ledger_args
+            )
             func = create_function(sig, execute)
             return func
 
@@ -209,6 +213,57 @@ class MonkeyContract(LedgerContract):
             executions[msg] = make_execution(msg, msg_args)
 
         return executions
+
+    def make_deploy(self) -> Dict[str, Callable]:
+
+        def make_deploy(msg: str, msg_args: List[str]):
+            def deploy(
+                self,
+                sender,
+                label=None,
+                store_gas_limit=None,
+                instantiate_gas_limit=None,
+                admin_address=None,
+                funds=None,
+                **kwargs
+            ):
+                init_arg = {python_keyword_unwrapper(key): value for (key, value) in kwargs.items()}
+                return self._deploy(
+                    init_arg,
+                    sender,
+                    label,
+                    store_gas_limit,
+                    instantiate_gas_limit,
+                    admin_address,
+                    funds,
+                )
+
+            ledger_args = [
+                'sender', 'label', 'store_gas_limit', 'instantiate_gas_limit', 'admin_address', 'funds'
+            ]
+            sig = self._make_function_signature(msg, msg_args, ledger_args)
+            func = create_function(sig, deploy)
+            return func
+
+        deploy = {'deploy': make_deploy('deploy', self._contract.init_args())}
+
+        return deploy
+
+    @staticmethod
+    def _make_function_signature(
+        name: str,
+        msg_args: Dict[str, Any],
+        ledger_args: List[str],
+    ):
+        sig_args = ['self']
+        for (arg, description) in msg_args.items():
+            if description.get('required'):
+                sig_args.append(python_keyword_wrapper(arg))
+        for (arg, description) in msg_args.items():
+            if not description.get('required'):
+                sig_args.append(f"{python_keyword_wrapper(arg)}=None")
+        sig_args += [f'{arg}=None' for arg in ledger_args]
+        return f'{name}({",".join(sig_args)})'
 
     def _find_contract_id_by_digest_with_hint(self, code_id_hint: int) -> Optional[int]:
 
@@ -268,9 +323,21 @@ def make_contract(
     if contract.schema is not None:
         contract_functions.update(monkey_contract.make_queries())
         contract_functions.update(monkey_contract.make_executions())
+        contract_functions.update(monkey_contract.make_deploy())
 
     JenesisContract = type('JenesisContract', (MonkeyContract,), contract_functions)
 
     return JenesisContract(
         contract, client, address, digest, code_id, observer, init_args
     )
+
+
+def python_keyword_wrapper(arg: str) -> str:
+    return f'{PYTHON_KEYWORD_PREFIX}{arg}' if iskeyword(arg) else arg
+
+
+def python_keyword_unwrapper(arg: str) -> str:
+    if PYTHON_KEYWORD_PREFIX in arg:
+        if iskeyword(arg[len(PYTHON_KEYWORD_PREFIX):]):
+            return arg[len(PYTHON_KEYWORD_PREFIX):]
+    return arg
