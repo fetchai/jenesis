@@ -91,7 +91,7 @@ For this example, we will first generate two wallets. We provide wealth to the s
 We now proceed to deploy `my_token` contract, we define the arguments for the cw20 token: name, symbol, decimal, and the addresses that will be funded with these cw20 tokens. In this case we will fund wallet's address with 5000 tokens.
 
 ```python
->>> my_token.deploy(name="Crab Coin", symbol="CRAB", decimals=6, initial_balances=[{ address=str(wallet.address()), amount =  "5000"}], sender=wallet)
+>>> my_token.deploy(name="Crab Coin", symbol="CRAB", decimals=6, initial_balances=[{ "address": str(wallet.address()), "amount" :  "5000"}], sender=wallet)
 ```
 
 We can query wallet balance to make sure it has been funded with cw20 tokens
