@@ -33,8 +33,10 @@ def run(args: argparse.Namespace):
         print('Deployment not found in project')
         return 1
 
+    deployment = selected_profile.deployments[args.contract]
+
     client = LedgerClient(selected_profile.network)
-    contract_to_attach = parse_contract(project_path, args.contract)
+    contract_to_attach = parse_contract(project_path, deployment.contract)
 
     data = toml.load("jenesis.toml")
     network = Network(**data["profile"][profile_name]["network"])
@@ -47,7 +49,7 @@ def run(args: argparse.Namespace):
     Config.update_project(project_path, profile_name, network.name, contract_to_attach)
 
     cfg.update_deployment(
-        selected_profile.name, args.contract, digest, code_id, args.address
+        selected_profile.name, deployment.name, digest, code_id, args.address
     )
     cfg.save(project_path)
     return 0
