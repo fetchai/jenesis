@@ -35,7 +35,6 @@ class Contract:
                 self.query_schema = schema
             elif 'execute' in msg_type:
                 self.execute_schema = schema
-        return
 
     def digest(self) -> Optional[str]:
         if not os.path.isfile(self.binary_path):
