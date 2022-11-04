@@ -18,6 +18,10 @@ class Contract:
         self.query_schema = {}
         self.execute_schema = {}
 
+        self.update_schema()
+
+
+    def update_schema(self):
         # check for workspace-style schemas
         if self.name in self.schema:
             contract_schema = self.schema[self.name]
@@ -31,6 +35,7 @@ class Contract:
                 self.query_schema = schema
             elif 'execute' in msg_type:
                 self.execute_schema = schema
+        return
 
     def digest(self) -> Optional[str]:
         if not os.path.isfile(self.binary_path):
