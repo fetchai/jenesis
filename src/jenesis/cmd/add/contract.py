@@ -9,6 +9,13 @@ def add_contract_command(parser):
     add_contract_cmd = parser.add_parser("contract")
     add_contract_cmd.add_argument("template", help="The name of the template to use")
     add_contract_cmd.add_argument("name", help="The name of contract to create")
+    add_contract_cmd.add_argument('deployments', nargs='+', help='contract deployments')
+    add_contract_cmd.add_argument(
+        "-p",
+        "--profile",
+        default=None,
+        help="Profile where the deployments will be added to",
+    )
     add_contract_cmd.add_argument(
         "-b", "--branch", help="The name of the branch that should be used"
     )
@@ -16,12 +23,18 @@ def add_contract_command(parser):
 
 
 def run_add_contract(args: argparse.Namespace):
+
     template = args.template
     name = args.name
     branch = args.branch
 
     project_root = os.path.abspath(os.getcwd())
     contract_root = os.path.join(project_root, "contracts", name)
+
+    cfg = Config.load(project_root)
+
+    profile_name = args.profile or cfg.get_default_profile()
+    selected_profile = cfg.profiles[profile_name]
 
     # check that we are actually running the command from the project root
     if not os.path.exists(os.path.join(project_root, "jenesis.toml")):
@@ -38,10 +51,8 @@ def run_add_contract(args: argparse.Namespace):
     if selected_contract is None:
         return False
 
-    cfg = Config.load(project_root)
-
-    for (profile_name, profile) in cfg.profiles.items():
-        network_name = profile.network.name
-        Config.update_project(os.getcwd(), profile_name, network_name, selected_contract)
+    network_name = selected_profile.network.name
+    for deployment in args.deployments:
+        Config.update_project(os.getcwd(), profile_name, network_name, selected_contract, deployment)
 
     return True

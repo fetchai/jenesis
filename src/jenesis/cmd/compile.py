@@ -69,8 +69,9 @@ def run(args: argparse.Namespace):
             # update project file
             for (profile_name, profile) in cfg.profiles.items():
                 network_name = profile.network.name
-                Config.update_project(project_path, profile_name, network_name, contract)
-
+                for deployment in profile.deployments.values():
+                    if deployment.contract == contract.name:
+                        Config.update_project(project_path, profile_name, network_name, contract, deployment.name)
     return 0
 
 
