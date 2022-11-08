@@ -14,7 +14,7 @@ def run(args: argparse.Namespace):
         print("Please run command from project root")
         return
 
-    Config.add_profile(project_path, args.profile, args.network)
+    Config.add_profile(args.profile, args.network)
 
 
 

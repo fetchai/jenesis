@@ -63,8 +63,6 @@ def run(args: argparse.Namespace):
     print(term.green("\nGenerating contract schemas..."))
     generate_schemas(contracts, batch_size=args.batch_size, rebuild=args.rebuild)
 
-    contracts = detect_contracts(project_path)
-
     cfg = Config.load(os.getcwd())
     for contract in contracts:
         if _compute_init_checksum(project_path, contract.name) != init_checksums[contract.name]:

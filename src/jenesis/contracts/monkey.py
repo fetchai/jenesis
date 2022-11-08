@@ -1,6 +1,6 @@
 from typing import Dict, Optional, Any, Callable, List
 from abc import ABC, abstractmethod
-from keyword import iskeyword
+from keyword import iskeyword as is_python_keyword
 
 import grpc
 from cosmpy.aerial.client import LedgerClient
@@ -14,7 +14,16 @@ from makefun import create_function
 from jenesis.contracts import Contract
 
 
-PYTHON_KEYWORD_PREFIX = '_'
+KEYWORD_PREFIX = '_'
+COSMPY_LEDGER_ARGS = [
+    'sender',
+    'label',
+    'gas_limit',
+    'store_gas_limit',
+    'instantiate_gas_limit',
+    'admin_address',
+    'funds'
+]
 
 
 class InstantiateArgsError(RuntimeError):
@@ -197,14 +206,21 @@ class MonkeyContract(LedgerContract):
     def make_executions(self) -> Dict[str, Callable]:
 
         def make_execution(msg: str, msg_args: List[str]):
-            def execute(self, sender, gas_limit=None, funds=None, **kwargs):
-                execute_arg = {msg: {python_keyword_unwrapper(key): value for (key, value) in kwargs.items()}}
-                return self.execute(execute_arg, sender, gas_limit, funds)
 
-            ledger_args = ['sender', 'label', 'store_gas_limit', 'gas_limit', 'funds']
-            sig = self._make_function_signature(
-                msg, msg_args, ledger_args
-            )
+            ledger_args = ['sender', 'gas_limit', 'funds']
+
+            def execute(self, **kwargs):
+                ledger_exec_args = {}
+                contract_func_args = {}
+                for (key, value) in kwargs.items():
+                    if key in ledger_args:
+                        ledger_exec_args[key] = value
+                    else:
+                        contract_func_args[python_keyword_unwrapper(key)] = value
+                execute_arg = {msg: contract_func_args}
+                return self.execute(execute_arg, **ledger_exec_args)
+
+            sig = self._make_function_signature(msg, msg_args, ledger_args)
             func = create_function(sig, execute)
             return func
 
@@ -217,30 +233,21 @@ class MonkeyContract(LedgerContract):
     def make_deploy(self) -> Dict[str, Callable]:
 
         def make_deploy(msg: str, msg_args: List[str]):
-            def deploy(
-                self,
-                sender,
-                label=None,
-                store_gas_limit=None,
-                instantiate_gas_limit=None,
-                admin_address=None,
-                funds=None,
-                **kwargs
-            ):
-                init_arg = {python_keyword_unwrapper(key): value for (key, value) in kwargs.items()}
-                return self._deploy(
-                    init_arg,
-                    sender,
-                    label,
-                    store_gas_limit,
-                    instantiate_gas_limit,
-                    admin_address,
-                    funds,
-                )
 
             ledger_args = [
                 'sender', 'label', 'store_gas_limit', 'instantiate_gas_limit', 'admin_address', 'funds'
             ]
+
+            def deploy(self, **kwargs):
+                ledger_deploy_args = {}
+                contract_init_args = {}
+                for (key, value) in kwargs.items():
+                    if key in ledger_args:
+                        ledger_deploy_args[key] = value
+                    else:
+                        contract_init_args[python_keyword_unwrapper(key)] = value
+                return self._deploy(contract_init_args, **ledger_deploy_args)
+
             sig = self._make_function_signature(msg, msg_args, ledger_args)
             func = create_function(sig, deploy)
             return func
@@ -332,12 +339,16 @@ def make_contract(
     )
 
 
+def _iskeyword(arg: str):
+    return is_python_keyword(arg) or arg in COSMPY_LEDGER_ARGS
+
+
 def python_keyword_wrapper(arg: str) -> str:
-    return f'{PYTHON_KEYWORD_PREFIX}{arg}' if iskeyword(arg) else arg
+    return f'{KEYWORD_PREFIX}{arg}' if _iskeyword(arg) else arg
 
 
 def python_keyword_unwrapper(arg: str) -> str:
-    if PYTHON_KEYWORD_PREFIX in arg:
-        if iskeyword(arg[len(PYTHON_KEYWORD_PREFIX):]):
-            return arg[len(PYTHON_KEYWORD_PREFIX):]
+    if KEYWORD_PREFIX in arg:
+        if _iskeyword(arg[len(KEYWORD_PREFIX):]):
+            return arg[len(KEYWORD_PREFIX):]
     return arg
