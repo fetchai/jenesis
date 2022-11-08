@@ -75,6 +75,7 @@ def generate_schemas(
 
     for contract in contracts:
         contract.schema = load_contract_schema(contract.source_path)
+        contract.update_schema()
 
 
 def load_contract_schema(source_path: str) -> dict:

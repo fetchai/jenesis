@@ -22,7 +22,7 @@ def test_add_profile():
     Config.create_project(path, profiles[0], networks[1])
 
     for (i, profile) in enumerate(profiles[1:]):
-        Config.add_profile(path, profile, networks[i % 2])
+        Config.add_profile(profile, networks[i % 2])
 
     input_file_name = "jenesis.toml"
     toml_path = os.path.join(path, input_file_name)

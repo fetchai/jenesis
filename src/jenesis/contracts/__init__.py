@@ -18,6 +18,10 @@ class Contract:
         self.query_schema = {}
         self.execute_schema = {}
 
+        self.update_schema()
+
+
+    def update_schema(self):
         # check for workspace-style schemas
         if self.name in self.schema:
             contract_schema = self.schema[self.name]

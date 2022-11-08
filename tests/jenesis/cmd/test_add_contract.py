@@ -20,7 +20,7 @@ def test_add_contract():
     path = os.getcwd()
 
     Config.create_project(path, profiles[0], network)
-    Config.add_profile(path, profiles[1], network)
+    Config.add_profile(profiles[1], network)
 
     template = "starter"
     contract_name = "test_contract"
@@ -35,7 +35,7 @@ def test_add_contract():
     Config.update_project(os.getcwd(), profiles[0], network, contract)
     Config.update_project(os.getcwd(), profiles[1], network, contract)
 
-    Config.add_profile(path, profiles[2], network)
+    Config.add_profile(profiles[2], network)
 
     input_file_name = "jenesis.toml"
     toml_path = os.path.join(os.getcwd(), input_file_name)

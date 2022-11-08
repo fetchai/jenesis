@@ -3,7 +3,7 @@ import os
 
 from cosmpy.aerial.client import LedgerClient
 from jenesis.config import Config
-from jenesis.contracts.detect import detect_contracts
+from jenesis.contracts.detect import parse_contract
 from jenesis.contracts.monkey import MonkeyContract
 from jenesis.network import Network
 from jenesis.network import network_context
@@ -32,22 +32,21 @@ def run(args: argparse.Namespace):
     if args.contract not in selected_profile.deployments:
         print('Deployment not found in project')
         return 1
+
     deployment = selected_profile.deployments[args.contract]
 
     client = LedgerClient(selected_profile.network)
-
-    project_contracts = {contract.name: contract for contract in detect_contracts(project_path)}
+    contract_to_attach = parse_contract(project_path, deployment.contract)
 
     data = toml.load("jenesis.toml")
-
     network = Network(**data["profile"][profile_name]["network"])
 
     with network_context(network, cfg.project_name, profile_name):
-        contract = MonkeyContract(project_contracts[deployment.contract], client, args.address)
+        contract = MonkeyContract(contract_to_attach, client, args.address)
         code_id = contract.code_id
         digest = contract.digest.hex()
 
-    Config.update_project(project_path, profile_name, network.name, project_contracts[deployment.contract])
+    Config.update_project(project_path, profile_name, network.name, contract_to_attach)
 
     cfg.update_deployment(
         selected_profile.name, deployment.name, digest, code_id, args.address
