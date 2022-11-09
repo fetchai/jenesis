@@ -18,6 +18,5 @@ is_local = false
 
 [profile.my_second_profile.contracts]
 ```
-If there are existing contracts in your project, all of them will be added to the new profile.
 
 Currently available network configurations are `fetchai-testnet`, `fetchai-mainnet`, and `fetchai-localnode`, but Jenesis is easily configurable for other networks by directly editing the `jenesis.toml` file.
