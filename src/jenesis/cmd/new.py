@@ -8,10 +8,9 @@ def run(args: argparse.Namespace):
 
     # check if the project has been already initialized
     if os.path.exists(os.path.join(project_path, args.project)):
-        # pylint: disable=all
         print("Project already exists")
         return
-        
+
     Config.create_project(args.project, args.profile, args.network)
 
 def add_new_command(parser):
