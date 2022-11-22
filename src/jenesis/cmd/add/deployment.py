@@ -22,26 +22,19 @@ def run(args: argparse.Namespace):
 
     cfg = Config.load(project_root)
 
-    profile_name = args.profile or cfg.get_default_profile()
-    selected_profile = cfg.profiles[profile_name]
+    profile_name = cfg.get_default_profile()
 
     selected_contract = parse_contract(project_root , args.contract)
 
-    network_name = selected_profile.network.name
 
-    for deployment in args.deployments:
-        Config.update_project(os.getcwd(), profile_name, network_name, selected_contract, deployment)
-
+    for (profile_name, profile) in cfg.profiles.items():
+        network_name = profile.network.name
+        for deployment in args.deployments:
+            Config.update_project(os.getcwd(), profile_name, network_name, selected_contract, deployment)
 
 
 def add_deployment_command(parser):
     deployment_cmd = parser.add_parser("deployment")
     deployment_cmd.add_argument("contract", help="The name of the contract that the deployment points to")
-    deployment_cmd.add_argument('deployments', nargs='+', help='contract deployments')
-    deployment_cmd.add_argument(
-        "-p",
-        "--profile",
-        default=None,
-        help="Profile where the deployment will be added",
-    )
+    deployment_cmd.add_argument('deployments', nargs='+', help='contract deployments',)
     deployment_cmd.set_defaults(handler=run)

@@ -384,9 +384,16 @@ class Config:
         network = {"name": ""}
         network.update(vars(net_config))
 
+        default_profile = list(data["profile"].keys())[0]
+
+        contract_data = data["profile"][default_profile]["contracts"]
+
+        for deployment_name in contract_data.keys():
+            contract_data[deployment_name]["network"] = network_name
+
         data["profile"][profile] = {
             "network": network,
-            "contracts": {},
+            "contracts": contract_data,
         }
 
         output_file_name = "jenesis.toml"
