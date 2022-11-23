@@ -371,7 +371,7 @@ class Config:
             toml.dump(data, toml_file)
 
     @staticmethod
-    def add_profile(path: str, profile: str, network_name: str):
+    def add_profile(profile: str, network_name: str):
 
         data = toml.load("jenesis.toml")
 
@@ -387,28 +387,17 @@ class Config:
         network = {"name": ""}
         network.update(vars(net_config))
 
-        # detect contract source code and add placeholders for key contract data
-        contracts = detect_contracts(path) or []
+        default_profile = list(data["profile"].keys())[0]
 
-        contract_cfgs = {
-            contract.name: Deployment(
-                contract.name,
-                contract.name,
-                network_name,
-                "",
-                {arg: "" for arg in contract.init_args()},
-                "",
-                None,
-                None,
-                None,
-                None,
-            )
-            for contract in contracts
-        }
+        contract_data = data["profile"][default_profile]["contracts"]
+
+        for contract_name in contract_data.keys():
+            contract_data[contract_name]["network"] = network_name
+
 
         data["profile"][profile] = {
             "network": network,
-            "contracts": {name: vars(cfg) for (name, cfg) in contract_cfgs.items()},
+            "contracts": contract_data,
         }
 
         output_file_name = "jenesis.toml"
