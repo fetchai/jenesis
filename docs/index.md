@@ -14,6 +14,7 @@ There are multiple commands integrated into jenesis that allow you to perform a 
 - `new` 
 - `init`
 - `add`
+- `update`
 - `attach`
 - `compile`
 - `keys`

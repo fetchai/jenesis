@@ -7,8 +7,8 @@ You can interact with your project's contracts by using the ```shell``` or ```ru
 To reproduce the examples in this document, add and compile a basic starter contract and a cw20 token contract to your project with the following commands:
 
 ```bash
-jenesis add contract starter my_first_contract deployment_1
-jenesis add contract cw20-base my_token token_1
+jenesis add contract starter my_first_contract -d deployment_1
+jenesis add contract cw20-base my_token -d token_1
 jenesis compile
 ```
 

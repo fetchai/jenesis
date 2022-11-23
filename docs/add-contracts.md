@@ -2,20 +2,22 @@
 Once you have successfully created your project, you can add contract templates. You first need to navigate to your project's directory and run the following command:
 
 ```
-jenesis add contract <TEMPLATE> <CONTRACT NAME> <DEPLOYMENTS> -p <PROFILE>
+jenesis add contract <TEMPLATE> <CONTRACT NAME> -d <DEPLOYMENTS>
 ```
 You can find all the contract templates available in [Jenesis Templates](https://github.com/fetchai/jenesis-templates).
 An example of how to add the template **cw20** with the name `my_token` is given below:
 
 ```
-jenesis add contract cw20-base my_token token_1 token_2
+jenesis add contract cw20-base my_token -d token_1 token_2
 ```
 
-Since we didnt specify a profile, Jenesis will just use the default profile. As you can observe above, `token_1` and `token_2` deployments have been added, this will allow you to deploy `my_token` with two different configurations. You can add as many deployments as you wish.
+You can use `-d` flag to specify deployments. Jenesis will add the deployments to all profiles inside the specified contract. As you can observe above, `token_1` and `token_2` deployments have been added, this will allow you to deploy `my_token` contract with two different configurations. You can add as many deployments as you wish.
 
-This ```add contract``` command will add a contract template to your jenesis project inside `contracts/my_token/` folder. It will also update the `jenesis.toml` configuration file with the contract information under the selected profile.
+If no deployments are selected when adding a contract, the default deployment name will be equal to the contract name.
 
-```
+This ```add contract``` command will add a contract template to your jenesis project inside `contracts/my_token/` folder. It will also update the `jenesis.toml` configuration file with the contract information.
+
+```toml
 [profile.testing.contracts.token_1]
 name = "token_1"
 contract = "my_token"
@@ -37,7 +39,7 @@ init_funds = ""
 
 The `deployer_key` field can be manually specified, you can choose any private key locally available to deploy any specific contract. You can also leave this field empty since the ```deploy``` command has an optional argument to deploy all contracts inside a specified profile with the same key, overriding this `deployer_key` argument in the `jenesis.toml` file. See [deploy contracts](deploy-contracts.md) for more information. 
 
-Finally, the `init` section contains the parameters needed in the instantiation message for this contract to be deployed. The required parameters are taken from the schema file inside the `contracts` directory. Since this contract templat doesnt include a schema, it will be generated when [compiling](compile-contracts.md) the contract `my_token` loading the init fields to the `jenesis.toml` file. You will need to manually add the values for these parameters in their correct variable type, which are listed on the schema file. For this  **my_token** contract, we need to fill the following init fields for each deployment after [compiling](compile-contracts.md). Here is an example:
+Finally, the `init` section contains the parameters needed in the instantiation message for this contract to be deployed. The required parameters are taken from the schema file inside the `contracts` directory. Since this contract template doesn't include a schema, it will be generated when [compiling](compile-contracts.md) the `my_token` contract loading the init fields to the `jenesis.toml` file. You will need to manually add the values for these parameters in their correct variable type, which are listed on the schema file. For this  **my_token** contract, we need to fill the following init fields for each deployment after [compiling](compile-contracts.md). Here is an example:
 
 ```
 [profile.testing.contracts.token_1.init]
@@ -60,7 +62,16 @@ If your contract requires nested instantiation messages you may add fields follo
 price = {amount = 1000, denom = DLS}
 info = {performance = {max_speed = 200, unit = kph}, fuel = {consumption = 7, unit = kmpl}}
 ```
-> *NOTE: Before editing the `jenesis.toml` configuration file with the desired `deployer_key` and `init` parameters, make sure to first [compile](compile-contracts.md) your contract. All configuration parameters will restart every time a contract is compiled to make sure everything is up to date.*
+> *NOTE: Before editing the `jenesis.toml` configuration file with the desired `deployer_key` and `init` parameters, make sure to first [compile](compile-contracts.md) your contract. All configuration parameters will restart every time a contract is compiled if the schema has changed.*
+
+You can also add contracts manually by copying and pasting the contract directory from another project you may have, however, they need to follow the same directory structure as the **starter** template mentioned above.
+
+When you add a contract manually, you need to update the `jenesis.toml` file with the contract information by running:
+
+```
+jenesis update
+```
+The `update` command will automatically detect which contract is missing in the `jenesis.toml` configuration file by revising the contracts directory.
 
 
 # Add contract deployments
@@ -78,7 +89,7 @@ If you add a contract into the project's contract folder that has already been d
 To add a deployment to yout project you can run:
 
 ```
-jenesis add contract cw20-base my_token token_1
+jenesis add contract cw20-base my_token -d token_1
 ```
 
 Then compile the contract:
