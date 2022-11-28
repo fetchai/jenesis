@@ -29,11 +29,11 @@ def run(args: argparse.Namespace):
 
     selected_profile = cfg.profiles[profile_name]
 
-    if args.contract not in selected_profile.deployments:
+    if args.deployment not in selected_profile.deployments:
         print('Deployment not found in project')
         return 1
 
-    deployment = selected_profile.deployments[args.contract]
+    deployment = selected_profile.deployments[args.deployment]
 
     client = LedgerClient(selected_profile.network)
     contract_to_attach = parse_contract(project_path, deployment.contract)
@@ -46,7 +46,7 @@ def run(args: argparse.Namespace):
         code_id = contract.code_id
         digest = contract.digest.hex()
 
-    Config.update_project(project_path, profile_name, network.name, contract_to_attach)
+    Config.update_project(project_path, profile_name, network.name, contract_to_attach, deployment.name)
 
     cfg.update_deployment(
         selected_profile.name, deployment.name, digest, code_id, args.address
@@ -57,12 +57,12 @@ def run(args: argparse.Namespace):
 
 def add_attach_command(parser):
     attach_cmd = parser.add_parser("attach")
-    attach_cmd.add_argument("contract", help="Contract name")
+    attach_cmd.add_argument("deployment", help="Deployment name")
     attach_cmd.add_argument("address", help="Contract address")
     attach_cmd.add_argument(
         "-p",
         "--profile",
         default=None,
-        help="Profile where the contract will be attached",
+        help="Profile where deployment will be attached to",
     )
     attach_cmd.set_defaults(handler=run)

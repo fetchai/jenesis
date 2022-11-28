@@ -1,7 +1,7 @@
 import argparse
 import os
-import toml
 
+from jenesis.contracts.detect import parse_contract
 from jenesis.config import Config
 
 
@@ -20,28 +20,21 @@ def run(args: argparse.Namespace):
         print(f'Contract "{args.contract}" does not exist')
         return
 
-    data = toml.load("jenesis.toml")
-
     cfg = Config.load(project_root)
-    profiles = list(cfg.profiles.keys())
 
-    for profile_name in profiles:
-        profile = cfg.profiles[profile_name]
-        profile_contracts = list(profile.deployments.keys())
+    profile_name = cfg.get_default_profile()
 
-        if args.contract in profile_contracts:
-            contract_data = data["profile"][profile_name]["contracts"][args.contract].copy()
-            data["profile"][profile_name]["contracts"][args.deployment] = contract_data
-            data["profile"][profile_name]["contracts"][args.deployment]["name"] = args.deployment
+    selected_contract = parse_contract(project_root , args.contract)
 
-    project_configuration_file = os.path.join(project_root, "jenesis.toml")
 
-    with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
-        toml.dump(data, toml_file)
+    for (profile_name, profile) in cfg.profiles.items():
+        network_name = profile.network.name
+        for deployment in args.deployments:
+            Config.update_project(os.getcwd(), profile_name, network_name, selected_contract, deployment)
 
 
 def add_deployment_command(parser):
     deployment_cmd = parser.add_parser("deployment")
-    deployment_cmd.add_argument("contract", help="The name of the contract to duplicate")
-    deployment_cmd.add_argument("deployment", help="The name to assign the new deployment")
+    deployment_cmd.add_argument("contract", help="The name of the contract that the deployment points to")
+    deployment_cmd.add_argument('deployments', nargs='+', help='contract deployments',)
     deployment_cmd.set_defaults(handler=run)

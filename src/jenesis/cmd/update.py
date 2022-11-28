@@ -37,7 +37,7 @@ def run(args: argparse.Namespace):
     for profile in profiles:
         for contract in contracts_to_update:
             network_name = cfg.profiles[profile].network.name
-            Config.update_project(os.getcwd(), profile, network_name, contract)
+            Config.update_project(os.getcwd(), profile, network_name, contract, contract.name)
     
     print("Contracts up to date!")
 
