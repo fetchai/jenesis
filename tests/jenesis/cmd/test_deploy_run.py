@@ -31,13 +31,14 @@ def test_deploy_run_contract():
 
     template = "starter"
     contract_name = "contract"
+    deployment_name = "deployment"
 
     project_root = os.path.abspath(os.getcwd())
     contract_root = os.path.join(project_root, "contracts", contract_name)
 
     # add starter contract and update
     contract = Config.add_contract(project_root, template, contract_name, None)
-    Config.update_project(os.getcwd(), profile, network, contract)
+    Config.update_project(os.getcwd(), profile, network, contract, deployment_name)
 
     # compile contract
     args = Arguments()
@@ -56,7 +57,7 @@ def test_deploy_run_contract():
         data = toml.load(toml_file)
 
     # set contract init parameter
-    data["profile"][profile]["contracts"][contract_name]["init"]["count"] = 5
+    data["profile"][profile]["contracts"][deployment_name]["init"]["count"] = 5
 
     # set Jenesis to test keyring backend
     data["project"]["keyring_backend"] = "test"

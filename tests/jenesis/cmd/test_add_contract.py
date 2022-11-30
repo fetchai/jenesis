@@ -11,7 +11,7 @@ def test_add_contract():
     """Test adding new contracts"""
 
     network = "fetchai-testnet"
-    profiles = ["profile_1", "profile_2", "profile_3"]
+    profiles = ["profile_1", "profile_2"]
 
     temp_clone_path = mkdtemp(prefix="jenesis-", suffix="-tmpl")
 
@@ -32,10 +32,9 @@ def test_add_contract():
     contracts = detect_contracts(project_root)
     contract = contracts[0]
 
-    Config.update_project(os.getcwd(), profiles[0], network, contract)
-    Config.update_project(os.getcwd(), profiles[1], network, contract)
+    Config.update_project(os.getcwd(), profiles[0], network, contract, "deployment")
+    Config.update_project(os.getcwd(), profiles[1], network, contract, "deployment")
 
-    Config.add_profile(profiles[2], network)
 
     input_file_name = "jenesis.toml"
     toml_path = os.path.join(os.getcwd(), input_file_name)
@@ -46,8 +45,7 @@ def test_add_contract():
 
     for (i, profile) in enumerate(profiles):
         assert profile_list[i] == profile
-        contract_data = data["profile"][profile]["contracts"][contract_name]
-        contract_data =  data["profile"][profile]["contracts"][contract_name]
+        contract_data = data["profile"][profile]["contracts"]["deployment"]
         assert contract_data["contract"] == contract_name
         assert contract_data["network"] == network
         assert contract_data["deployer_key"] == ""

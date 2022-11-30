@@ -333,13 +333,10 @@ class Config:
                 pass
 
     @staticmethod
-    def update_project(path: str, profile: str, network_name: str, contract: Contract):
+    def update_project(path: str, profile: str, network_name: str, contract: Contract, deployment_name: str):
 
         # take the project name directly from the base name of the project
         project_root = os.path.abspath(path)
-
-        # set deployment name to contract name by default
-        deployment_name = contract.name
 
         deployment = Deployment(deployment_name, contract.name,
             network_name, "", {arg: "" for arg in contract.init_args()},
@@ -347,7 +344,7 @@ class Config:
 
         data = toml.load("jenesis.toml")
 
-        data["profile"][profile]["contracts"][contract.name] = vars(deployment)
+        data["profile"][profile]["contracts"][deployment_name] = vars(deployment)
         project_configuration_file = os.path.join(project_root, "jenesis.toml")
 
         with open(project_configuration_file, "w", encoding="utf-8") as toml_file:
@@ -391,9 +388,8 @@ class Config:
 
         contract_data = data["profile"][default_profile]["contracts"]
 
-        for contract_name in contract_data.keys():
-            contract_data[contract_name]["network"] = network_name
-
+        for deployment_name in contract_data.keys():
+            contract_data[deployment_name]["network"] = network_name
 
         data["profile"][profile] = {
             "network": network,

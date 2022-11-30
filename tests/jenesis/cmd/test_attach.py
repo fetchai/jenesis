@@ -26,6 +26,7 @@ def test_attach():
 
     template = "starter"
     contract_name = "contract"
+    deployment_name = "deployment"
 
     project_root = os.path.abspath(os.getcwd())
 
@@ -41,7 +42,7 @@ def test_attach():
 
     # add contract and update
     contract = Config.add_contract(project_root, template, contract_name, None)
-    Config.update_project(os.getcwd(), profile, network, contract)
+    Config.update_project(os.getcwd(), profile, network, contract, deployment_name)
 
     # compile contract
     args = Arguments()
@@ -56,7 +57,7 @@ def test_attach():
 
     # attach previously deployed contract
     subprocess.run(
-        "jenesis attach " + contract_name + " " + contract_address, shell=True
+        "jenesis attach " + deployment_name + " " + contract_address, shell=True
     )
 
     file_path = os.path.dirname(os.path.realpath(__file__))
