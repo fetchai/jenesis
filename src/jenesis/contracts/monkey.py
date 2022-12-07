@@ -67,6 +67,8 @@ class MonkeyContract(LedgerContract):
         self._observer = observer
         self._init_args = init_args
 
+        self._load_schema(contract.source_path)
+
         # build the digest
         if contract.binary_path is not None:
             self._digest = _compute_digest(contract.binary_path)
@@ -107,7 +109,6 @@ class MonkeyContract(LedgerContract):
 
     def instantiate(
             self,
-            code_id: int,
             args: Any,
             sender: Wallet,
             label: Optional[str] = None,
@@ -126,7 +127,7 @@ class MonkeyContract(LedgerContract):
                 )
         if do_validate and self._contract.instantiate_schema:
             validate(args, self._contract.instantiate_schema)
-        address = super().instantiate(code_id, args, sender, label=label, gas_limit=gas_limit,
+        address = super().instantiate(args, sender, label=label, gas_limit=gas_limit,
                                       admin_address=admin_address, funds=funds)
 
         if self._observer is not None:
@@ -158,7 +159,6 @@ class MonkeyContract(LedgerContract):
         assert self._code_id
 
         address = self.instantiate(
-            self._code_id,
             args,
             sender,
             label=label,
