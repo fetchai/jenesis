@@ -159,7 +159,7 @@ class DeployContractTask(Task):
         assert self.ledger_contract is not None
 
         def action():
-            return self.ledger_contract.deploy(
+            return self.ledger_contract._deploy( #  pylint: disable=W0212
                 args=self._deployment.init,
                 sender=self._wallet,
                 admin_address=self._wallet.address(),
