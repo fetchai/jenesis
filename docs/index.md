@@ -21,6 +21,7 @@ There are multiple commands integrated into jenesis that allow you to perform a 
 - `deploy`
 - `run`
 - `shell`
+- `network`
 
 ## Create a new project
 Create a project using the ```new``` command
@@ -33,7 +34,11 @@ This will create a new directory called `my_project`. You can use `--profile` an
 ```toml
 [project]
 name = "my_project"
-authors = [ "Alice Tyler <alice@mail.com>",]
+authors = [ "Alice Tyler <alice@mail.com>"]
+keyring_backend = "os"
+
+[profile.my_profile]
+default = true
 
 [profile.my_profile.network]
 name = "fetchai-testnet"
@@ -48,7 +53,7 @@ is_local = false
 [profile.my_profile.contracts]
 ```
 
-The project name is the argument passed to the ```new``` command while the authors field is populated by querying the user's GitHub username and email address. The profile's network will be filled with the relevant configuration variables. The contracts field will remain empty until new contracts are added.
+The project name is the argument passed to the ```new``` command while the authors field is populated by querying the user's GitHub username and email address. The profile's network will be filled with the relevant configuration variables. The contracts field will remain empty until new contracts are added. This `my_profile` profile will be set as the default profile, this means that every time you use a jenesis command without specifying a profile, `my_profile` will be used.
 
 An empty `contracts` folder will also be created inside `my_project` directory that will eventually contain all the information needed to compile and deploy the desired contracts.
 

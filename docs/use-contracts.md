@@ -7,8 +7,8 @@ You can interact with your project's contracts by using the ```shell``` or ```ru
 To reproduce the examples in this document, add and compile a basic starter contract and a cw20 token contract to your project with the following commands:
 
 ```bash
-jenesis add contract starter my_first_contract
-jenesis add contract token my_token
+jenesis add contract starter my_first_contract -d deployment_1
+jenesis add contract cw20-base my_token -d token_1
 jenesis compile
 ```
 
@@ -31,16 +31,17 @@ You will observe the following text indicating the available contracts in your p
 ```
 Network: fetchai-testnet
 Detecting contracts...
-C my_first_contract
-C my_token
+C deployment_1
+C token_1
 Detecting contracts...complete
 ```
-> *NOTE: `jenesis shell` currently requires that contract names use accepted python variable names. For example, using `my-first-contract` instead of `my_first_contract` will generate an error when trying to interact with it.*
+> *NOTE: `jenesis shell` currently requires that contract names use accepted python variable names. For example, using `token-1` instead of `token_1` will generate an error when trying to interact with it.*
 
-In this case, we can see that `my_first_contract` and `my_token` contracts are available for this project. If these contracts have been already deployed you can directly interact with them by performing contract executions such as:
+In this case, we can see that `deployment_1` and `token_1` deployments are available for this project. If these contracts have been already deployed you can directly interact with them by performing contract querys and executions such as:
 
 ```python
->>> my_first_contract.execute(args = {'msg_name': {...}}
+>>> deployment_1.query(args = {'msg_name': {...}}
+>>> deployment_1.execute(args = {'msg_name': {...}}
 ```
 
 A ledger client (`ledger`) and your locally stored wallet keys will also be available in the shell. For example, if you have a local key named `alice`, you will find this under `wallets['alice']` and you can query the balance as follows:
@@ -54,7 +55,30 @@ If the ledger is a testnet with a faucet url, you can get funds using the `fauce
 >>> faucet.get_wealth(wallets['alice'])
 ```
 
-We will show an example assuming that the my_token contract has only been compiled and not yet deployed, going through deployment, execution, and querying.
+## Dynamic Methods
+
+Jenesis also attaches the contract query, execution and deploy messages as dynamic methods.
+
+For example, the following query
+
+```python
+>>> token_1.query({"balance": {"address": str(wallet.address())}}))
+```
+can also be run with:
+```python
+>>> token_1.balance(address=str(wallet.address()))
+{'balance': '4000'}
+```
+
+Similarly, instead of using `token_1.execute...` , a transfer can be executed with:
+```python
+>>> token_1.transfer(amount='1000', recipient=str(wallet2.address()), sender=wallet)
+```
+
+Jensesis also has an autocompletion helper for query, execution and deployment arguments. It will show automatically when typing in the shell.
+
+
+We will now show an example assuming that the `token_1` deployment contract has only been compiled and not yet deployed, going through deployment, execution, and querying using dynamic methods.
 
 For this example, we will first generate two wallets. We provide wealth to the sender wallet in atestfet so it can pay for transaction fees.
 
@@ -64,48 +88,34 @@ For this example, we will first generate two wallets. We provide wealth to the s
 >>> faucet.get_wealth(wallet)
 ```
 
-We now proceed to deploy `my_token` contract, we define the arguments for the cw20 token: name, symbol, decimal, and the addresses that will be funded with these my_token tokens. In this case we will fund wallet's address with 5000 tokens.
+We now proceed to deploy `my_token` contract using `token_1` deployment configuration, we define the arguments for the cw20 token: name, symbol, decimal, and the addresses that will be funded with these cw20 tokens. In this case we will fund wallet's address with 5000 tokens.
+
 ```python
->>> my_token.deploy({"name": "Crab Coin", "symbol": "CRAB", "decimals": 6, "initial_balances": [{"address": str(wallet.address()), "amount": "5000"}]}, wallet)
+>>> token_1.deploy(name="Crab Coin", symbol="CRAB", decimals=6, initial_balances=[{ "address": str(wallet.address()), "amount" :  "5000"}], sender=wallet)
 ```
 
 We can query wallet balance to make sure it has been funded with cw20 tokens
 
 ```python
->>> my_token.query({"balance": {"address": str(wallet.address())}})
+>>> token_1.balance(address=str(wallet.address()))
 {'balance': '5000'}
 ```
 
 We now execute a cw20 token transfer of 1000 tokens from wallet to wallet2
 
 ```python
->>> my_token.execute({'transfer': {'amount': '1000','recipient': str(wallet2.address())}}, sender=wallet)
+>>> token_1.transfer(amount='1000', recipient=str(wallet2.address()), sender=wallet)
 ```
 
 Finally, we query both wallet's balance
 
 ```python
->>> my_token.query({"balance": {"address": str(wallet.address())}})
+>>> token_1.balance(address=str(wallet.address()))
 {'balance': '4000'}
->>> my_token.query({"balance": {"address": str(wallet2.address())}})
+>>> token_1.balance(address=str(wallet2.address()))
 {'balance': '1000'}
 ```
 We can observe that wallet has sent 1000 tokens to wallet2.
-
-## Queries and Executions as Dynamic Methods
-
-Jenesis also attaches the contract query and execution messages as dynamic methods.
-
-For example, the above queries can also be run with:
-```python
->>> my_token.balance(address=str(wallet.address()))
-{'balance': '4000'}
-```
-
-Similarly, the transfer can be executed with:
-```python
->>> my_tokentransfer(wallet, amount='1000', recipient=str(wallet2.address()))
-```
 
 ## Executing Scripts
 
@@ -117,15 +127,16 @@ wallet = LocalWallet.generate()
 faucet.get_wealth(wallet.address())
 wallet2 = LocalWallet.generate()
 
-my_token.deploy({"name": "My Token","symbol": "MT", "decimals": 6, "initial_balances": [{"address": str(wallet.address()), "amount": "5000"}]}, wallet)
-print("wallet initial cw20 MT balance: ", my_token.query({"balance": {"address": str(wallet.address())}}))
+token_1.deploy(name="Crab Coin", symbol="CRAB", decimals=6, initial_balances=[{ "address": str(wallet.address()), "amount" :  "5000"}], sender=wallet)
 
-tx = my_token.execute({'transfer': {'amount': '1000', 'recipient': str(wallet2.address())}}, sender=wallet)
+print("wallet initial cw20 MT balance: ", token_1.balance(address=str(wallet.address())))
+
+tx = token_1.transfer(amount='1000', recipient=str(wallet2.address()), sender=wallet)
 print("transfering 1000 cw20 MT tokens from wallet to wallet2")
 tx.wait_to_complete()
 
-print("wallet final cw20 MT balance: ", my_token.query({"balance": {"address": str(wallet.address())}}))
-print("wallet2 final cw20 MT balance: ", my_token.query({"balance": {"address": str(wallet2.address())}}))
+print("wallet final cw20 MT balance: ", token_1.balance(address=str(wallet.address())))
+print("wallet2 final cw20 MT balance: ", token_1.balance(address=str(wallet2.address())))
 ```
 
 If we paste the above code into the file script.py inside the project's directory, we can run it with:
