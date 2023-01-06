@@ -2,16 +2,24 @@
 Once you have successfully created your project, you can add contract templates. You first need to navigate to your project's directory and run the following command:
 
 ```
-jenesis add contract <TEMPLATE> <CONTRACT NAME> -d <DEPLOYMENTS>
+jenesis add contract <TEMPLATE> <CONTRACT NAME>
 ```
 You can find all the contract templates available in [Jenesis Templates](https://github.com/fetchai/jenesis-templates).
-An example of how to add the template **cw20** with the name `my_token` is given below:
+An example of how to add the template **cw20-base** with the name `my_token` is given below:
 
+```
+jenesis add contract cw20-base my_token
+```
+
+If you need multiple deployments of the same contract, you can use the `-d` flag to specify multiple deployments and name them. 
+```
+jenesis add contract <TEMPLATE> <CONTRACT NAME> -d <DEPLOYMENTS>
+```
+Jenesis will add the deployments to all profiles for the specified contract. 
+In the example below, `token_1` and `token_2` deployments have been added. This will allow you to deploy `my_token` contract with two different configurations. You can add as many deployments as you wish.
 ```
 jenesis add contract cw20-base my_token -d token_1 token_2
 ```
-
-You can use `-d` flag to specify deployments. Jenesis will add the deployments to all profiles inside the specified contract. As you can observe above, `token_1` and `token_2` deployments have been added, this will allow you to deploy `my_token` contract with two different configurations. You can add as many deployments as you wish.
 
 If no deployments are selected when adding a contract, the default deployment name will be equal to the contract name.
 
