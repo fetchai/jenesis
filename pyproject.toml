@@ -22,7 +22,7 @@ mkdocs-material = "^8.3.9"
 keyring = "^23.9.0"
 jsonschema = "^4.15.0"
 graphlib-backport = "^1.0.3"
-jwskate = "^0.4.1"
+jwskate = ">=0.4.1,<0.6.0"
 makefun = "^1.15.0"
 
 [tool.poetry.dev-dependencies]
