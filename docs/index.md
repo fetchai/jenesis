@@ -1,14 +1,24 @@
+# Introduction
+
 Jenesis is a command line tool for rapid contract and service development for the Fetch.ai blockchain ecosystem and other CosmWasm-enabled blockchains.
+
+# System Requirements
+
+Jenesis currently requires:
+- OS: Linux, MacOS
+- Python: 3.7 to 3.10
+- Docker: 20.10.22 or higher recommended
+- git: Any
 
 # Installation
 
-Install jenesis for Python 3.7 or newer via PyPI:
+Install via PyPI:
 
 ```
 pip install jenesis
 ```
 
-# Getting Started
+# Getting started
 There are multiple commands integrated into jenesis that allow you to perform a variety of tasks these commands are:
 
 - `new` 
