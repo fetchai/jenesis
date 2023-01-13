@@ -6,7 +6,7 @@ Jenesis is a command line tool for rapid contract and service development for th
 
 Jenesis currently requires:
 - OS: Linux, MacOS
-- Python: 3.7 to 3.10
+- Python: 3.8 to 3.10
 - Docker: 20.10.22 or higher recommended
 - git: Any
 
