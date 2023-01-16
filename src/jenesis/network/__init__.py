@@ -20,6 +20,7 @@ DEFAULT_CHAIN_ID = "testing"
 DEFAULT_GENESIS_ACCOUNT = "fetch1gns5lphdk5ew5lnre7ulzv8s8k9dr9eyqvgj0w"
 DEFAULT_DENOMINATION = "atestfet"
 DEFAULT_CLI_BINARY = "fetchd"
+DEFAULT_TIMEOUT_COMMIT = "5s"
 
 
 LOCALNODE_CONFIG_DIR = os.path.join(os.getcwd(), ".localnode")
@@ -44,6 +45,7 @@ class Network(NetworkConfig):
         password: Optional[str] = None,
         moniker: Optional[str] = None,
         genesis_accounts: Optional[List[str]] = None,
+        timeout_commit: Optional[str] = None,
         debug_trace: bool = True,
     ):
         super().__init__(
@@ -64,6 +66,7 @@ class Network(NetworkConfig):
             self.password = password or DEFAULT_PASSWORD
             self.moniker = moniker or DEFAULT_MONIKER
             self.genesis_accounts = genesis_accounts or [DEFAULT_GENESIS_ACCOUNT]
+            self.timeout_commit = timeout_commit or DEFAULT_TIMEOUT_COMMIT
             self.debug_trace = debug_trace
 
     @classmethod
@@ -141,8 +144,9 @@ class LedgerNodeDockerContainer:
             f'echo "$PASSWORD" |{self.network.cli_binary} add-genesis-account $({self.network.cli_binary} keys show $VALIDATOR_KEY_NAME -a) 100000000000000000000000$DENOM',
             f'echo "$PASSWORD" |{self.network.cli_binary} gentx $VALIDATOR_KEY_NAME 10000000000000000000000$DENOM --chain-id $CHAIN_ID',
             f"{self.network.cli_binary} collect-gentxs",
+            f'sed -i "s/stake/{self.network.fee_denomination}/" ~/.{self.network.cli_binary}/config/genesis.json',
+            f'''sed -i 's/timeout_commit = "5s"/timeout_commit = "{self.network.timeout_commit}"/' ~/.{self.network.cli_binary}/config/config.toml''',
             # Enable rest-api
-            f'sed -i "s/stake/atestfet/" ~/.{self.network.cli_binary}/config/genesis.json',
             f'sed -i "s/enable = false/enable = true/" ~/.{self.network.cli_binary}/config/app.toml',
             f'sed -i "s/swagger = false/swagger = true/" ~/.{self.network.cli_binary}/config/app.toml',
             'fi',
