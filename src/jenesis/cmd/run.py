@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 from jenesis.config import Config, Profile
 from jenesis.network import network_context
@@ -16,6 +17,11 @@ def run(args: argparse.Namespace):
 
     with network_context(profile.network, cfg.project_name, profile.name):
         shell_globals = load_shell_globals(cfg, profile)
+
+        # Make the script args available inside the script
+        sys.argv = [args.script_path] + args.args
+        shell_globals['sys'] = sys
+
         with open(args.script_path, encoding="utf-8") as file:
             code = compile(
                 file.read(),
@@ -31,4 +37,7 @@ def add_run_command(parser):
         "-p", "--profile", default=None, help="The profile to use"
     )
     run_cmd.add_argument("script_path", help="The path to the script to run")
+    run_cmd.add_argument(
+        "args", nargs= "*", help="The args to pass to the script"
+    )
     run_cmd.set_defaults(handler=run)
