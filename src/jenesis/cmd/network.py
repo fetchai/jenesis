@@ -56,7 +56,7 @@ def run_stop(args: argparse.Namespace):
 
 
 def get_logs(local_node: LedgerNodeDockerContainer):
-    for line in local_node.container.logs(stream=True): #.splitlines():
+    for line in local_node.container.logs(stream=True):
         yield line.strip().decode()
 
 
