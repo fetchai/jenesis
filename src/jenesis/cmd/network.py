@@ -74,7 +74,7 @@ def run_logs(args: argparse.Namespace):
     if local_node.container is not None:
         if local_node.is_ready():
             for line in get_logs(local_node):
-                print(line, end=None)
+                print(line)
     return 1
 
 
