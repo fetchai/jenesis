@@ -72,9 +72,8 @@ def run_logs(args: argparse.Namespace):
 
     local_node = LedgerNodeDockerContainer(profile.network, cfg.project_name, profile.name)
     if local_node.container is not None:
-        if local_node.is_ready():
-            for line in get_logs(local_node):
-                print(line)
+        for line in get_logs(local_node):
+            print(line)
     return 1
 
 
