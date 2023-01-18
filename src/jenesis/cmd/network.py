@@ -55,15 +55,39 @@ def run_stop(args: argparse.Namespace):
     return 1
 
 
+def get_logs(local_node: LedgerNodeDockerContainer):
+    for line in local_node.container.logs(stream=True):
+        yield line.strip().decode()
+
+
+def run_logs(args: argparse.Namespace):
+    cfg, profile = get_profile(args.profile)
+
+    if profile is None:
+        return 1
+
+    if not profile.network.is_local:
+        print("This profile is configured for a remote network.")
+        return 1
+
+    local_node = LedgerNodeDockerContainer(profile.network, cfg.project_name, profile.name)
+    if local_node.container is not None:
+        for line in get_logs(local_node):
+            print(line)
+    return 1
+
+
 def add_network_command(parser):
     network_parser = parser.add_parser("network", help="Start or stop a local node")
     subparsers = network_parser.add_subparsers()
 
     netstart_cmd = subparsers.add_parser("start", help="Start local node")
     netstop_cmd = subparsers.add_parser("stop", help="Stop local node")
-    for cmd in [netstart_cmd, netstop_cmd]:
+    netlogs_cmd = subparsers.add_parser("logs", help="Show local node logs")
+    for cmd in [netstart_cmd, netstop_cmd, netlogs_cmd]:
         cmd.add_argument(
             "-p", "--profile", default=None, help="The profile associated with the network"
         )
     netstart_cmd.set_defaults(handler=run_start)
     netstop_cmd.set_defaults(handler=run_stop)
+    netlogs_cmd.set_defaults(handler=run_logs)
