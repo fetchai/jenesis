@@ -2,7 +2,7 @@
 Once you have successfully created your project, you can add contract templates. You first need to navigate to your project's directory and run the following command:
 
 ```
-jenesis add contract <TEMPLATE> <CONTRACT NAME>
+jenesis add contract <template> <contract_name>
 ```
 You can find all the contract templates available in [Jenesis Templates](https://github.com/fetchai/jenesis-templates).
 An example of how to add the template **cw20-base** with the name `my_token` is given below:
@@ -11,9 +11,9 @@ An example of how to add the template **cw20-base** with the name `my_token` is 
 jenesis add contract cw20-base my_token
 ```
 
-If you need multiple deployments of the same contract, you can use the `-d` flag to specify multiple deployments and name them. 
+If you need multiple deployments of the same contract, you can use the `--deployments` or `-d` flag to specify multiple deployments and name them. 
 ```
-jenesis add contract <TEMPLATE> <CONTRACT NAME> -d <DEPLOYMENTS>
+jenesis add contract <template> <contract_name> [--deployments <deployments>]
 ```
 Jenesis will add the deployments to all profiles for the specified contract. 
 In the example below, `token_1` and `token_2` deployments have been added. This will allow you to deploy `my_token` contract with two different configurations. You can add as many deployments as you wish.
@@ -112,4 +112,4 @@ To attach the contract, you will need to specify the deployment's name and addre
 jenesis attach token_1 fetch18xs97q6h9zgh4sz730a42pp0dqa9sh4eef7eutfkv69q3v2y3x8s72pkua
 ```
 
-This will add the relevant deployment information into a `jenesis.lock` file and you will now be able to interact with `token_1` using [contract interactions](use-contracts.md) 
+This will add the relevant deployment information into a `jenesis.lock` file and you will now be able to interact with `token_1` using [contract interactions](use-contracts.md).
