@@ -147,4 +147,9 @@ jenesis run script.py
 
 And you will observe the same output as before. You can also specify the profile as an optional argument using `--profile`.
 
+Finally, you can pass arguments to the script just as you would to a standard python script by placing all the arguments to the script after the `--` delimiter:
+```
+jenesis run script.py [--profile profile_name] -- arg1 arg2 --key1 value1 --key2 value2
+```
+
 You can visit [CosmPy](https://docs.fetch.ai/CosmPy/) for more contract interaction examples.

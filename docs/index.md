@@ -1,14 +1,24 @@
+# Introduction
+
 Jenesis is a command line tool for rapid contract and service development for the Fetch.ai blockchain ecosystem and other CosmWasm-enabled blockchains.
+
+# System Requirements
+
+Jenesis currently requires:
+- OS: Linux, MacOS
+- Python: 3.8 to 3.10
+- Docker: 20.10.22 or higher recommended
+- git: Any
 
 # Installation
 
-Install jenesis for Python 3.7 or newer via PyPI:
+Install via PyPI:
 
 ```
 pip install jenesis
 ```
 
-# Getting Started
+# Getting started
 There are multiple commands integrated into jenesis that allow you to perform a variety of tasks these commands are:
 
 - `new` 
@@ -26,10 +36,10 @@ There are multiple commands integrated into jenesis that allow you to perform a 
 ## Create a new project
 Create a project using the ```new``` command
 ```
-jenesis new my_project --profile my_profile
+jenesis new my_project [--profile my_profile] [--network network_name]
 ```
 
-This will create a new directory called `my_project`. You can use `--profile` and `--network` optional arguments, when they aren't used, profile and network will be set to `testing` and `fetchai-testnet` respectively. Inside this directory a `jenesis.toml` file will be created containing the following information:
+This will create a new directory called `my_project`. You can use `--profile` and `--network` optional arguments; when they aren't used, profile and network will be set to `testing` and `fetchai-testnet` respectively. Inside this directory a `jenesis.toml` file will be created containing the following information:
 
 ```toml
 [project]
@@ -60,7 +70,7 @@ An empty `contracts` folder will also be created inside `my_project` directory t
 The ```init``` command is similar to the ```new``` command, but in this case, you won't need a project name argument since this command is intended to run inside an existing project directory.
 
 ```
-jenesis init
+jenesis init [--profile my_profile] [--network network_name]
 ```
 
 This command will create the same files and folders inside your project directory as the ones described for the ```new``` command.
@@ -98,6 +108,8 @@ mnemonic = "gap bomb bulk border original scare assault pelican resemble found l
 password = "12345678"
 moniker = "test-node"
 genesis_accounts = [ "fetch1vas6cc9650z0s08230ytqjphgzl5tcq9crqhhu",]
+timeout_commit = "5s"
+debug_trace = true
 ```
 In particular, to fund some accounts for testing, replace the `genesis_accounts`
 field with the addresses to be funded.
@@ -106,4 +118,16 @@ When running any of the commands `deploy`, `run`, `shell`, and `attach`,
 jenesis will check for a currently running local node, and if there is none, a new one will be created in a docker container.
 If you wish to keep a local node running, you need to set the `keep_running` parameter to `true`. Otherwise, nodes will be stopped after any of the command mentioned above finish running.
 
-At any time, you can start or stop a local node by running `jenesis network start/stop --profile <PROFILE>`
+At any time, you can start or stop a local node by running:
+```
+jenesis network start [--profile my_profile]
+```
+or
+```
+jenesis network stop [--profile my_profile]
+```
+
+To view the logs from the local node, run:
+```
+jenesis network logs [--profile my_profile]
+```

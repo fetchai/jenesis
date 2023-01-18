@@ -9,14 +9,14 @@ To deploy all the contracts inside a profile you have two options:
 1. Fill the `deployer_key` field for each contract inside the `jenesis.toml` file (keys can be different for each contract) and run the following command:
 
 ```
-jenesis deploy --profile profile_name
+jenesis deploy [--profile profile_name]
 ```
 Each contract inside the specified profile will be deployed with the specified key.
 
 2. Simply specify a certain key as an argument of the deploy command:
 
 ```
-jenesis deploy key_name --profile profile_name 
+jenesis deploy key_name [--profile profile_name]
 ```
 
 The `deployer_key` field will be ignored in this case and all contracts inside the specified profile will be deployed using the key `key_name`.
