@@ -1227,20 +1227,20 @@ files = [
 
 [[package]]
 name = "ptpython"
-version = "3.0.22"
+version = "3.0.23"
 description = "Python REPL build on top of prompt_toolkit"
 category = "main"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 files = [
-    {file = "ptpython-3.0.22-py2.py3-none-any.whl", hash = "sha256:2b06f28e63b8bfe30736ac07d23c00adb4161c4f0e1c1a26a51344b07e2100bd"},
-    {file = "ptpython-3.0.22.tar.gz", hash = "sha256:c097b324406014a005c6b09f493bbbdde571e412360af2ba1551873a10c36cf8"},
+    {file = "ptpython-3.0.23-py2.py3-none-any.whl", hash = "sha256:51069503684169b21e1980734a9ba2e104643b7e6a50d3ca0e5669ea70d9e21c"},
+    {file = "ptpython-3.0.23.tar.gz", hash = "sha256:9fc9bec2cc51bc4000c1224d8c56241ce8a406b3d49ec8dc266f78cd3cd04ba4"},
 ]
 
 [package.dependencies]
 appdirs = "*"
 jedi = ">=0.16.0"
-prompt-toolkit = ">=3.0.18,<3.1.0"
+prompt-toolkit = ">=3.0.28,<3.1.0"
 pygments = "*"
 
 [package.extras]
@@ -1871,4 +1871,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "2bef8777b1f8ebde38643e1b4b07a7edcdab3983702696e131da20e60f683b21"
+content-hash = "9f2812f4a3657355247ba129d33d5bfc2c6ab21025fa2d5643b80ec60c59566d"

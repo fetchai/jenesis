@@ -13,7 +13,7 @@ jenesis = 'jenesis.cli:main'
 python = "^3.8"
 docker = ">=5.0.3,<6.1.0"
 blessings = "^1.7"
-ptpython = "^3.0.20"
+ptpython = "^3.0.23"
 toml = "^0.10.2"
 tqdm = "^4.64.0"
 cosmpy = "^0.9.1"
