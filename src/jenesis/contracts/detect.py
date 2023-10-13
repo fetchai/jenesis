@@ -43,7 +43,7 @@ def parse_contract(path: str, name: str) -> Contract:
     schema = load_contract_schema(source_path)
 
     return Contract(
-        name=name,
+        name=contract_name,
         source_path=source_path,
         binary_path=binary_path,
         cargo_root=cargo_root,
