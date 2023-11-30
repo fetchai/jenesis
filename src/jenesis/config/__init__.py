@@ -442,7 +442,10 @@ class Config:
                         contents = input_file.read()
 
                         # replace the templating parameters here
-                        contents = contents.replace("<<NAME>>", name)
+                        if file_path.endswith(".toml"):
+                            contents = contents.replace("<<NAME>>", name)
+                        else:
+                            contents = contents.replace("<<NAME>>", name.replace("-", "_"))
 
                         output_file.write(contents)
         print("Rendering template...complete")
