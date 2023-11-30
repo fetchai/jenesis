@@ -11,8 +11,8 @@ from jenesis.tasks.monitor import run_tasks
 from jenesis.tasks.utils import chunks, get_last_modified_timestamp
 
 
-CONTRACT_BUILD_IMAGE = "cosmwasm/rust-optimizer:0.12.9"
-WORKSPACE_BUILD_IMAGE = "cosmwasm/workspace-optimizer:0.12.9"
+CONTRACT_BUILD_IMAGE = "cosmwasm/rust-optimizer:0.13.0"
+WORKSPACE_BUILD_IMAGE = "cosmwasm/workspace-optimizer:0.13.0"
 DEFAULT_BUILD_STEPS = [
     "RUSTFLAGS='-C link-arg=-s' cargo build --release --lib --target wasm32-unknown-unknown",
     "mkdir -p artifacts",
