@@ -22,9 +22,13 @@ class Contract:
 
 
     def update_schema(self):
+        replaced_name = self.name.replace("_", "-")
+
         # check for workspace-style schemas
         if self.name in self.schema:
             contract_schema = self.schema[self.name]
+        elif replaced_name in self.schema:
+            contract_schema = self.schema[replaced_name]
         else:
             contract_schema = self.schema
 
