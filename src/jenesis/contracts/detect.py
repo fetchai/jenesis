@@ -30,7 +30,7 @@ def parse_contract(path: str, name: str) -> Contract:
         cargo_contents = toml.load(cargo_file)
 
     # extract the contract name and replace hyphens with underscores
-    contract_name = cargo_contents['package']['name'].replace("-", "_")
+    contract_name = cargo_contents['package']['name']
 
     source_path = os.path.abspath(os.path.join(contracts_folder, name))
     if is_workspace(path):

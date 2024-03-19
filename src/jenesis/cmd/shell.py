@@ -38,7 +38,7 @@ def load_shell_globals(cfg: Config, selected_profile: Profile) -> dict:
     shell_globals = {}
     contract_instances = {}
 
-    contracts = {contract.name: contract for contract in detect_contracts(PROJECT_PATH)}
+    contracts = {contract.variable_name: contract for contract in detect_contracts(PROJECT_PATH)}
 
     deployments = selected_profile.deployments
 

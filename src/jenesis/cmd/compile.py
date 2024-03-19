@@ -12,6 +12,7 @@ from jenesis.contracts.detect import detect_contracts, is_workspace
 from jenesis.contracts.schema import generate_schemas, load_contract_schema
 from jenesis.tasks.image import image_exists, pull_image
 
+
 def _compute_init_checksum(path, contract_name):
     schema_path = os.path.join(path, "contracts", contract_name)
     schema = load_contract_schema(schema_path)
