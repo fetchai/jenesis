@@ -27,7 +27,7 @@ DEFAULT_KEYRING_BACKEND = "os"
 
 @dataclass
 class Deployment:
-    name: str # internal: the name for the deployment
+    name: str  # internal: the name for the deployment
     contract: str  # internal: the name of the contract to deploy
     network: str  # internal: the name of the network to deploy to
     deployer_key: str  # config: the name of the key to use for deployment

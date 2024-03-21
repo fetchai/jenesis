@@ -21,7 +21,7 @@ class Contract:
     execute_schema: Optional[SchemaType] = field(default=None, init=False)
 
     def __post_init__(self):
-        self.variable_name = self.name.replace("-", "_")
+        self.variable_name = self.to_variable_name(self.name)
         self.instantiate_schema = {}
         self.query_schema = {}
         self.execute_schema = {}
@@ -59,6 +59,10 @@ class Contract:
 
     def __repr__(self):
         return self.name
+
+    @classmethod
+    def to_variable_name(cls, contract_name: str) -> str:
+        return contract_name.replace("-", "_")
 
 
 def _extract_msgs(schema: dict) -> dict:
