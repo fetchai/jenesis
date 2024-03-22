@@ -24,6 +24,7 @@ jsonschema = "^4.15.0"
 graphlib-backport = "^1.0.3"
 jwskate = ">=0.4.1,<0.6.0"
 makefun = "^1.15.0"
+urllib3 = "==1.26.16"
 
 [tool.poetry.dev-dependencies]
 coverage = "^7.0.3"

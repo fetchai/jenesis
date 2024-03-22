@@ -37,6 +37,10 @@ class ContractBuildTask(ContainerTask):
     def name(self) -> str:
         return self.contract.name
 
+    @property
+    def variable_name(self) -> str:
+        return self.contract.variable_name
+
     def _is_out_of_date(self) -> bool:
         #  pylint: disable=duplicate-code
         if self._rebuild:
@@ -56,7 +60,7 @@ class ContractBuildTask(ContainerTask):
 
     def _schedule_container(self) -> Container:
         mounts = [
-            Mount('/code/target', f'contract_{self.contract.name}_cache'),
+            Mount('/code/target', f'contract_{self.contract.variable_name}_cache'),
             Mount('/usr/local/cargo/registry', 'registry_cache'),
             Mount('/code', os.path.abspath(self.contract.cargo_root), type='bind'),
         ]

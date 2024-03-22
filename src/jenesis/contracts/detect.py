@@ -30,7 +30,7 @@ def parse_contract(path: str, name: str) -> Contract:
         cargo_contents = toml.load(cargo_file)
 
     # extract the contract name and replace hyphens with underscores
-    contract_name = cargo_contents['package']['name'].replace("-", "_")
+    contract_name = cargo_contents['package']['name']
 
     source_path = os.path.abspath(os.path.join(contracts_folder, name))
     if is_workspace(path):
@@ -38,7 +38,7 @@ def parse_contract(path: str, name: str) -> Contract:
     else:
         cargo_root = os.path.join(contracts_folder, name)
     artifacts_path = os.path.join(cargo_root, 'artifacts')
-    binary_path = os.path.abspath(os.path.join(artifacts_path, f'{contract_name}.wasm'))
+    binary_path = os.path.abspath(os.path.join(artifacts_path, f'{Contract.to_variable_name(contract_name)}.wasm'))
 
     schema = load_contract_schema(source_path)
 

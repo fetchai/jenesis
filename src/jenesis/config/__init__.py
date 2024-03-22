@@ -27,7 +27,7 @@ DEFAULT_KEYRING_BACKEND = "os"
 
 @dataclass
 class Deployment:
-    name: str # internal: the name for the deployment
+    name: str  # internal: the name for the deployment
     contract: str  # internal: the name of the contract to deploy
     network: str  # internal: the name of the network to deploy to
     deployer_key: str  # config: the name of the key to use for deployment
@@ -402,7 +402,7 @@ class Config:
             toml.dump(data, toml_file)
 
     @staticmethod
-    def add_contract(project_root: str, template: str, name: str, branch: str) -> Contract:
+    def add_contract(project_root: str, template: str, name: str, branch: Optional[str]) -> Optional[Contract]:
 
         contract_path = os.path.join(project_root, 'contracts', name)
 
@@ -425,8 +425,10 @@ class Config:
         contract_template_path = os.path.join(temp_clone_path, "contracts", template)
         if not os.path.isdir(contract_template_path):
             print(f"Unknown template {template}: expecting one of {set(available_templates)}")
-            return
+            return None
         print("Downloading template...complete")
+
+        name_underscored = name.replace("-", "_")
 
         # process all the files as part of the template
         print("Rendering template...")
@@ -440,12 +442,11 @@ class Config:
                 with open(file_path, "r", encoding="utf8") as input_file:
                     with open(output_filepath, "w", encoding="utf8") as output_file:
                         contents = input_file.read()
-
                         # replace the templating parameters here
                         if file_path.endswith(".toml"):
                             contents = contents.replace("<<NAME>>", name)
                         else:
-                            contents = contents.replace("<<NAME>>", name.replace("-", "_"))
+                            contents = contents.replace("<<NAME>>", name_underscored)
 
                         output_file.write(contents)
         print("Rendering template...complete")
