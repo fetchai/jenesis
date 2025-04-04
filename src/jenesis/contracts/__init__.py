@@ -55,7 +55,6 @@ class Contract:
         return self.name
 
 
-
 def _extract_msgs(schema: dict, root_schema: dict) -> dict:
     msgs = {}
     if 'oneOf' in schema:
@@ -74,10 +73,10 @@ def _extract_msgs(schema: dict, root_schema: dict) -> dict:
                 ref_schema = ref_schema[key]
 
             # Recursively extract messages
-            nested_msgs = _extract_msgs(i, root_schema)
+            nested_msgs = _extract_msgs(ref_schema, root_schema)
 
             # Ensure no overlapping keys
-            assert len(msgs.items() & res_msgs.items()) == 0, "Nested messages overlap"
+            assert len(msgs.items() & nested_msgs.items()) == 0, "Nested messages overlap"
 
             msgs = msgs | nested_msgs
         else:
@@ -86,7 +85,6 @@ def _extract_msgs(schema: dict, root_schema: dict) -> dict:
             args = _get_msg_args(msg_schema['properties'][msg])
             msgs[msg] = args
     return msgs
-
 
 def _get_msg_args(msg_schema):
     msg_args = {}
