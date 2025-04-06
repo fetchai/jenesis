@@ -26,7 +26,6 @@ def run(args: argparse.Namespace):
 
     selected_contract = parse_contract(project_root , args.contract)
 
-
     for (profile_name, profile) in cfg.profiles.items():
         network_name = profile.network.name
         for deployment in args.deployments:
