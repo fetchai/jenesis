@@ -1,25 +1,31 @@
 import os.path
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Optional, Dict, Any
 
 from cosmpy.aerial.contract import _compute_digest
+
+
+SchemaType = Dict[str, Any]
 
 
 @dataclass
 class Contract:
     name: str
+    variable_name: str = field(init=False)
     source_path: str
     binary_path: str
     cargo_root: str
-    schema: dict
+    schema: SchemaType
+    instantiate_schema: Optional[SchemaType] = field(default=None, init=False)
+    query_schema: Optional[SchemaType] = field(default=None, init=False)
+    execute_schema: Optional[SchemaType] = field(default=None, init=False)
 
     def __post_init__(self):
+        self.variable_name = self.to_variable_name(self.name)
         self.instantiate_schema = {}
         self.query_schema = {}
         self.execute_schema = {}
-
         self.update_schema()
-
 
     def update_schema(self):
         # check for workspace-style schemas
@@ -54,6 +60,10 @@ class Contract:
     def __repr__(self):
         return self.name
 
+    @classmethod
+    def to_variable_name(cls, contract_name: str) -> str:
+        return contract_name.replace("-", "_")
+
 
 def _extract_msgs(schema: dict, root_schema: dict) -> dict:
     msgs = {}
@@ -85,6 +95,7 @@ def _extract_msgs(schema: dict, root_schema: dict) -> dict:
             args = _get_msg_args(msg_schema['properties'][msg])
             msgs[msg] = args
     return msgs
+
 
 def _get_msg_args(msg_schema):
     msg_args = {}
