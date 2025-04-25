@@ -10,7 +10,7 @@ readme = "README.md"
 jenesis = 'jenesis.cli:main'
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 docker = ">=5.0.3,<6.1.0"
 blessings = "^1.7"
 ptpython = "^3.0.23"
