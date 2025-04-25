@@ -12,6 +12,7 @@ from jenesis.contracts.detect import detect_contracts, is_workspace
 from jenesis.contracts.schema import generate_schemas, load_contract_schema
 from jenesis.tasks.image import image_exists, pull_image
 
+
 def _compute_init_checksum(path, contract_name):
     schema_path = os.path.join(path, "contracts", contract_name)
     schema = load_contract_schema(schema_path)
@@ -44,7 +45,7 @@ def run(args: argparse.Namespace):
         print(term.red("Unable to detect any contracts"))
         return 1
 
-    init_checksums = {contract.name: _compute_init_checksum(project_path, contract.name) for contract in contracts}
+    init_checksums = {contract.name: _compute_init_checksum(project_path, contract.variable_name) for contract in contracts}
 
     if is_workspace(project_path):
         if not image_exists(WORKSPACE_BUILD_IMAGE):
@@ -65,7 +66,7 @@ def run(args: argparse.Namespace):
 
     cfg = Config.load(os.getcwd())
     for contract in contracts:
-        if _compute_init_checksum(project_path, contract.name) != init_checksums[contract.name]:
+        if _compute_init_checksum(project_path, contract.variable_name) != init_checksums[contract.name]:
             # update project file
             for (profile_name, profile) in cfg.profiles.items():
                 network_name = profile.network.name
