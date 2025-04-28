@@ -49,10 +49,10 @@ class Contract:
         return _compute_digest(self.binary_path).hex()
 
     def execute_msgs(self) -> dict:
-        return _extract_msgs(self.execute_schema)
+        return _extract_msgs(self.execute_schema, self.execute_schema)
 
     def query_msgs(self) -> dict:
-        return _extract_msgs(self.query_schema)
+        return _extract_msgs(self.query_schema, self.query_schema)
 
     def init_args(self) -> dict:
         return _get_msg_args(self.instantiate_schema)
@@ -65,7 +65,7 @@ class Contract:
         return contract_name.replace("-", "_")
 
 
-def _extract_msgs(schema: dict) -> dict:
+def _extract_msgs(schema: dict, root_schema: dict) -> dict:
     msgs = {}
     if 'oneOf' in schema:
         schemas = schema['oneOf']
@@ -74,9 +74,26 @@ def _extract_msgs(schema: dict) -> dict:
     else:
         return msgs
     for msg_schema in schemas:
-        msg = msg_schema['required'][0]
-        args = _get_msg_args(msg_schema['properties'][msg])
-        msgs[msg] = args
+        if "$ref" in msg_schema:
+            # Resolve the reference
+            ref_path = msg_schema["$ref"].split("/")
+            assert ref_path[0] == "#"
+            ref_schema = root_schema
+            for key in ref_path[1:]:
+                ref_schema = ref_schema[key]
+
+            # Recursively extract messages
+            nested_msgs = _extract_msgs(ref_schema, root_schema)
+
+            # Ensure no overlapping keys
+            assert len(msgs.items() & nested_msgs.items()) == 0, "Nested messages overlap"
+
+            msgs = msgs | nested_msgs
+        else:
+            # Direct schema definition
+            msg = msg_schema['required'][0]
+            args = _get_msg_args(msg_schema['properties'][msg])
+            msgs[msg] = args
     return msgs
 
 
