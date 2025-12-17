@@ -6,6 +6,7 @@ import grpc
 from cosmpy.aerial.client import LedgerClient
 from cosmpy.aerial.contract import LedgerContract, _compute_digest
 from cosmpy.aerial.tx_helpers import SubmittedTx
+from cosmpy.aerial.tx import TxFee
 from cosmpy.aerial.wallet import Wallet
 from cosmpy.crypto.address import Address
 from cosmpy.protos.cosmwasm.wasm.v1.query_pb2 import QueryCodeRequest
@@ -99,7 +100,7 @@ class MonkeyContract(LedgerContract):
             gas_limit: Optional[int] = None,
             memo: Optional[str] = None,
     ) -> int:
-        code_id = super().store(sender, gas_limit=gas_limit, memo=memo)
+        code_id = super().store(sender, memo=memo, fee=TxFee(gas_limit=gas_limit))
 
         # trigger the observer if necessary
         if self._observer is not None:
@@ -127,8 +128,8 @@ class MonkeyContract(LedgerContract):
                 )
         if do_validate and self._contract.instantiate_schema:
             validate(args, self._contract.instantiate_schema)
-        address = super().instantiate(args, sender, label=label, gas_limit=gas_limit,
-                                      admin_address=admin_address, funds=funds)
+        address = super().instantiate(args, sender, label=label,
+                                      admin_address=admin_address, funds=funds, fee=TxFee(gas_limit=gas_limit))
 
         if self._observer is not None:
             self._observer.on_contract_address_update(address)
@@ -179,7 +180,7 @@ class MonkeyContract(LedgerContract):
     ) -> SubmittedTx:
         if do_validate and self._contract.execute_schema:
             validate(args, self._contract.execute_schema)
-        return super().execute(args, sender, gas_limit, funds)
+        return super().execute(args, sender, funds=funds, fee=TxFee(gas_limit=gas_limit))
 
     def query(self, args: Any, do_validate: Optional[bool] = True) -> Any:
         if do_validate and self._contract.query_schema:
