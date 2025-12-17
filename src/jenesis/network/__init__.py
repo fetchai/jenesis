@@ -150,7 +150,7 @@ class LedgerNodeDockerContainer:
             f'sed -i "s/enable = false/enable = true/" ~/.{self.network.cli_binary}/config/app.toml',
             f'sed -i "s/swagger = false/swagger = true/" ~/.{self.network.cli_binary}/config/app.toml',
             'fi',
-            f"{self.network.cli_binary} start --rpc.laddr tcp://0.0.0.0:26657 {trace_flag}",
+            f"{self.network.cli_binary} start --rpc.laddr tcp://0.0.0.0:26657 {trace_flag} --minimum-gas-prices 0{self.network.fee_denomination}",
         ])
         return [line + "\n" for line in entrypoint_lines]
 
