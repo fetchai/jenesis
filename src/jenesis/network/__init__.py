@@ -11,7 +11,7 @@ from docker.models.containers import Container
 from cosmpy.aerial.config import NetworkConfig
 from cosmpy.aerial.client import LedgerClient
 
-DEFAULT_DOCKER_IMAGE_TAG = "fetchai/fetchd:0.10.5"
+DEFAULT_DOCKER_IMAGE_TAG = "fetchai/fetchd:0.15.0-rc2"
 DEFAULT_VALIDATOR_KEY_NAME = "validator"
 DEFAULT_MNEMONIC = "gap bomb bulk border original scare assault pelican resemble found laptop skin gesture height inflict clinic reject giggle hurdle bubble soldier hurt moon hint"
 DEFAULT_PASSWORD = "12345678"
